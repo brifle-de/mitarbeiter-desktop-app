@@ -1,116 +1,149 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
-
-        <q-toolbar-title>
-          Quasar App
-        </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
-      </q-toolbar>
-    </q-header>
+  <q-layout view="hhh LpR lFr">
+    <q-header class="unselectable bg-titlebar titlebar">
+        <q-toolbar class="q-ml-sm">          
+          <q-btn 
+                class="titlebar-button"
+                flat
+                dense
+                round
+                color="green-3"
+                icon="home" >
+                <b-tooltip
+                    text="Startseite"
+                />
+            </q-btn>
+        </q-toolbar>
+      </q-header>  
+    <div class="titlebar-placeholder"></div>
 
     <q-drawer
-      v-model="leftDrawerOpen"
+       class="non-selectable column justify-between no-wrap"
       show-if-above
+      :model-value="true"
+      :width="250"
+      :breakpoint="500"
       bordered
     >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
-
+    <div class="">
+      <div class="q-py-md q-px-md">
+      <img src="~assets/logo.png" height="26">
+    </div>
+      <q-list class="q-pa-sm mainMenuList">
         <EssentialLink
-          v-for="link in linksList"
+          v-for="link in essentialLinks"
           :key="link.title"
           v-bind="link"
+          :title="$t(link.title)"
         />
+
       </q-list>
+    </div> 
+
     </q-drawer>
 
-    <q-page-container>
-      <router-view />
+    <q-page-container class="main-container">
+      <div class="q-pa-md">
+        <router-view />
+      </div>
     </q-page-container>
   </q-layout>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
-import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink.vue';
+<style lang="scss">
+.sticky-color-toolbar {
+  background-color: #212321;
+  transition: background-color 0.35s;
+}
+.sticky-color-toolbar.sticky {
+  border-bottom: 1px solid #213021;
+  background-color: #293029;
+}
 
-const linksList: EssentialLinkProps[] = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
+.mainMenuList{
+  a {
+    border-radius: 15px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+
+    &.q-router-link--active {
+      background-color: rgba(62, 110, 71, 0.266);
+    }
+
   }
-];
+}
+
+.profile-dropdown-menu{
+  margin-top: 10px !important;
+}
+
+</style>
+
+<script lang="ts">
+import { Ref, defineComponent, ref } from 'vue';
+import EssentialLink from 'components/EssentialLink.vue';
+import { useRouter } from 'vue-router';
+
 
 export default defineComponent({
   name: 'MainLayout',
-
   components: {
-    EssentialLink
+    EssentialLink,
   },
+  unmounted() {
+   
+  },
+  mounted() {
+    
+  },
+  methods: {
+    checkStickyColor() {
+      const toolbar = document.querySelector('.sticky-color-toolbar');
+      if (toolbar) {
+        if (window.scrollY > 0) {
+          toolbar.classList.add('sticky');
+        } else {
+          toolbar.classList.remove('sticky');
+        }
+      }
+    },
+   
+  },
+  setup() {
+    const router = useRouter();  
+    const menuLinks: Ref<Array<{title: string, icon: string, link: string}>> = ref([]);
+    const showRefreshLogin = ref(false);
+  
 
-  setup () {
-    const leftDrawerOpen = ref(false);
+    menuLinks.value = [
+        {
+          title: 'menu.home',
+          icon: 'dashboard',
+          link: '/',
+        },
+        {
+          title: 'menu.bulk_sending',
+          icon: 'markunread_mailbox',
+          link: '/inbox',
+        },
+        {
+          title: 'menu.settings',
+          icon: 'settings',
+          link: '/settings',
+        },
+       
+      ];
+  
+ 
+
+
 
     return {
-      linksList,
-      leftDrawerOpen,
-      toggleLeftDrawer () {
-        leftDrawerOpen.value = !leftDrawerOpen.value;
-      }
+      essentialLinks: menuLinks,
+      miniState: ref(true),
+      showRefreshLogin,
+      router,
     };
-  }
+  },
 });
 </script>

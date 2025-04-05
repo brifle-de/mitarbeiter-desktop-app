@@ -7,6 +7,10 @@ import {
 } from 'vue-router';
 import routes from './routes';
 
+import UnsealGuard from 'src/utils/unsealGuard';
+
+
+
 /*
  * If not building with SSR mode, you can
  * directly export the Router instantiation;
@@ -15,7 +19,6 @@ import routes from './routes';
  * async/await or return a Promise which resolves
  * with the Router instance.
  */
-
 export default defineRouter(function (/* { store, ssrContext } */) {
   const createHistory = process.env.SERVER
     ? createMemoryHistory
@@ -29,6 +32,16 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     history: createHistory(process.env.VUE_ROUTER_BASE),
+  });
+
+  Router.beforeEach(async (to, from, next) => {
+    // Check if the route requires unseal
+    if (to.matched.some((record) => record.meta.requiresUnseal)) {
+        // Call the unseal guard
+        return await UnsealGuard.checkUnseal(to, from, next);     
+    }
+    return next();
+      
   });
 
   return Router;

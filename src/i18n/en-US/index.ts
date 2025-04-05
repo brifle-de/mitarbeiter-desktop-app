@@ -3,5 +3,10 @@
 
 export default {
   failed: 'Action failed',
-  success: 'Action was successful'
+  success: 'Action was successful',
+  menu: {
+    home: 'Home',
+    bulk_sending: 'Bulk Mailing',
+    settings: 'Settings',
+  }
 };

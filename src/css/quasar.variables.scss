@@ -12,14 +12,44 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-$primary   : #1976D2;
-$secondary : #26A69A;
-$accent    : #9C27B0;
+
+$primary   : #53B28A;
+$secondary : #C1FF72;
+$accent    : #9561e8;
 
 $dark      : #1D1D1D;
-$dark-page : #121212;
+$dark-page : #0e100d;
+$dark-text : #222;
 
-$positive  : #21BA45;
-$negative  : #C10015;
-$info      : #31CCEC;
-$warning   : #F2C037;
+$separator-dark-color : #324032;
+
+$positive  : #1b9638;
+$negative  : #a11b2b;
+$info      : #349db3;
+$warning   : #bf9319;
+
+@use 'sass:color';
+
+
+$background: #0e100d;
+$scrollbar-thumb: #2a2b2a;
+$scrollbar-thumb-hover: color.adjust($scrollbar-thumb, $lightness: 40%, $space: hsl);
+$text-color: #eef2ed;
+$titlebar-background: #151b11;
+$titlebar-text-color: #74be97;
+$titlebar-height: 60px;
+$titlebar-border-color: #e5ebe818;
+
+
+// define scss variables as css variables
+
+:root {
+  --background: #{$background};
+  --scrollbar-thumb: #{$scrollbar-thumb};
+  --scrollbar-thumb-hover: #{$scrollbar-thumb-hover};
+  --text-color: #{$text-color}; 
+  --titlebar-background: #{$titlebar-background};
+  --titlebar-text-color: #{$titlebar-text-color};
+  --titlebar-height: #{$titlebar-height};
+  --titlebar-border-color: #{$titlebar-border-color};
+}

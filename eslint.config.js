@@ -68,7 +68,11 @@ export default defineConfigWithVueTs(
       'prefer-promise-reject-errors': 'off',
 
       // allow debugger during development only
-      'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off'
+      'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
+      'require-await': 'off',
+      "@typescript-eslint/require-await": "off",
+      '@typescript-eslint/consistent-type-imports': "off",
+      'vue/multi-word-component-names': 'off',
     }
   },
 

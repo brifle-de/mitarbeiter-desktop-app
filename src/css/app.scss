@@ -1,1 +1,131 @@
 // app global css in SCSS form
+
+@font-face {
+    font-family: 'Quicksand';
+    src: url("/static/fonts/Quicksand-VariableFont_wght.ttf");
+}
+
+@font-face {
+    font-family: "Twemoji Country Flags";
+    unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067,
+      U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+    src: url('/static/fonts/TwemojiCountryFlags.woff2') format('woff2');
+    font-display: swap;
+}
+
+
+* {
+    font-family: 'Twemoji Country Flags', 'Quicksand';
+    font-size: 18px;   
+
+    .q-toggle {
+        * {            
+            font-size: 40px;
+        }        
+    }
+}
+
+
+.wrapper{
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    max-width: 1400px;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: 0 auto;
+}
+
+.q-drawer{
+    .q-router-link--active {
+        color: $secondary;
+        background-color: #1d1d1d;
+    }
+}
+
+.q-list{
+    .q-item--active{
+        color: $secondary;
+    }
+}
+
+.clickable{
+    cursor: pointer;
+}
+
+.unselectable {    
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+* {
+    &::-webkit-scrollbar {
+        width: 20px;
+    }
+    &::-webkit-scrollbar-corner {
+        background: rgba(0,0,0,0);
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb);
+        border-radius: 8px;
+        border: 4px solid rgba(0,0,0,0);
+        background-clip: content-box;
+        min-width: 32px;
+        min-height: 32px;
+    
+        &:hover {
+            background-color: var(--scrollbar-thumb-hover); 
+        }
+    }
+    &::-webkit-scrollbar-track {
+        background-color: rgba(0,0,0,0); 
+    }
+}
+
+
+.pull-below-titlebar {
+    margin-top: var(--titlebar-height);
+  }
+
+.main-container {
+    height: calc(100vh - var(--titlebar-height));
+    overflow-y: auto;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-top: 1px solid var(--titlebar-border-color);
+}
+
+.border{
+    border: 1px solid #9996;
+}
+
+.titlebar-button {
+    app-region: no-drag;
+}
+
+.titlebar {
+    height: var(--titlebar-height);
+    background-color: var(--titlebar-background);
+    color: var(--titlebar-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    app-region: drag;
+    z-index: 100000000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;       
+  }
+
+  .titlebar-placeholder {
+    height: var(--titlebar-height);
+}
+
+
+.bg-titlebar{
+    background-color: var(--titlebar-background);
+    color: var(--titlebar-text-color);   
+}
+

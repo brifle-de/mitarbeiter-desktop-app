@@ -2,6 +2,7 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 import { defineConfig } from '#q-app/wrappers';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig((ctx) => {
@@ -43,6 +44,9 @@ export default defineConfig((ctx) => {
         node: 'node20'
       },
 
+      alias: {
+        '@src': path.resolve(__dirname, './src') 
+      },
       typescript: {
         strict: true,
         vueShim: true
@@ -65,7 +69,12 @@ export default defineConfig((ctx) => {
       // polyfillModulePreload: true,
       // distDir
 
-      // extendViteConf (viteConf) {},
+       extendViteConf (viteConf) {
+        viteConf.build = {
+          rollupOptions: {
+            external: ['fs'], 
+        }};
+       },
       // viteVuePluginOptions: {},
       
       vitePlugins: [
@@ -101,7 +110,9 @@ export default defineConfig((ctx) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
-      config: {},
+      config: {
+        dark: true,
+      },
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
@@ -212,7 +223,11 @@ export default defineConfig((ctx) => {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: 'brifle-gehalt'
+        appId: 'brifle-mitarbeiter'
+      },     
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      extendWebpack(cfg : any) {
+        cfg.externals = { fs: 'commonjs fs' }; 
       }
     },
 
