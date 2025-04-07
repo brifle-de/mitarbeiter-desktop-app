@@ -16,7 +16,6 @@ export default class EncryptedStore{
 
     private async getPath(path: string): Promise<string> {
         const full = `${this.basePath}/${path}`
-        console.log('getPath', app.getPath('home') + '/' + full)
         return app.getPath('home') + '/' + full;
     }
 
@@ -65,6 +64,7 @@ export default class EncryptedStore{
 
     async storeMetadata(data: EncryptedStoreType): Promise<void> {
         const js = JSON.stringify(data, null, 2)
+        // create the directory if it does not exist
         fs.writeFileSync(await this.getMetaPath(), js, 'utf-8')
     }
 
@@ -104,7 +104,9 @@ export default class EncryptedStore{
         const iv = crypto.randomBytes(16)        
         const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKey, iv)
         const encryptedData = Buffer.concat([cipher.update(data), cipher.final()]);
-        return Buffer.concat([iv, encryptedData])
+        const authTag = cipher.getAuthTag();
+        const cipherText = Buffer.concat([iv, authTag, encryptedData])
+        return cipherText
     }
 
     /**
@@ -115,8 +117,10 @@ export default class EncryptedStore{
      */
     async decryptData(encryptedData: Buffer, encryptionKey: Buffer): Promise<string> {
         const iv = encryptedData.subarray(0, 16)
-        const data = encryptedData.subarray(16)
+        const authTag = encryptedData.subarray(16, 32)
+        const data = encryptedData.subarray(32)
         const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey, iv)
+        decipher.setAuthTag(authTag) 
         const decryptedData = Buffer.concat([decipher.update(data), decipher.final()]);
         return decryptedData.toString()
     }
@@ -136,10 +140,11 @@ export default class EncryptedStore{
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true })
         }
-        fs.writeFileSync(accPath, encryptedData, 'utf-8')
+        // store file as binary file        
+        fs.writeFileSync(accPath, encryptedData, 'binary')
     }
 
-    async addAccount(account: AccountData, encryptionKey: string): Promise<void> {
+    async addAccount(account: AccountData, encryptionKey: string): Promise<void> {       
         const meta = await this.fetchMetadata()
         meta.accountIds.push(account.id)
         await this.storeAccount(account, encryptionKey)
@@ -156,7 +161,6 @@ export default class EncryptedStore{
      */
     async getKey(salt:string, password: string): Promise<string> {
         const buffer = await this.generateEncryptionKey(password, salt)
-        console.log('getKey', buffer.length, buffer.toString('hex'))
         return buffer.toString('hex')
     }
 
@@ -168,14 +172,28 @@ export default class EncryptedStore{
      */
     async getAccount(accountId: string, encryptionKey: string): Promise<AccountData | null> {
         const accPath = await this.getAccountPath(accountId)
-        const cipher = fs.readFileSync(accPath, 'utf-8')
+        const cipher = fs.readFileSync(accPath, 'binary')
+        // output cihper as hex string        
         const key = Buffer.from(encryptionKey, 'hex')
-        const js = await this.decryptData(Buffer.from(cipher), key)
+        const js = await this.decryptData(Buffer.from(cipher, 'binary'), key)
         return JSON.parse(js) as AccountData
     }
 
     async deleteAccount(accountId: string): Promise<void> {
-        console.log('deleteAccount', accountId)
+        // get meta
+        const meta = await this.fetchMetadata()
+        // remove account from meta
+        const index = meta.accountIds.indexOf(accountId)
+        if (index > -1) {
+            meta.accountIds.splice(index, 1)
+        }        
+        // store meta
+        await this.storeMetadata(meta)
+        // delete account file
+        const accPath = await this.getAccountPath(accountId)
+        if (fs.existsSync(accPath)) {
+            fs.unlinkSync(accPath)
+        }
     }
 
     async fetchMetadata(): Promise<EncryptedStoreType> {

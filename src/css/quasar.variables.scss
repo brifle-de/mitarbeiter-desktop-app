@@ -24,10 +24,10 @@ $dark-text : #222;
 $separator-dark-color : #324032;
 
 $positive  : #1b9638;
-$negative  : #a11b2b;
+$negative  : rgb(209, 59, 77);
 $info      : #349db3;
 $warning   : #bf9319;
-
+ 
 @use 'sass:color';
 
 
@@ -39,6 +39,8 @@ $titlebar-background: #151b11;
 $titlebar-text-color: #74be97;
 $titlebar-height: 60px;
 $titlebar-border-color: #e5ebe818;
+$fading-background: #1a2215ab;
+$fading-text-color: #74be97;
 
 
 // define scss variables as css variables
@@ -52,4 +54,6 @@ $titlebar-border-color: #e5ebe818;
   --titlebar-text-color: #{$titlebar-text-color};
   --titlebar-height: #{$titlebar-height};
   --titlebar-border-color: #{$titlebar-border-color};
+  --fading-background: #{$fading-background};
+  --fading-text-color: #{$fading-text-color};
 }

@@ -19,8 +19,7 @@ export const useEncryptedStore = defineStore('encrypted-store', {
     accounts: (state) => {
       return state._accounts;
     },
-    isLoaded: (state) => {
-      console.log('isLoaded', state.meta);
+    isLoaded: (state) => {  
       return state.meta !== null;
     }
   },
@@ -31,7 +30,6 @@ export const useEncryptedStore = defineStore('encrypted-store', {
         this.meta = data;
         this._accounts = [];
         this.key = await encryptedStoreService.getKey(password, data.salt);
-        console.log('key', this.key);
         this.meta.accountIds.forEach((accountId) => {
           void encryptedStoreService.getAccount(this.key!, accountId)
           .then((account: AccountData | null) => {
@@ -43,6 +41,9 @@ export const useEncryptedStore = defineStore('encrypted-store', {
         );
       });
     },
+    getAccount(accountId: string) {
+      return this._accounts.find((account) => account.id === accountId);
+    }, 
     checkIfInitialized() {
       return encryptedStoreService.isInitialized();
     },
@@ -64,6 +65,22 @@ export const useEncryptedStore = defineStore('encrypted-store', {
       account.id = crypto.randomUUID();
       return encryptedStoreService.addAccount(this.key, account).then(() => {
         this._accounts.push(account);
+      });
+    },
+    /**
+     * removes the account from the store and from the file system
+     * @param accountId the id of the account to get
+     * @returns 
+     */
+    deleteAccount(accountId: string) {
+      if (!this.key) {
+        throw new Error('Key is not initialized');
+      }
+      return encryptedStoreService.deleteAccount(this.key, accountId).then(() => {
+        const index = this._accounts.findIndex((a) => a.id === accountId);
+        if (index !== -1) {
+          this._accounts.splice(index, 1);
+        }
       });
     },
     /**

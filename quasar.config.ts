@@ -1,10 +1,11 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
-
+ 
 import { defineConfig } from '#q-app/wrappers';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
+ 
+   
 export default defineConfig((ctx) => {
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
@@ -68,13 +69,6 @@ export default defineConfig((ctx) => {
       // minify: false,
       // polyfillModulePreload: true,
       // distDir
-
-       extendViteConf (viteConf) {
-        viteConf.build = {
-          rollupOptions: {
-            external: ['fs'], 
-        }};
-       },
       // viteVuePluginOptions: {},
       
       vitePlugins: [
@@ -113,6 +107,7 @@ export default defineConfig((ctx) => {
       config: {
         dark: true,
       },
+      lang: 'de', // Quasar language pack
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack

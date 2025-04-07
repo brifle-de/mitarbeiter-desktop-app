@@ -45,7 +45,6 @@ async function createWindow() {
 
   // full size by default
   mainWindow.maximize();
-
   
 
   if (process.env.DEV) {

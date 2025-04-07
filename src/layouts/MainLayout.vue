@@ -8,6 +8,7 @@
                 dense
                 round
                 color="green-3"
+                @click="$router.push('/')"
                 icon="home" >
                 <b-tooltip
                     text="Startseite"
@@ -26,9 +27,7 @@
       bordered
     >
     <div class="">
-      <div class="q-py-md q-px-md">
-      <img src="~assets/logo.png" height="26">
-    </div>
+     
       <q-list class="q-pa-sm mainMenuList">
         <EssentialLink
           v-for="link in essentialLinks"
@@ -42,7 +41,7 @@
 
     </q-drawer>
 
-    <q-page-container class="main-container">
+    <q-page-container class="main-container unselectable">
       <div class="q-pa-md">
         <router-view />
       </div>
@@ -124,7 +123,7 @@ export default defineComponent({
         {
           title: 'menu.bulk_sending',
           icon: 'markunread_mailbox',
-          link: '/inbox',
+          link: '/bulk_sending',
         },
         {
           title: 'menu.settings',

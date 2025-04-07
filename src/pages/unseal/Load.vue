@@ -42,8 +42,7 @@ export default defineComponent({
     },
     methods: {
         unsealApp () {
-            this.encryptedStorage.loadData(this.password).then((res) => {
-                console.log(res);
+            this.encryptedStorage.loadData(this.password).then(() => {              
                 void this.$router.push({ path: '/accounts' }); 
             }).catch((err: Error) => {
                 console.error(err);

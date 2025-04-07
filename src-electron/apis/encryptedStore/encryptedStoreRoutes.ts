@@ -8,8 +8,8 @@ export default class EncryptedStoreRoutes{
     registerRoutes(){
         const encryptedStore = new EncryptedStore();        
 
-        ipcMain.handle('encryptedStore:addAccount', async (event: IpcMainInvokeEvent, encryptionKey: string, account: AccountData) => {
-            return encryptedStore.storeAccount(account,encryptionKey)
+        ipcMain.handle('encryptedStore:addAccount', async (event: IpcMainInvokeEvent, encryptionKey: string, account: AccountData) => {            
+            return encryptedStore.addAccount(account,encryptionKey)
         })
         ipcMain.handle('encryptedStore:getAccount', async (event: IpcMainInvokeEvent, encryptionKey: string, accountId: string) => {
             return encryptedStore.getAccount(accountId,encryptionKey)

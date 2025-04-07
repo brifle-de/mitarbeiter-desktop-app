@@ -1,9 +1,10 @@
  
+import { ContextBridge, IpcRenderer } from "electron";
 import { AccountData, EncryptedStoreType } from "../../models/EncryptedStore"
 
  export class EncryptedStoreApi{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    registerApi(contextBridge: any, ipcRenderer: any){     
+    
+    registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRenderer){     
         contextBridge.exposeInMainWorld('encryptedStoreApi', {
             addAccount: (encryptionKey: string, accountData: AccountData) => ipcRenderer.invoke('encryptedStore:addAccount', encryptionKey, accountData),
             getAccount: (encryptionKey: string, accountId: string) => ipcRenderer.invoke('encryptedStore:getAccount', encryptionKey, accountId),
