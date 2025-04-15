@@ -4,12 +4,14 @@ import os from 'os';
 import { fileURLToPath } from 'url'
 import { registerRoutes } from './apis/routes';
 
+
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform(); 
 
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 
 let mainWindow: BrowserWindow | undefined;
+
 
 async function createWindow() {
 
@@ -70,8 +72,7 @@ async function createWindow() {
 
 void app.whenReady().then(() => {
   registerRoutes();
-  void createWindow();
- 
+  void createWindow(); 
 });
 
 app.on('window-all-closed', () => {

@@ -13,6 +13,18 @@ export default class Sftp {
            return window.sftpApi.lsDir(path, serializedOpts);   
     }     
 
+    /**
+     * read a file and return its content as a string
+     * @param path the path to the file to read
+     * @param connectionOpts the connection options to use
+     * @param encoding the encoding to use to read the file, default is 'utf8', binary will return a hex string
+     * @returns 
+     */
+    static async readFile(path: string, connectionOpts: SftpConnection, encoding: BufferEncoding): Promise<string | null> {
+      const serializedOpts = JSON.parse(JSON.stringify(connectionOpts));
+      return window.sftpApi.readFile(path, serializedOpts, encoding);
+    }
+
 
 
 }

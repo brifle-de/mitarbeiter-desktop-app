@@ -23,7 +23,7 @@
 
 
         <q-stepper-navigation class="text-center">
-          <q-btn @click="step = 2" color="secondary" text-color="black" label="Weiter" />
+          <q-btn :disable="!validSourceReceiver" @click="step = 2" color="secondary" text-color="black" label="Weiter" />
         </q-stepper-navigation>
       </q-step>
 
@@ -36,12 +36,15 @@
         :done="step > 2"
       >
         <SourceReceiversParser
-          :receiverSource="receiverSrc"
+          :receiverSource="receiverSrc"          
+          @parsed="onParsedReceivers($event)"
         />
 
+
         <q-stepper-navigation>
-          <q-btn @click="step = 3" color="primary" label="Continue" />
-          <q-btn flat @click="step = 1" color="primary" label="Back" class="q-ml-sm" />
+          <q-btn @click="step = 3" color="secondary"  
+          :disable="receiverRecords.length === 0"
+          text-color="black"  label="Weiter" />
         </q-stepper-navigation>
       </q-step>
 
@@ -59,27 +62,109 @@
       >
       </SourceDocuments>
 
+      <q-stepper-navigation>
+          <q-btn @click="step = 4" :disable="!validSourceDocuments" color="secondary"  text-color="black"  label="Weiter" />
+        </q-stepper-navigation>
+
       </q-step>
 
       <q-step
         :name="4"
-        title="Create an ad"
+        :disable="step < 4"
+        :done="step > 4"
+        title="Zuweisung - Dokumente"
         color="secondary"
         icon="add_comment"
       >
-        Try out different ad text to see what brings in the most customers, and learn how to
-        enhance your ads using features like ad extensions. If you run into any problems with
-        your ads, find out how to tell if they're running and how to resolve approval issues.
+        <SourceDocumentsParser
+          @parsed="onParsedDocuments($event)"
+          v-model="documentsSrc"
+        />
 
         <q-stepper-navigation>
-          <q-btn color="primary" label="Finish" />
-          <q-btn flat @click="step = 2" color="primary" label="Back" class="q-ml-sm" />
+          <q-btn  @click="step = 5" color="secondary" 
+          :disable="documentRecords.length === 0"
+          text-color="black" label="Weiter" />
         </q-stepper-navigation>
       </q-step>
+      <q-step
+        :name="5"
+        :disable="step < 5"
+        :done="step > 5"
+        title="Suche - Empfänger Brifle Account"
+        color="secondary"
+        icon="add_comment"
+      >     
+      <SearchReceivers
+        :receiverRecords="receiverRecords"
+        :documentRecords="documentRecords"
+        @confirmed="onConfirmedDocuments($event)"
+      />
+        
+      </q-step>
+      <q-step
+        :name="6"
+        :disable="step < 6"
+        :done="step > 6"
+        title="Aktion - Nicht Brifle Empfänger"
+        color="secondary"
+        icon="local_post_office"
+      >
+        <NonExistingReceiversAction
+          @selected="actionNotBrifle = $event"
+        />
+        <q-stepper-navigation>
+          <q-btn @click="step = 7" color="secondary" text-color="black" label="Weiter" />
+        </q-stepper-navigation>
+    
+    </q-step>
+    <q-step
+        :name="7"
+        :disable="step < 7"
+        :done="step > 7"
+        title="Betreff"
+        color="secondary"
+        icon="title"
+      >
+      <div class="q-my-lg text-center">
+          <q-input filled
+          v-model="subject"
+          color="secondary"
+          label="Betreff"
+          class="q-mt-lg"
+          />
+          <q-stepper-navigation>
+            <q-btn @click="step = 8" color="secondary" 
+            :disable="subject === ''"
+            text-color="black" label="Weiter" />
+          </q-stepper-navigation>
+
+      </div>
+
+    </q-step>
+      <q-step
+        :name="8"
+        :disable="step < 8"
+        :done="step > 8"
+        title="Übersicht"
+        color="secondary"
+        icon="assignment_turned_in"
+      >
+
+      <SendingOverviewPage
+      :subject="subject"
+      :send-doc-record="docsToSend"
+      >
+
+      </SendingOverviewPage>
+    </q-step>
     </q-stepper>
   </div>
     </q-page>
 </template>
+<style lang="scss">
+   
+</style>
 <script lang="ts">
 
 import { defineComponent, ref } from 'vue';
@@ -91,11 +176,20 @@ import SourceReceivers from './components/SourceReceivers.vue';
 import { DocumentSource, ReceiverSource } from './util/helper';
 import SourceReceiversParser from './components/SourceReceiversParser.vue';
 import SourceDocuments from './components/SourceDocuments.vue';
+import SourceDocumentsParser from './components/SourceDocumentsParser.vue';
+import SearchReceivers from './components/SearchReceivers.vue';
+
+import ReceiverRecord, { SendDocReq } from './util/receivers/receiverRecord';
+import DocumentRecord from './util/documents/documentRecord';
+import NonExistingReceiversAction from './components/NonExistingReceiversAction.vue';
+import SendingOverviewPage from './components/SendingOverview.vue';
 
 export default defineComponent({
     name: 'BulkSendingPage',
     components: {
-        SourceReceivers, SourceReceiversParser, SourceDocuments
+        SourceReceivers, SourceReceiversParser, SourceDocuments, 
+        SourceDocumentsParser, SearchReceivers, NonExistingReceiversAction,
+        SendingOverviewPage,
     },
     setup () {
         const sessionStore = useSessionStore();
@@ -107,16 +201,55 @@ export default defineComponent({
         const documentsSrc = ref<DocumentSource>({
             type: 'file',
             destType: 'file',
-        });
+        });       
+        const receiverRecords = ref<ReceiverRecord[]>([]);
+        const documentRecords = ref<DocumentRecord[]>([]);
+        const docsToSend = ref<SendDocReq[]>([]);
+        const actionNotBrifle = ref<string>('ignore');
+        const subject = ref<string>('');
         return {
             sessionStore,
             encryptedStore,
             step,
-            receiverSrc,
+            receiverSrc,            
             documentsSrc,
+            receiverRecords,
+            documentRecords,
+            docsToSend,
+            actionNotBrifle,
+            subject,
         };
     },
+    computed: {
+      validSourceReceiver() {
+        if(this.receiverSrc.type === 'file') {
+            return this.receiverSrc.file != null && this.receiverSrc.file !== '';
+        } else if(this.receiverSrc.type === 'sftp') {
+            return this.receiverSrc.sftp?.filePath != null && this.receiverSrc.sftp?.filePath !== '';
+        }
+        return false;
+    
+      },
+      validSourceDocuments() {
+        if(this.documentsSrc.type === 'file') {
+            return this.documentsSrc.file != null && this.documentsSrc.file !== '';
+        } else if(this.documentsSrc.type === 'sftp') {
+            return this.documentsSrc.sftp?.filePath != null && this.documentsSrc.sftp?.filePath !== '';
+        }
+        return false;    
+      },
+    },
     methods: {
+      onConfirmedDocuments(records : SendDocReq[]){        
+        this.docsToSend = records;
+        this.step = 6;
+      },
+      onParsedReceivers (parsed: ReceiverRecord[]) {
+        this.receiverRecords = parsed;
+      },
+      onParsedDocuments (parsed: DocumentRecord[]) {
+        this.documentRecords = parsed;
+      },
         
     },
 });

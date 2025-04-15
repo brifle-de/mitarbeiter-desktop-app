@@ -10,6 +10,9 @@ export default class SftpRoutes{
         ipcMain.handle('sftp:lsDir', async (event: IpcMainInvokeEvent, path: string, opts: SftpConnection) => {            
             return SftpConnector.lsDir(path, opts)
         })
+        ipcMain.handle('sftp:readFile', async (event: IpcMainInvokeEvent, path: string, opts: SftpConnection, encoding: BufferEncoding) => {            
+            return SftpConnector.readFile(path, opts, encoding)
+        })
         
     }
 

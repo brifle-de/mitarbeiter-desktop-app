@@ -37,6 +37,15 @@
                     Hinweis: Neue API Keys können in Brifle unter "Einstellungen" erstellt werden.
             </div>
             <div class="q-mt-md">
+                <q-input v-model="tenantId" filled
+                color="secondary" label="Mandanten ID" 
+                hint="Mandanten ID legt den Absender fest.">
+                </q-input>
+            </div>
+            <div class="bg-accent text-white q-mt-lg q-pa-sm rounded-borders">
+                Die Mandaten ID kann in Brifle unter 'Einstellungen > Absender' gefunden werden.
+            </div>
+            <div class="q-mt-md">
                     <!-- select api environment-->
                     <q-select filled v-model="apiEnv" :options="apiEnvs" 
                     emit-value
@@ -165,6 +174,7 @@ export default defineComponent({
         const hasSent = ref<boolean>(false);
         const encryptedStore = useEncryptedStore();
         const lastData = ref<AccountData|null>(null);
+        const tenantId = ref<string>('');
         const apiEnvs = [
             {
                 label: 'Produktion',
@@ -189,7 +199,8 @@ export default defineComponent({
             apiEnv,
             encryptedStore,
             sessionStore,
-            lastData
+            lastData,
+            tenantId,
             };
     },
     mounted() {
@@ -205,7 +216,8 @@ export default defineComponent({
             this.apiKey = selectedAccount.apiKey
             this.apiSecret = selectedAccount.apiSecret
             this.sftpServer = selectedAccount.sftpData || []
-            this.apiEnv = selectedAccount.apiEnv            
+            this.apiEnv = selectedAccount.apiEnv      
+            this.tenantId = selectedAccount.tenantId || ''      
         }       
         // copy to avoid reference issues
         this.lastData = this.cpAccount({
@@ -214,7 +226,8 @@ export default defineComponent({
             apiSecret: this.apiSecret,
             sftpData: this.sftpServer,
             apiEnv: this.apiEnv,
-            id: selectedAccountId || ''
+            id: selectedAccountId || '',
+            tenantId: this.tenantId,
         })
     },
     computed: {
@@ -231,6 +244,7 @@ export default defineComponent({
                     server.username !== this.lastData?.sftpData[index]?.username ||
                     server.password !== this.lastData?.sftpData[index]?.password ||
                     server.displayName !== this.lastData?.sftpData[index]?.displayName;
+
             });
            
             return this.name !== this.lastData?.name ||
@@ -238,6 +252,7 @@ export default defineComponent({
                 this.apiSecret !== this.lastData?.apiSecret ||
                 this.sftpServer.length !== this.lastData?.sftpData?.length ||
                 hasFtpServerUpdated ||
+                this.tenantId !== this.lastData?.tenantId ||
                 this.apiEnv !== this.lastData?.apiEnv;
         },
     },
@@ -255,6 +270,8 @@ export default defineComponent({
                 username: '',
                 password: '',
                 displayName: '',
+                // random id for the sftp server
+                id: Math.random().toString(36).substring(2, 15),
             });
         },
         goTo (path: string) {
@@ -268,7 +285,8 @@ export default defineComponent({
                 apiSecret: this.apiSecret,
                 sftpData: this.sftpServer,
                 apiEnv: this.apiEnv,
-                id: this.sessionStore.selectedAccountId || ''
+                id: this.sessionStore.selectedAccountId || '',
+                tenantId: this.tenantId,
             });
             this.encryptedStore.updateAccount(accountData).then(() => {
                 this.lastData = accountData

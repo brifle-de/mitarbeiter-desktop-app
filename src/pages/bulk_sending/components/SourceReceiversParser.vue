@@ -26,8 +26,6 @@
             bordered
             :pagination="{ rowsPerPage: 10 }"
             :loading="isLoading"
-            :no-data-label="$t('noData')"
-            :no-results-label="$t('noResults')"
         />
 
     </div>
@@ -42,6 +40,8 @@ import SampleParsers from '../util/receivers/sampleParsers';
 import { ReceiverParserResult, ReceiverParserRules } from '../util/receivers/parsers';
 import Files from 'src/services/node/Files';
 import { ReceiverParser } from '../util/receivers/parsers';
+import ReceiverRecord from '../util/receivers/receiverRecord';
+import Sftp from 'src/services/node/Sftp';
 
 
 export default defineComponent({
@@ -113,15 +113,25 @@ export default defineComponent({
       receiverColumns
     };
   },
-  emits: ['update:modelValue', 'selectFile'],
+  emits: ['update:modelValue', 'parsed'],
   computed: {
     
   },
   methods: {
+    emitResults() {
+        const receiverRecords : ReceiverRecord[] = [];
+        this.receivers.forEach((receiver: ReceiverParserResult) => {
+            const record : ReceiverRecord = receiver
+            receiverRecords.push(record);
+        });
+        this.$emit('parsed', receiverRecords);
+    },
     async readFile() {
         if(this.receiverSource.type){
             if(this.receiverSource.type === 'file' && this.receiverSource.file){
-                return Files.readFile(this.receiverSource.file);
+                return Files.readFile(this.receiverSource.file, 'utf8');
+            }else if(this.receiverSource.type === 'sftp' && this.receiverSource.sftp?.filePath && this.receiverSource.sftp?.connection){
+                return Sftp.readFile(this.receiverSource.sftp.filePath, this.receiverSource.sftp.connection, 'utf8');
             }
         }
         return "";
@@ -132,7 +142,8 @@ export default defineComponent({
             console.error('No parser selected');
             return;
         }
-        this.receivers = ReceiverParser.parse(fileContent, this.parser.rules);     
+        this.receivers = ReceiverParser.parse(fileContent??'', this.parser.rules);   
+        this.emitResults();  
     },
   },
   props: {

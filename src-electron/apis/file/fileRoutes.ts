@@ -9,8 +9,11 @@ export default class FileRoutes{
         ipcMain.handle('files:pickFile', async (event: IpcMainInvokeEvent, opts: FilePickerOpts) => {            
             return Files.pickFile(opts)
         })
-        ipcMain.handle('files:readFile', async (event: IpcMainInvokeEvent, filePath: string) => {            
-            return Files.readFile(filePath)
+        ipcMain.handle('files:readFile', async (event: IpcMainInvokeEvent, filePath: string, encoding: BufferEncoding) => {            
+            return Files.readFile(filePath, encoding)
+        })
+        ipcMain.handle('files:lsDir', async (event: IpcMainInvokeEvent, path: string) => {            
+            return Files.lsDir(path)
         })
         
     }

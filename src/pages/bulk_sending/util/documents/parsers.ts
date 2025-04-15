@@ -2,7 +2,7 @@ export interface DocumentSourceDirParserRules {
     // callback: (fileName: string) => string,
     regexCatch: (fileName: string) => string,
     // callback to get the receiver id from the file name
-    regexOutputReceiverID: (match: RegExpMatchArray) => string,
+    regexOutputReceiverID: (match: RegExpMatchArray) => string | null,
     // callback to get the date from the file name. Return null if no date is set
     regexOutputDate(match: RegExpMatchArray): Date | null,
 }
@@ -40,6 +40,10 @@ export class DocumentSourceDirParser{
             if (match) {
                 const date = rules.regexOutputDate(match);
                 const receiverId = rules.regexOutputReceiverID(match);
+                // if receiverId is null, skip the file
+                if (!receiverId) {
+                    continue;
+                }
                 result.push({
                     fileName: fileName,
                     receiverId: receiverId,

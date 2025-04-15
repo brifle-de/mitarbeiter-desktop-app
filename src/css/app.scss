@@ -13,16 +13,32 @@
     font-display: swap;
 }
 
+.flex-column{
+    display: flex;
+    flex-direction: column;
+}
+
+
+.q-table th{
+    font-size: 18px;
+ }
+ .q-table tbody td {
+    font-size: 16px;
+ }
 
 * {
     font-family: 'Twemoji Country Flags', 'Quicksand';
     font-size: 18px;   
 
-    .q-toggle {
+
+
+    .q-toggle  {
         * {            
             font-size: 40px;
         }        
     }
+
+    
 }
 
 
@@ -133,3 +149,42 @@
     background-color: var(--fading-background);
     color: var(--fading-text-color);   
 }
+
+.dialog-window-md, .dialog-window-lg{   
+    display: flex;
+    flex-direction: column;   
+    min-width: 300px;
+    max-width: 80vw;
+    min-height: 300px;
+    max-height: 80vh;
+    // Second child to flex 1
+    > :nth-child(2){
+      flex: 1;
+      overflow: auto;
+    }
+  }
+
+  .dialog-window-md{  
+    width: 600px;
+    height: 600px; 
+  }
+
+  .dialog-window-lg{
+    width: 900px;
+    height: 700px;    
+  }
+
+  .dialog-window-lg-wide{
+    width: 1400px;
+    height: 700px;    
+    max-width: 100%;
+  }
+
+
+  .w-100 {
+    width: 100%;
+  }
+
+    .h-100 {
+        height: 100%;
+    }

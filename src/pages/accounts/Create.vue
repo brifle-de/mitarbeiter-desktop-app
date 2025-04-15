@@ -39,6 +39,15 @@
             Hinweis: Neue API Keys können in Brifle unter "Einstellungen" erstellt werden.
        </div>
        <div class="q-mt-md">
+            <q-input v-model="tenantId" filled
+            color="secondary" label="Mandanten ID"                
+            hint="Mandanten ID legt den Absender fest.">
+            </q-input>
+        </div>
+        <div class="bg-accent text-white q-mt-lg q-pa-sm rounded-borders">
+            Die Mandaten ID kann in Brifle unter 'Einstellungen > Absender' gefunden werden.
+        </div>
+       <div class="q-mt-md">
             <!-- select api environment-->
             <q-select filled v-model="apiEnv" :options="apiEnvs" 
             emit-value
@@ -156,6 +165,8 @@ export default defineComponent({
             username: '',
             password: '',
             displayName: '',
+            // random id
+            id:  Math.random().toString(36).substring(2, 15),
         });
     },
     addAccount () {
@@ -169,7 +180,8 @@ export default defineComponent({
             apiSecret: this.apiSecret,
             sftpData: this.sftpServer,
             apiEnv: this.apiEnv,
-            id: ""
+            id: "",
+            tenantId: this.tenantId,
         };
         // save account data to encrypted store
         this.encryptedStore.createAccount(accountData).then(() => {
@@ -201,6 +213,7 @@ export default defineComponent({
             value: ApiEnvironment.INTERNAL,
         },
     ]
+    const tenantId = ref<string>('');
     return { 
         name,
         apiKey,
@@ -209,7 +222,8 @@ export default defineComponent({
         apiEnvs,
         hasSent,
         apiEnv,
-        encryptedStore
+        encryptedStore,
+        tenantId
     };
   },
 

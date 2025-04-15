@@ -5,18 +5,19 @@ import fs from 'fs'
 import { pbkdf2Sync } from "crypto"
 import argon2 from "argon2"
 import crypto from "crypto"
+import * as p from 'path'
 
 
 export default class EncryptedStore{
 
-    private readonly basePath: string = 'brifle-mitarbeiter/encryptedStore'
+    private readonly basePath: string = p.join('brifle-mitarbeiter','encryptedStore')
     private readonly metaFile: string = 'meta.json'
      
    
 
     private async getPath(path: string): Promise<string> {
-        const full = `${this.basePath}/${path}`
-        return app.getPath('home') + '/' + full;
+        const full = p.join(this.basePath, path)
+        return p.join(app.getPath('home'), full);
     }
 
     private async getMetaPath(): Promise<string> {

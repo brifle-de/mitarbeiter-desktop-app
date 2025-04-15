@@ -92,6 +92,11 @@ class XMLReceiverParser{
         if (typeIndex > -1) {
             keys.splice(typeIndex, 1);
         }
+        // remove itemSelector
+        const itemSelectorIndex = keys.indexOf('itemSelector');
+        if (itemSelectorIndex > -1) {
+            keys.splice(itemSelectorIndex, 1);
+        }
         // iterate over all keys and get the values from the xml document
         keys.forEach((key) => {
             const xpath = rules[key as keyof ReceiverParserRules] as string;

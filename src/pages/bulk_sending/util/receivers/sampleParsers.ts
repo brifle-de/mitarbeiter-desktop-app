@@ -19,7 +19,6 @@ export {
 }
 
 // enum with the sample parsers
-
 const ALL = [
     {
         name: 'XML 1',

@@ -21,6 +21,47 @@
             SFTP-Server
         </div>
     </div>
+    <div v-if="value.type === 'sftp'">
+        <q-select
+            filled
+            v-model="sftpServerSelected"
+            :options="sftpServer"
+            option-label="displayName"
+            label="SFTP-Server auswählen"
+            color="secondary"
+            map-options
+        />
+
+        <div class="row q-my-md" v-if="sftpServerSelected != null">   
+            <div class="col-9">
+                {{ sftpFilePath }}
+            </div>
+            <div class="col-3 text-right">
+                <SftpModal 
+                :sftpConnection="sftpServerSelected"
+                @select-file="selectSftpFile"
+                :showFiles="documentSource.destType === 'file'"
+
+                v-model="showSftpModal">
+ 
+                </SftpModal>
+                <q-btn @click="showSftpModal = true" color="secondary" text-color="black" label="Datei auswählen" />
+            </div>
+        </div>
+        
+
+    </div>
+    <div v-if="value.type === 'file'">
+        <div class="row">
+            <div class="col-9">
+                {{ filePath }}
+            </div>
+            <div class="col-3 text-right">
+                <q-btn @click="selectLocale()" color="secondary" text-color="black" label="Datei auswählen" />
+            </div>
+        </div>
+      
+    </div>
 </template>
 <style lang="scss" scoped>
 
@@ -61,10 +102,12 @@ import { useSessionStore } from 'src/stores/session-store';
 import { defineComponent, PropType, ref } from 'vue';
 import { DocumentSource } from '../util/helper';
 import Files from 'src/services/node/Files';
+import SftpModal from 'src/components/SftpModal.vue';
 
 export default defineComponent({
   name: 'SourceDocuments',
   components: {
+    SftpModal
   },
   setup() {   
     const documentSource = ref<DocumentSource>({
@@ -89,8 +132,18 @@ export default defineComponent({
         documentSource,
     };
   },
-  emits: ['update:modelValue', 'selectFile'],
+  mounted(){
+    this.documentSource = this.modelValue;
+    const accId = this.sessionStore.selectedAccountId;
+    if(accId != null) {
+        this.sftpServer = this.encryptedStore.getAccount(accId)?.sftpData ?? [];           
+    }
+  },
+  emits: ['update:modelValue'],
   computed: {
+    value () {
+        return this.modelValue;
+    },
    
   },
   props: {
@@ -134,8 +187,34 @@ export default defineComponent({
             this.emitValue();
         }
     },
-    selectFile () {
-        Files.pickFile({
+    selectLocale(){
+        if(this.documentSource.destType === 'file') {
+            return this.selectLocaleFile();
+        } else if(this.documentSource.destType === 'directory') {
+            return this.selectLocalDir();
+        }  
+        return Promise.resolve();
+    },
+    selectLocalDir(){
+        return Files.pickFile(
+            {               
+                properties: ['openDirectory'],
+            }
+        ).then((files: string[]) => {
+            if(files.length === 0 || files[0] == null) {
+                return;
+            }
+           this.filePath = files[0];
+           this.documentSource.file = files[0];
+           this.documentSource.type = 'file';
+           this.emitValue();
+            
+        }).catch((err: Error) => {
+            console.error(err);
+        });
+    },
+    selectLocaleFile () {
+        return Files.pickFile({
             filters: [
                 { name: 'CSV', extensions: ['csv'] },
                 { name: 'XML', extensions: ['xml'] },

@@ -4,11 +4,31 @@ enum ApiEnvironment {
     INTERNAL = 'internal',
 }
 
+export class ApiEndpoints {
+    static PRODUCTION = 'https://api.brifle.de';
+    static SANDBOX = 'https://sandbox-api.brifle.de';
+    static INTERNAL = 'https://internaltest-api.brifle.de';
+
+    static getEndpoint(env: ApiEnvironment): string {
+        switch (env) {
+            case ApiEnvironment.PRODUCTION:
+                return this.PRODUCTION;
+            case ApiEnvironment.SANDBOX:
+                return this.SANDBOX;
+            case ApiEnvironment.INTERNAL:
+                return this.INTERNAL;
+            default:
+                return this.PRODUCTION;
+        }
+    }
+}
+
 interface AccountData {
     id: string;
     apiKey: string;
     apiSecret: string;
     apiEnv: ApiEnvironment;
+    tenantId: string;
     name: string;
     sftpData?: SftpData[];
 }
@@ -19,6 +39,7 @@ interface SftpData {
     username: string;
     password: string;
     displayName: string;
+    id: string;
 }
 
 interface EncryptedStoreType {

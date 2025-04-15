@@ -1,4 +1,4 @@
-import { FilePickerOpts } from "app/src-electron/service/Files";
+import { FilePickerOpts, FilesLsDirResponse } from "app/src-electron/service/Files";
 
 export default class Files {
     /**
@@ -15,7 +15,18 @@ export default class Files {
      * @param filePath the path to the file to read
      * @returns the content of the file as a string
      */
-    static async readFile(filePath: string): Promise<string> {
-        return window.fileApi.readFile(filePath); 
+    static async readFile(filePath: string, encoding: BufferEncoding): Promise<string> {
+        return window.fileApi.readFile(filePath, encoding); 
     }
+
+    /**
+     * Read a directory and return its content as an array of files and directories
+     * @param path the path to the directory to read
+     * @returns the content of the directory as an array of files and directories
+     */
+    static async lsDir(path: string): Promise<FilesLsDirResponse | null> {
+        return window.fileApi.lsDir(path); 
+    }
+
+    
 }
