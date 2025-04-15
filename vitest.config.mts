@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+  
+
 // https://vitejs.dev/config/
 export default defineConfig({
   test: {
@@ -15,13 +17,16 @@ export default defineConfig({
       'test/vitest/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
     ],
   },
-  plugins: [
+  plugins: [    
+    // @ts-expect-error otherwise will throw error
     vue({
       template: { transformAssetUrls },
     }),
+     // @ts-expect-error otherwise will throw error
     quasar({
       sassVariables: 'src/quasar-variables.scss',
     }),
+     // @ts-expect-error otherwise will throw error
     tsconfigPaths(),
   ],
 });
