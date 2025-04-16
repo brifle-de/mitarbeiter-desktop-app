@@ -1,4 +1,4 @@
-import { ReceiverRequest } from "brifle-sdk";
+import { ReceiverRequest } from "@brifle/brifle-sdk";
 import DocumentRecord from "../documents/documentRecord";
 
 /**
@@ -18,7 +18,7 @@ export default interface ReceiverRecord {
     addressStreet?: string,
     addressCity?: string,
     addressPostcode?: string,
-
+    addressCountry?: string,
 }
 
 export interface SendDocReq {

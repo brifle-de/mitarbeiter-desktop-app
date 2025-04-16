@@ -9,12 +9,15 @@
                 </q-item-section>
                 <q-item-section class="text-h6">Konto</q-item-section>
             </q-item>
-            <q-item clickable @click="goTo('/settings/app')">
+            <q-item clickable @click="goTo('/settings/parsers')">
                 <q-item-section avatar>
-                    <q-icon name="settings" size="2.5rem" color="secondary" />
+                    <q-icon name="settings_input_component"
+                     size="2.5rem" color="secondary" />
                 </q-item-section>
-                <q-item-section class="text-h6">App Einstellungen</q-item-section>
+                <q-item-section class="text-h6">Parsers</q-item-section>
+
             </q-item>
+           
         </q-list>
     </p-page>
 

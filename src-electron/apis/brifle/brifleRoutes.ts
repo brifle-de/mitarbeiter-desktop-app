@@ -1,7 +1,7 @@
 
 import {  ipcMain } from 'electron'
-import { ApiV1, LoginRequest, ReceiverRequest, SendContentRequest } from 'brifle-sdk'
-import { ApiResponse } from 'brifle-sdk/dist/types/endpoints/v1/apiResponse'
+import { ApiV1, LoginRequest, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
+import { ApiResponse } from '@brifle/brifle-sdk'
 
 export default class BrifleRoutes{
 

@@ -21,7 +21,7 @@
         "@quasar/extras": "^1.16.4",
         "argon2": "^0.41.1",
         "axios": "^1.2.1",
-        "brifle-sdk": "git+https://github.com/brifle-de/brifle-sdk-js.git",
+        "@brifle/brifle-sdk": "^0.0.2",
         "crypto-browserify": "^3.12.1",
         "dotenv": "^16.1.4",
         "electron-updater": "^6.6.2",

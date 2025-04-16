@@ -154,9 +154,24 @@
       <SendingOverviewPage
       :subject="subject"
       :send-doc-record="docsToSend"
+      @sent="sentAll($event)"
       >
 
       </SendingOverviewPage>
+    </q-step>
+    <q-step
+        :name="9"
+        :disable="step < 9"
+        :done="step > 9"
+        title="Bericht"
+        color="secondary"
+        icon="send"
+      >
+      <SendReports
+      :success-records="reportSuccess"
+      :error-records="reportError"
+      :not-brifle-records="reportNotBrifle"
+      ></SendReports>
     </q-step>
     </q-stepper>
   </div>
@@ -183,13 +198,15 @@ import ReceiverRecord, { SendDocReq } from './util/receivers/receiverRecord';
 import DocumentRecord from './util/documents/documentRecord';
 import NonExistingReceiversAction from './components/NonExistingReceiversAction.vue';
 import SendingOverviewPage from './components/SendingOverview.vue';
+import SendReports from './components/SendReports.vue';
+
 
 export default defineComponent({
     name: 'BulkSendingPage',
     components: {
         SourceReceivers, SourceReceiversParser, SourceDocuments, 
         SourceDocumentsParser, SearchReceivers, NonExistingReceiversAction,
-        SendingOverviewPage,
+        SendingOverviewPage, SendReports,
     },
     setup () {
         const sessionStore = useSessionStore();
@@ -207,6 +224,9 @@ export default defineComponent({
         const docsToSend = ref<SendDocReq[]>([]);
         const actionNotBrifle = ref<string>('ignore');
         const subject = ref<string>('');
+        const reportSuccess = ref<SendDocReq[]>([]);
+        const reportError = ref<SendDocReq[]>([]);
+        const reportNotBrifle = ref<SendDocReq[]>([]);
         return {
             sessionStore,
             encryptedStore,
@@ -218,6 +238,9 @@ export default defineComponent({
             docsToSend,
             actionNotBrifle,
             subject,
+            reportSuccess,
+            reportError,
+            reportNotBrifle,
         };
     },
     computed: {
@@ -240,6 +263,16 @@ export default defineComponent({
       },
     },
     methods: {
+      sentAll(event: {
+        success: SendDocReq[],
+        failed: SendDocReq[],
+        notBrifle: SendDocReq[],
+      }) {
+        this.reportSuccess = event.success;
+        this.reportError = event.failed;        
+        this.reportNotBrifle = event.notBrifle;
+        this.step = 9;
+      },
       onConfirmedDocuments(records : SendDocReq[]){        
         this.docsToSend = records;
         this.step = 6;

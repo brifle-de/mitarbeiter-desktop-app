@@ -16,6 +16,14 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'account',
         component: () => import('pages/settings/Account.vue'),  
+      },
+      {
+        path: 'parsers',
+        component: () => import('pages/settings/Parsers.vue'),
+      },
+      {
+        path: 'parsers/receiver-records',
+        component: () => import('pages/settings/parsers/receiversFiles.vue'),
       }
     ],
   },

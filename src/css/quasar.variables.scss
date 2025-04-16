@@ -41,6 +41,8 @@ $titlebar-height: 60px;
 $titlebar-border-color: #e5ebe818;
 $fading-background: #1a2215ab;
 $fading-text-color: #74be97;
+$selection-background: #c2ff72c2;
+$selection-text-color: rgb(5, 18, 3);
 
 
 // define scss variables as css variables
@@ -56,4 +58,6 @@ $fading-text-color: #74be97;
   --titlebar-border-color: #{$titlebar-border-color};
   --fading-background: #{$fading-background};
   --fading-text-color: #{$fading-text-color};
+  --selection-background: #{$selection-background};
+  --selection-color: #{$selection-text-color};
 }

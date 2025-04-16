@@ -1,6 +1,6 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { CheckReceiverResponse, LoginRequest, LoginResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "brifle-sdk"
-import { ApiResponse } from "brifle-sdk/dist/types/endpoints/v1/apiResponse";
+import { CheckReceiverResponse, LoginRequest, LoginResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
     registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRenderer){     

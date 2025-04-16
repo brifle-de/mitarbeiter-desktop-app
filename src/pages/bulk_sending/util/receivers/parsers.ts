@@ -15,6 +15,7 @@ export interface ReceiverParserRules {
     addressStreet?: string,
     addressCity?: string,
     addressPostcode?: string,
+    addressCountry?: string,
     // selector for get the root element of all receivers items. This is needed for xml files
     itemSelector?: string,
 }
@@ -32,6 +33,7 @@ export interface ReceiverParserResult {
     addressStreet?: string,
     addressCity?: string,
     addressPostcode?: string,
+    addressCountry?: string,
 }
 
 export class ReceiverParser {

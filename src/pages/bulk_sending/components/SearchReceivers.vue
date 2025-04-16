@@ -91,7 +91,7 @@ import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
 import { useSessionStore } from 'src/stores/session-store';
 import BrifleApi, { Authentication } from 'src/services/node/Brifle';
-import { ReceiverRequest } from 'brifle-sdk';
+import { ReceiverRequest } from '@brifle/brifle-sdk';
 
 export default defineComponent({
   name: 'SearchReceivers',

@@ -139,6 +139,7 @@ import SendDocsModal from './modal/SendDocsModal.vue';
 
 export default defineComponent({
     name: 'SendingOverviewPage',
+    emits: ['sent'],
     components: {
         SendDocsModal,
     },
@@ -180,6 +181,12 @@ export default defineComponent({
             for(const record of this.brifleReceivers) {
                 void await this.sendItem(record);
             }
+            // all sent
+            this.$emit('sent', {
+                success: this.successItems,
+                failed: this.failedItems,
+                notBrifle: this.externalReceivers,
+            });
         },
         async getContent(record: SendDocReq) {
             // get content from the record
