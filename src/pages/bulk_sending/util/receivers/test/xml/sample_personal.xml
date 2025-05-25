@@ -1,0 +1,77 @@
+<employees>
+    <employee>
+        <firstName>Anna</firstName>
+        <lastName>Schmidt</lastName>
+        <dateOfBirth>1985-01-01</dateOfBirth>
+        <placeOfBirth>München</placeOfBirth>
+        <email></email>
+        <address>
+            <street>Musterstraße 2</street>
+            <city>München</city>
+            <state>BY</state>
+            <zipCode>80331</zipCode>
+        </address>
+        <phone>089-7654321</phone>
+        <employeeNumber>654321</employeeNumber>
+    </employee>
+    <employee>
+        <firstName>Johannes</firstName>
+        <lastName>Bauer</lastName>
+        <dateOfBirth>1990-03-15</dateOfBirth>
+        <placeOfBirth>Hamburg</placeOfBirth>
+        <email>johannes.bauer@example.com</email>
+        <address>
+            <street>Elbchaussee 45</street>
+            <city>Hamburg</city>
+            <state>HH</state>
+            <zipCode>22765</zipCode>
+        </address>
+        <phone>040-9876543</phone>
+        <employeeNumber>123456</employeeNumber>
+    </employee>
+    <employee>
+        <firstName>Sophie</firstName>
+        <lastName>Keller</lastName>
+        <dateOfBirth>1988-11-22</dateOfBirth>
+        <placeOfBirth>Berlin</placeOfBirth>
+        <email>sophie.keller@example.com</email>
+        <address>
+            <street>Unter den Linden 12</street>
+            <city>Berlin</city>
+            <state>BE</state>
+            <zipCode>10117</zipCode>
+        </address>
+        <phone>030-7654321</phone>
+        <employeeNumber>234567</employeeNumber>
+    </employee>
+    <employee>
+        <firstName>Maximilian</firstName>
+        <lastName>Schneider</lastName>
+        <dateOfBirth>1995-06-10</dateOfBirth>
+        <placeOfBirth>Frankfurt</placeOfBirth>
+        <email>max.schneider@example.com</email>
+        <address>
+            <street>Zeil 89</street>
+            <city>Frankfurt</city>
+            <state>HE</state>
+            <zipCode>60313</zipCode>
+        </address>
+        <phone>069-1234567</phone>
+        <employeeNumber>345678</employeeNumber>
+    </employee>
+    <employee>
+        <firstName>Laura</firstName>
+        <lastName>Weber</lastName>
+        <dateOfBirth>1992-04-05</dateOfBirth>
+        <placeOfBirth>Leipzig</placeOfBirth>
+        <email>laura.weber@example.com</email>
+        <address>
+            <street>Augustusplatz 7</street>
+            <city>Leipzig</city>
+            <state>SN</state>
+            <zipCode>04109</zipCode>
+        </address>
+        <phone>0341-9876543</phone>
+        <employeeNumber>456789</employeeNumber>
+    </employee>
+</employees>

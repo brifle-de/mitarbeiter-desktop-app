@@ -18,4 +18,13 @@
   <body>
     <!-- quasar:entry-point -->
   </body>
+    <script>
+      // Ensure this script runs after the DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      window.electronAPI.getPlatform().then(platform => {
+        // append platform as css class to body
+        document.body.classList.add(platform);
+      });
+    });
+  </script>
 </html>

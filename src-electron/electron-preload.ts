@@ -32,3 +32,7 @@ import { registerApi } from "./apis/api";
 
 import { contextBridge, ipcRenderer } from 'electron';
 registerApi(contextBridge, ipcRenderer);
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  getPlatform: () => ipcRenderer.invoke('electron:getPlatform'),
+});

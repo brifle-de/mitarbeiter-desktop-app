@@ -25,6 +25,23 @@ export default class Sftp {
       return window.sftpApi.readFile(path, serializedOpts, encoding);
     }
 
+       /**
+     * Parse a directory name from a path
+     * @param path the path to parse
+     * @returns the directory name
+     */
+    static async parseDirname(path: string): Promise<string> {
+        return window.sftpApi.parseDirname(path);
+    }
+    /**
+     * Join multiple paths into a single path
+     * @param paths the paths to join
+     * @returns the joined path
+     */
+    static async pathJoin(...paths: string[]): Promise<string> {
+        return window.sftpApi.pathJoin(...paths);
+    }
+
 
 
 }

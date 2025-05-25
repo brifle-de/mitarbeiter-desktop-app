@@ -55,6 +55,9 @@ async function createWindow() {
     await mainWindow.loadFile('index.html');
   }
 
+  
+
+
   if (process.env.DEBUGGING) {
     // if on DEV or Production with debug enabled
     mainWindow.webContents.openDevTools();
@@ -71,7 +74,8 @@ async function createWindow() {
 }
 
 void app.whenReady().then(() => {
-  registerRoutes();
+  registerRoutes();  
+
   void createWindow(); 
 });
 

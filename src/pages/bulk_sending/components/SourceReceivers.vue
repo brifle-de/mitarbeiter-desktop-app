@@ -137,7 +137,6 @@ export default defineComponent({
             filters: [
                 { name: 'CSV', extensions: ['csv'] },
                 { name: 'XML', extensions: ['xml'] },
-                { name: 'All Files', extensions: ['*'] },
             ],
         }).then((files: string[]) => {
             if(files.length === 0 || files[0] == null) {

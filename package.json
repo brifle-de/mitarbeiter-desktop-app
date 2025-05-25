@@ -18,10 +18,10 @@
         "test:unit:ci": "vitest run"
     },
     "dependencies": {
+        "@brifle/brifle-sdk": "^0.0.2",
         "@quasar/extras": "^1.16.4",
         "argon2": "^0.41.1",
         "axios": "^1.2.1",
-        "@brifle/brifle-sdk": "^0.0.2",
         "crypto-browserify": "^3.12.1",
         "dotenv": "^16.1.4",
         "electron-updater": "^6.6.2",
@@ -40,20 +40,21 @@
         "@quasar/quasar-app-extension-testing-unit-vitest": "^1.1.0",
         "@types/node": "^20.5.9",
         "@types/ssh2-sftp-client": "^9.0.4",
+        "@vitest/ui": "^2.0.5",
         "@vue/devtools": "^7.7.2",
         "@vue/eslint-config-typescript": "^14.4.0",
+        "@vue/test-utils": "^2.4.4",
         "autoprefixer": "^10.4.2",
         "electron": "^35.1.3",
         "electron-builder": "^26.0.12",
         "eslint": "^9.14.0",
         "eslint-plugin-vue": "^9.30.0",
         "globals": "^15.12.0",
+        "jsdom": "^26.1.0",
         "typescript": "~5.5.3",
         "vite-plugin-checker": "^0.9.0",
-        "vue-tsc": "^2.0.29",
-        "@vue/test-utils": "^2.4.4",
         "vitest": "^2.0.5",
-        "@vitest/ui": "^2.0.5"
+        "vue-tsc": "^2.0.29"
     },
     "engines": {
         "node": "^28 || ^26 || ^24 || ^22 || ^20 || ^18",

@@ -4,7 +4,7 @@
         <q-select
             filled
             v-model="parser"
-            :options="rules"
+            :options="getRules()"
             option-label="name"
             label="Parser auswählen"
             color="secondary"
@@ -115,7 +115,14 @@ export default defineComponent({
   },
   emits: ['update:modelValue', 'parsed'],
   computed: {
-    
+    parserType() {
+        const fileName = this.receiverSource.type === 'file' ? this.receiverSource.file : this.receiverSource.sftp?.filePath;
+        if(fileName){
+            const fileExtension = fileName.split('.').pop();
+            return fileExtension;
+        }
+        return "";
+    },
   },
   methods: {
     emitResults() {
@@ -145,12 +152,19 @@ export default defineComponent({
         this.receivers = ReceiverParser.parse(fileContent??'', this.parser.rules);   
         this.emitResults();  
     },
+    getRules(){
+        return this.rules.filter((rule) => {
+            return rule.rules.type === this.parserType;
+        });
+    }
   },
+
   props: {
     receiverSource: {
         type: Object as PropType<ReceiverSource>,
         required: true,
-    },
+    }
+    
   }
 })
 

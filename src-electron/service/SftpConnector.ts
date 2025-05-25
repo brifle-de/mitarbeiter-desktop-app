@@ -84,6 +84,24 @@ export default class SftpConnector {
                 void client.end();
             });
     }
+    /**
+     * Parse a directory name from a path
+     * @param path the path to parse
+     * @returns the directory name
+     */
+    static async parseDirname(path: string): Promise<string> {
+        return p.dirname(path) + "/"; // in sftp the separator is always a forward slash
+    }
+
+    /**
+     * Join multiple paths into a single path
+     * @param paths the paths to join
+     * @returns the joined path
+     */
+    static async pathJoin(...paths: string[]): Promise<string> {
+        // in sftp the separator is always a forward slash
+        return paths.join('/').replace(/\/+/g, '/'); // ensure no double slashes
+    }
 }
 
 export interface SftpLsDirResponse {

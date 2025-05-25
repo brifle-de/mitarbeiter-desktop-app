@@ -14,6 +14,18 @@
                     text="Startseite"
                 />
             </q-btn>
+            <q-btn 
+                class="titlebar-button q-ml-sm"
+                flat
+                dense
+                round
+                color="green-3"
+                @click="$router.back()"
+                icon="chevron_left" >
+                <b-tooltip
+                    text="Zurück"
+                />
+            </q-btn>    
         </q-toolbar>
       </q-header>  
     <div class="titlebar-placeholder"></div>

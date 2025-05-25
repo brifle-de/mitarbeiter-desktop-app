@@ -146,8 +146,14 @@ export default defineComponent({
                 {
                     name: 'receiverName',
                     label: 'Geburtsdatum',
-                    field: (row: SendDocReq) => row.receiver?.req.birth_information?.date_of_birth,
+                    field: (row: SendDocReq) => row.receiver?.req.birth_information?.date_of_birth,                    
                     sortable: true,
+                    format: (val: string) => {
+                        if(val) {
+                            return new Date(val).toLocaleDateString('de-DE');
+                        }
+                        return '';
+                    },
                 },
             ];
 

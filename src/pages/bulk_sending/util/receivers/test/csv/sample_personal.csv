@@ -1,0 +1,6 @@
+firstName,lastName,dateOfBirth,placeOfBirth,email,street,city,state,zipCode,phone,employeeNumber
+Anna,Schmidt,1985-01-01,München,,Musterstraße 2,München,BY,80331,089-7654321,654321
+Johannes,Bauer,1990-03-15,Hamburg,johannes.bauer@example.com,Elbchaussee 45,Hamburg,HH,22765,040-9876543,123456
+Sophie,Keller,1988-11-22,Berlin,sophie.keller@example.com,Unter den Linden 12,Berlin,BE,10117,030-7654321,234567
+Maximilian,Schneider,1995-06-10,Frankfurt,max.schneider@example.com,Zeil 89,Frankfurt,HE,60313,069-1234567,345678
+Laura,Weber,1992-04-05,Leipzig,laura.weber@example.com,Augustusplatz 7,Leipzig,SN,04109,0341-9876543,456789

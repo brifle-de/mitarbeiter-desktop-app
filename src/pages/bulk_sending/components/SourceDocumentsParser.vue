@@ -1,5 +1,5 @@
 <template>
-    <q-select
+    <q-select v-if="isDirAnalysis"
         v-model="value.dirParser"
         :options="availableParsers"
         color="secondary"
@@ -10,7 +10,17 @@
         map-options
     >
     </q-select>
-    <div class="q-my-xl" v-if="value.dirParser != null">
+    <q-select v-else
+        v-model="value.fileAssignment"
+        :options="availableAssignmentParser"
+        color="secondary"
+        option-label="name"
+        option-value="rules"
+        label="Parser auswählen"
+        emit-value
+        map-options
+    ></q-select>
+    <div class="q-my-xl" v-if="value.dirParser != null && isDirAnalysis">
         <div class="text-h6">Filter - Datum Zeitstempel</div>        
         <div class="row">
             <div class="col-6">
@@ -37,8 +47,20 @@
             </div>
         </div>            
     </div>
+    <div v-else-if="!isDirAnalysis">
+        <!-- 
+            requires that a base directory can be selected, required if the path is selected from a file system 
+            (Window and Mac have different path structures)
+            optional for sftp, since path should be be consistent (relative path is still recommended)
+         -->
+        <q-input v-model="basePath" 
+            color="secondary"
+            label="Basisverzeichnis"
+            placeholder="z.B. /home/user/documents"
+            :rules="[val => val && val.length > 0 || 'Pfad ist erforderlich']" />
+    </div>
     <div class="q-my-lg text-right">        
-        <q-btn color="secondary" text-color="black" label="Einlesen" @click="parseDirectoryFiles()" />
+        <q-btn color="secondary" text-color="black" label="Einlesen" @click="parse()" />
     </div>
     <div class="q-my-lg">
         <!-- table with results-->
@@ -52,7 +74,14 @@
         />
     </div>
     
-    
+    <SftpModal v-if="documentSource.sftp?.connection != null"
+                :sftpConnection="documentSource.sftp?.connection"
+                @select-file="selectSftpBasePath"
+                :showFiles="false"
+
+                v-model="showSftpModalBasePath">
+ 
+    </SftpModal>
 </template>
 <style lang="scss">
     .quick-actions{
@@ -74,6 +103,8 @@ import { DocumentSourceDirParser, DocumentSourceDirParserResult, DocumentSourceD
 import SampleParser from '../util/documents/sampleParsers';
 import DocumentRecord from '../util/documents/documentRecord';
 import { SftpData } from 'app/src-electron/models/EncryptedStore';
+import AssignmentFile, { AssignmentRules } from '../util/documents/assignmentFile';
+import SampleAssignmentParser from '../util/documents/sampleAssignmentRules';
 
 
 export default defineComponent({
@@ -99,11 +130,22 @@ export default defineComponent({
     },
   },
   methods: {
+    parse() {
+        if(this.isDirAnalysis) {
+            void this.parseDirectoryFiles();
+        } else {
+            void this.parseAssignmentFile();
+        }
+    },
+    
     columns() {
         return [
             { name: 'fileName', label: 'Datei', field: 'fileName', sortable: true },
             { name: 'receiverId', label: 'Empfänger',  field: 'receiverId', sortable: true },
-            { name: 'date', label: 'Datum', field: 'date', sortable: true, format: (val: Date) => {             
+            { name: 'date', label: 'Datum', field: 'date', sortable: true, format: (val: Date|null) => {       
+                    if(val == null) {
+                        return '';
+                    }      
                     return val.toLocaleDateString('de-DE', {
                         year: 'numeric',
                         month: '2-digit',
@@ -113,7 +155,7 @@ export default defineComponent({
             }
         ];
     },
-    getBasePath() {
+    getDirAnalyticsBasePath() {
         if(this.isSFtp) {
             return this.value.sftp?.filePath ?? '/';
         } else {
@@ -121,11 +163,10 @@ export default defineComponent({
         }
     },
     getFullPath(basePath: string, fileName: string) {
-        // check if basePath ends with /
-        if(basePath.endsWith('/')) {
-            return basePath + fileName;
-        } else {
-            return basePath + '/' + fileName;
+        if(this.isSFtp){
+            return Sftp.pathJoin(basePath, fileName);
+        }else{
+            return Files.pathJoin(basePath, fileName);
         }
     },
     dateRangeToThisMonth() {
@@ -185,7 +226,57 @@ export default defineComponent({
     async readDirectory() {
         if(this.isSFtp){
             return this.readSftpDir();
+        }else {
+            return this.readLocaleDir();
         }
+    },
+    readData(filePath: string) {
+        if(this.isSFtp) {
+            if(this.value.sftp == null || this.value.sftp.connection == null) {
+                console.error('No SFTP connection available.');
+                return Promise.reject(new Error('No SFTP connection available.'));
+            }
+            return Sftp.readFile(filePath, this.value.sftp?.connection, 'utf-8');
+        } else {
+            if(this.value.file == null) {
+                console.error('No file path provided.');
+                return Promise.reject(new Error('No file path provided.'));
+            }            
+            return Files.readFile(filePath, 'utf-8')
+        }
+    },
+    async parseAssignmentFile(){        
+        if(this.value.fileAssignment == null) {
+            return;
+        }
+        const parser = new AssignmentFile(this.value.fileAssignment);
+        const filePath = this.isSFtp ? this.value.sftp?.filePath : this.value.file;
+        if(filePath == null || filePath === '') {
+            console.error('No file path provided for assignment file parsing.');
+            return;
+        }
+        const data = await this.readData(filePath);
+        if(data == null || data === '') {
+            console.error('No data found in the file for assignment parsing.');
+            return;
+        }
+        let res : DocumentRecord[] = parser.read(data);
+
+        const m = res.map(async (element: DocumentRecord) => {
+            return {
+                fileName: await this.getFullPath(this.basePath,element.filePath),
+                receiverId: element.receiverId,
+                date: null,
+            }
+        });
+
+        this.fileReceiverMapping = await Promise.all(m);
+
+        res = await Promise.all(res.map(async (element: DocumentRecord) => {
+            element.filePath = await this.getFullPath(this.basePath, element.filePath);
+            return element;
+        }));
+        this.$emit('parsed', res);
     },
     async parseDirectoryFiles() {
         const rules = this.value.dirParser
@@ -208,7 +299,7 @@ export default defineComponent({
             });
         }
         this.hasLoaded = true;
-        this.emitResult();
+        void this.emitDirAnalticsResult();
     },
     hasDateFilter(){
         if(this.dateRange == null) {
@@ -217,26 +308,61 @@ export default defineComponent({
         return (this.dateRange.from !== undefined && this.dateRange.from !== "") || 
             (this.dateRange.to !== undefined && this.dateRange.to !== "");
     },
-    emitResult(){
-        const res : DocumentRecord[] = [];
-        const basePath = this.getBasePath();
+   
+    async emitDirAnalticsResult(){    
+        const dirBasePath = this.getDirAnalyticsBasePath();
 
         const sftpConnection : SftpData | undefined = this.value.sftp?.connection ?? undefined;
 
-        this.fileReceiverMapping.forEach((element: DocumentSourceDirParserResult) => {
-            res.push({
-                filePath: this.getFullPath(basePath, element.fileName),
+        const res : DocumentRecord[] = await Promise.all(this.fileReceiverMapping.map(async (element: DocumentSourceDirParserResult) => {
+            return {
+                filePath: await this.getFullPath( dirBasePath, element.fileName),
                 receiverId: element.receiverId,
                 type: this.value.type,          
                 ...(sftpConnection !== undefined) && { sftp: sftpConnection },  
-            });
-        });
+            };
+        }));
         this.$emit('parsed', res);
     },
+    selectSource (source: string) {        
+        if(source === 'file') {
+            this.documentSource.type = 'file';
+           
+        } else if(source === 'sftp') {
+            this.documentSource.type = 'sftp';
+        }
+    },
+    selectSftpBasePath (filePath: string) {
+        this.basePath = filePath;
+    },
+    selectLocaleBasePath () {
+        Files.pickFile({            
+            properties: ['openDirectory'],
+        }).then((files: string[]) => {
+            if(files.length === 0 || files[0] == null) {
+                return;
+            }
+           this.basePath = files[0];
+            
+        }).catch((err: Error) => {
+            console.error(err);
+        });
+    },
+    getDefaultBasePath(){
+        if(this.isSFtp) {
+            // get directory of filePath
+            return Sftp.parseDirname(this.value.sftp?.filePath ?? '/');            
+        } else {
+            return Files.parseDirname(this.value.file ?? '/');
+        }
+    }
   },
   mounted() {
     this.documentSource = this.modelValue;
     this.hasLoaded = false;
+    void this.getDefaultBasePath().then((path: string) => {
+        this.basePath = path;        
+    });
     if(this.isDirAnalysis) {
         void this.readDirectory().then(() => {
             void this.parseDirectoryFiles().then(() => {
@@ -250,33 +376,41 @@ export default defineComponent({
     modelValue: {
         type: Object as PropType<DocumentSource>,
         required: true,
-    },
+    },    
   }, 
+  
   setup() {       
     const files = ref<string[]>([]);
     const fileReceiverMapping = ref<DocumentSourceDirParserResult[]>([]);    
-    const availableParsers = ref<{name: string, rules: DocumentSourceDirParserRules}[]>([]);
+    const availableDirParsers = ref<{name: string, rules: DocumentSourceDirParserRules}[]>([]);
+    const availableAssignmentParser = ref<{name: string, rules: AssignmentRules}[]>(SampleAssignmentParser);
     const documentSource = ref<DocumentSource>({
         type: 'file',
         destType: 'file',
     });
     const hasLoaded = ref<boolean>(false);
-
+    const showSftpModalBasePath = ref<boolean>(false);
+    const basePath = ref<string>('');
+    
     SampleParser.forEach(element => {
-        availableParsers.value.push({
+        availableDirParsers.value.push({
             name: element.name,
             rules: element.rules,
         });
     });
+    
     const dateRange = ref<{from?: string, to?: string}>();
 
     return {
         files,
         fileReceiverMapping,
-        availableParsers,
+        availableParsers: availableDirParsers,
         documentSource,
         hasLoaded,
-        dateRange
+        dateRange,
+        availableAssignmentParser,
+        showSftpModalBasePath,
+        basePath,
 
     };
 

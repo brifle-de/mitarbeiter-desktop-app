@@ -13,6 +13,12 @@ export default class SftpRoutes{
         ipcMain.handle('sftp:readFile', async (event: IpcMainInvokeEvent, path: string, opts: SftpConnection, encoding: BufferEncoding) => {            
             return SftpConnector.readFile(path, opts, encoding)
         })
+        ipcMain.handle('sftp:parseDirname', async (event: IpcMainInvokeEvent, path: string) => {            
+            return SftpConnector.parseDirname(path)
+        })
+        ipcMain.handle('sftp:pathJoin', async (event: IpcMainInvokeEvent, ...paths: string[]) => {            
+            return SftpConnector.pathJoin(...paths) // Join the paths using the platform-specific separator
+        })
         
     }
 

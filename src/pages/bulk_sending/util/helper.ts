@@ -1,5 +1,6 @@
 import { SftpData } from "app/src-electron/models/EncryptedStore";
 import { DocumentSourceDirParserRules } from "./documents/parsers";
+import { AssignmentRules } from "./documents/assignmentFile";
 
 export interface ReceiverSource {
     type: 'file' | 'sftp',
@@ -25,4 +26,5 @@ export interface DocumentSource {
     sftp?: SftpDocumentSource
     destType: 'directory' | 'file',
     dirParser? : DocumentSourceDirParserRules,
+    fileAssignment?: AssignmentRules
 }
