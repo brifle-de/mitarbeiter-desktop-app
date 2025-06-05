@@ -1,5 +1,5 @@
 <template>
-    <q-dialog v-model="value" full-width>
+    <q-dialog v-model="value" full-width class="unselectable">
         <q-card class="send-docs-card dialog-window-lg" flat bordered>
             <div>
                 <q-toolbar class="bg-secondary text-black">

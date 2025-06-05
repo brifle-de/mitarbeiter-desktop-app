@@ -1,7 +1,17 @@
 <template>
     <q-page class="wrapper">
        <div class="q-mt-xl">
-        <BackBtn to="/accounts" />
+        <div class="row">
+            <div class="col">
+                <BackBtn to="/accounts" />
+            </div>
+            <div class="col text-right">
+                <q-btn color="blue-3" text-color="black" @click="showImportModal = true" >
+                    Daten importieren
+                </q-btn>
+            </div>
+
+        </div>
        </div>
        <div class="text-center">
             <h4>Konto anlegen</h4>
@@ -135,6 +145,7 @@
             color="secondary"
         />
        </div>
+       <ImportModal v-model="showImportModal" @import="importData($event)" />
 
     </q-page>
 </template>
@@ -145,12 +156,13 @@ import { defineComponent, ref } from 'vue';
 
 import { useEncryptedStore } from 'src/stores/encrypted-store';
 
+import ImportModal from './modals/ImportModal.vue';
+
 
 export default defineComponent({
   name: 'CreateAccountPage',
-
   components: {
-    BackBtn,
+    BackBtn, ImportModal
   },
   computed: {
     requiredFieldsFilledOut () {
@@ -158,6 +170,17 @@ export default defineComponent({
     },
   },
   methods: {
+    importData(event: { accountData: AccountData}){
+        this.name = event.accountData.name
+        this.apiKey = event.accountData.apiKey ?? ''
+        this.apiEnv = event.accountData.apiEnv
+        this.apiSecret = event.accountData.apiSecret ?? ''
+        this.tenantId = event.accountData.tenantId ?? ''
+        event.accountData.sftpData?.forEach(record => {
+            this.sftpServer.push(record)
+        })
+        console.log(event);
+    },
     addNewSftpServer () {
         this.sftpServer.push({
             host: '',
@@ -199,6 +222,7 @@ export default defineComponent({
     const apiEnv = ref<ApiEnvironment>(ApiEnvironment.PRODUCTION);
     const hasSent = ref<boolean>(false);
     const encryptedStore = useEncryptedStore();
+    const showImportModal = ref<boolean>(false);
     const apiEnvs = [
         {
             label: 'Produktion',
@@ -223,7 +247,8 @@ export default defineComponent({
         hasSent,
         apiEnv,
         encryptedStore,
-        tenantId
+        tenantId,
+        showImportModal
     };
   },
 

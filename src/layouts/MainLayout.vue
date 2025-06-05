@@ -133,6 +133,11 @@ export default defineComponent({
           link: '/',
         },
         {
+          title: 'menu.outbox',
+          icon: 'markunread_mailbox',
+          link: '/outbox',
+        },
+        {
           title: 'menu.bulk_sending',
           icon: 'markunread_mailbox',
           link: '/bulk_sending',

@@ -144,14 +144,26 @@
 
         </div>
         <q-list class="q-mt-xl bg-fading rounded-borders q-pa-md">   
-            <h5 class="text-negative">Gefährlicher Bereich</h5>         
+            <h5 class="text-negative">Gefährlicher Bereich</h5> 
+            <q-item class="q-mt-xl" clickable @click="showExportAccountModal = true">
+                <q-item-section avatar>
+                    <q-icon name="download" size="2.5rem" color="primary" />
+                </q-item-section>
+                <q-item-section class="text-h6">Download Konto Backup</q-item-section>
+
+            </q-item>        
             <q-item class="q-mt-xl" clickable @click="deleteAccount()">
                 <q-item-section avatar>
                     <q-icon name="delete" size="2.5rem" color="negative" />
                 </q-item-section>
                 <q-item-section class="text-h6 text-negative">Konto löschen</q-item-section>
             </q-item>
+            <ExportAccountModal
+            v-model="showExportAccountModal"
+            @export="backupAccount($event)"
+        />
         </q-list>
+        
     </p-page>
 </template>
 <script lang="ts">
@@ -161,9 +173,13 @@ import { defineComponent, ref } from 'vue';
 import { useEncryptedStore } from '@src/stores/encrypted-store';
 import { useSessionStore } from 'src/stores/session-store';
 import { AccountData, ApiEnvironment, SftpData } from 'app/src-electron/models/EncryptedStore';
+import ExportAccountModal from './modals/exportAccountModal.vue';
 
 export default defineComponent({
     name: 'SettingsAccountPage',
+    components: {
+        ExportAccountModal,
+    },
     setup () {
         const sessionStore = useSessionStore();
         const name = ref<string>('');
@@ -175,6 +191,7 @@ export default defineComponent({
         const encryptedStore = useEncryptedStore();
         const lastData = ref<AccountData|null>(null);
         const tenantId = ref<string>('');
+        const showExportAccountModal = ref<boolean>(false);
         const apiEnvs = [
             {
                 label: 'Produktion',
@@ -201,7 +218,8 @@ export default defineComponent({
             sessionStore,
             lastData,
             tenantId,
-            };
+            showExportAccountModal,
+        };  
     },
     mounted() {
         const selectedAccountId = this.sessionStore.selectedAccountId
@@ -257,6 +275,33 @@ export default defineComponent({
         },
     },
     methods: {
+        backupAccount(event: { password: string }) {
+            const accountData : AccountData = this.cpAccount({
+                name: this.name,
+                apiKey: this.apiKey,
+                apiSecret: this.apiSecret,
+                sftpData: this.sftpServer,
+                apiEnv: this.apiEnv,
+                id: this.sessionStore.selectedAccountId || '',
+                tenantId: this.tenantId,
+            });
+            const password = event.password;
+            void this.encryptedStore.exportAccount(password, accountData).then((exportData) => {
+                if (!exportData) {
+                    console.error('Export failed or no data to export.');
+                    return;
+                }
+                // trigger download
+                const blob = new Blob([exportData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');  
+                a.href = url;
+                a.download = `${accountData.name || 'account'}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+        },
         cpAccount(account?: AccountData) {
             if (!account) {
                 return null;

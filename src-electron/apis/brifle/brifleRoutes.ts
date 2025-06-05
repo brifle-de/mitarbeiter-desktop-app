@@ -1,6 +1,6 @@
 
 import {  ipcMain } from 'electron'
-import { ApiV1, LoginRequest, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
+import { ApiV1, InboxFilter, LoginRequest, OutboxFilter, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
 import { ApiResponse } from '@brifle/brifle-sdk'
 
 export default class BrifleRoutes{
@@ -32,6 +32,24 @@ export default class BrifleRoutes{
             const api = this.apiMap.get(apiId)
             if (!api) throw new Error('API not found')
             return await this.castToResponse(api.content().sendContent(tenantId, request))
+        })
+
+        ipcMain.handle('brifle:getOutbox', async (event, apiId: string, tenantId: string, filter: OutboxFilter, page: number) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            return await this.castToResponse(api.mailbox().getOutbox(tenantId, filter, page))
+        })
+
+        ipcMain.handle('brifle:getInbox', async (event, apiId: string, filter: InboxFilter, page: number) => {        
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            return await this.castToResponse(api.mailbox().getInbox(filter, page))
+        })
+
+        ipcMain.handle('brifle:getAccount', async (event, apiId: string, accountId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            return await this.castToResponse(api.accounts().getById(accountId))
         })
     }
 

@@ -25,6 +25,17 @@ export const useEncryptedStore = defineStore('encrypted-store', {
   },
 
   actions: {
+    exportAccount(password: string, accountData: AccountData) {      
+      return encryptedStoreService.exportAccount(password, accountData);
+    },
+    importAccount(password: string, accountData: string) {
+      return encryptedStoreService.importAccount(password, accountData).then((account: AccountData | null) => {
+        if (account) {
+          this._accounts.push(account);
+        }
+        return account;
+      });
+    },
     loadData(password: string) {      
       return encryptedStoreService.loadMetadata(password).then(async (data: EncryptedStoreType) => {       
         this.meta = data;

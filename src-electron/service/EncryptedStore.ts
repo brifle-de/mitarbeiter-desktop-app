@@ -10,9 +10,12 @@ import * as p from 'path'
 
 export default class EncryptedStore{
 
-    private readonly basePath: string = p.join('brifle-mitarbeiter','encryptedStore')
+    private readonly basePath: string = p.join('brifle-business','encryptedStore')
     private readonly metaFile: string = 'meta.json'
+
      
+
+
    
 
     private async getPath(path: string): Promise<string> {
@@ -125,6 +128,41 @@ export default class EncryptedStore{
         const decryptedData = Buffer.concat([decipher.update(data), decipher.final()]);
         return decryptedData.toString()
     }
+
+    /**
+     * exports an account data as a JSON string
+     * @param accountData the account data to export
+     * @param encryptionPassword the password to use for encryption
+     * @returns {Promise<string>} the exported account data as a JSON string
+     */
+    public async exportAccount(accountData: AccountData, encryptionPassword: string): Promise<string> {
+        const exportSalt = crypto.randomBytes(24).toString('hex')
+        const key = await this.generateEncryptionKey(encryptionPassword, exportSalt)
+        const encryptedData = await this.encryptData(JSON.stringify(accountData), key)
+        const exportData = {
+            accountData: encryptedData.toString('base64'),
+            salt: exportSalt
+        }
+        return JSON.stringify(exportData);
+        
+    }
+
+    /**
+     * imports an account data from a JSON string
+     * @param accountData the account data to import
+     * @param encryptionPassword the password to use for decryption
+     * @returns {Promise<AccountData>} the imported account data
+     */
+    public async importAccount(accountData: string, encryptionPassword: string): Promise<AccountData> {
+        const parsedData = JSON.parse(accountData)
+        const exportSalt = parsedData.salt
+        const key = await this.generateEncryptionKey(encryptionPassword, exportSalt)
+        const encryptedData = Buffer.from(parsedData.accountData, 'base64')
+        const decryptedData = await this.decryptData(encryptedData, key)
+        return JSON.parse(decryptedData) as AccountData;
+    }
+
+   
 
     /**
      * 

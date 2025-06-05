@@ -1,8 +1,8 @@
 {
-    "name": "brifle-mitarbeiter",
-    "version": "0.0.1",
+    "name": "brifle-business",
+    "version": "0.0.2",
     "description": "A Desktop App to deliver payslips",
-    "productName": "Brifle Mitarbeiter",
+    "productName": "Brifle Business",
     "author": "Brifle GmbH",
     "type": "module",
     "private": true,
@@ -18,7 +18,7 @@
         "test:unit:ci": "vitest run"
     },
     "dependencies": {
-        "@brifle/brifle-sdk": "^0.0.2",
+        "@brifle/brifle-sdk": "^0.0.5",
         "@quasar/extras": "^1.16.4",
         "argon2": "^0.41.1",
         "axios": "^1.2.1",
@@ -33,6 +33,7 @@
         "vue-router": "^4.0.12"
     },
     "devDependencies": {
+        "@electron-forge/publisher-electron-release-server": "^7.8.1",
         "@electron/packager": "^18.3.6",
         "@eslint/js": "^9.14.0",
         "@intlify/unplugin-vue-i18n": "^4.0.0",

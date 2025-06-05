@@ -25,12 +25,14 @@ export class ApiEndpoints {
 
 interface AccountData {
     id: string;
-    apiKey: string;
-    apiSecret: string;
+    apiKey?: string;
+    apiSecret?: string;
     apiEnv: ApiEnvironment;
-    tenantId: string;
+    tenantId?: string;
     name: string;
     sftpData?: SftpData[];
+    // specify the remote server to use to handle the configuration    
+    remoteServerUrl?: string;
 }
 
 interface SftpData {

@@ -241,8 +241,8 @@ export default defineComponent({
         this.apiKey = this.account?.apiKey ?? '';
         // get api 
         if(this.account) {            
-            this.tenantId = this.account.tenantId;
-             void this.brifleStore.getApi(this.account.apiKey, ApiEndpoints.getEndpoint(this.account.apiEnv)).then(api => {
+            this.tenantId = this.account.tenantId ?? '';
+             void this.brifleStore.getApi(this.account.apiKey ?? '', ApiEndpoints.getEndpoint(this.account.apiEnv)).then(api => {
                 if(api) {
                     this.apiId = api;                    
                 } else {

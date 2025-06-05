@@ -28,6 +28,17 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/outbox',
+    component: () => import('layouts/MainLayout.vue'),
+    meta: { requiresUnseal: true },
+    children: [
+      {
+        path: '',
+        component: () => import('pages/outbox/Index.vue'),
+      }
+    ]
+  },
+  {
     path: '/bulk_sending',
     component: () => import('layouts/MainLayout.vue'),
     meta: { requiresUnseal: true },

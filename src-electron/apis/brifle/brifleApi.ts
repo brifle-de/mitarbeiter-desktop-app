@@ -1,5 +1,5 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { CheckReceiverResponse, LoginRequest, LoginResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { AccountInfo, CheckReceiverResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
@@ -9,6 +9,9 @@ export class BrifleApi{
             authLogin: (apiId: string, request: LoginRequest) => ipcRenderer.invoke('brifle:authLogin', apiId, request),
             contentCheckReceiver: (apiId: string, receiver: ReceiverRequest) => ipcRenderer.invoke('brifle:contentCheckReceiver', apiId, receiver),
             contentSendContent: (apiId: string, tenantId: string, request: SendContentRequest) => ipcRenderer.invoke('brifle:contentSendContent', apiId, tenantId, request),
+            getOutbox: (apiId: string, tenantId: string, filter: OutboxFilter, page: number) => ipcRenderer.invoke('brifle:getOutbox', apiId, tenantId, filter, page),
+            getInbox: (apiId: string, filter: InboxFilter, page: number) => ipcRenderer.invoke('brifle:getInbox', apiId, filter, page),
+            getAccount: (apiId: string, accountId: string) => ipcRenderer.invoke('brifle:getAccount', apiId, accountId),
         }) 
     }
 
@@ -46,6 +49,33 @@ export class BrifleApi{
      * @returns the send content response
      */
     contentSendContent: (apiId: string, tenantId: string, request: SendContentRequest) => Promise<ApiResponse<SendContentResponse>>;
+
+    /**
+     * get the outbox of the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to get the outbox for
+     * @param filter - The filter to apply to the outbox
+     * @param page - The page to get
+     * @returns the outbox response
+     */
+    getOutbox: (apiId: string, tenantId: string, filter: OutboxFilter, page: number) => Promise<ApiResponse<MailboxResponse>>;
+
+    /**
+     * get the inbox of the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param filter - The filter to apply to the inbox
+     * @param page - The page to get
+     * @returns the inbox response
+     */
+    getInbox: (apiId: string,filter: InboxFilter, page: number) => Promise<ApiResponse<MailboxResponse>>;
+
+    /**
+     * get the account data from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param accountId - The account id to get
+     * @returns the account data
+     */
+    getAccount: (apiId: string, accountId: string) => Promise<ApiResponse<AccountInfo>>;
 
  }
     

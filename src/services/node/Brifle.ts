@@ -1,4 +1,4 @@
-import { CheckReceiverResponse, LoginRequest, LoginResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
+import { AccountInfo, CheckReceiverResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 /**
@@ -31,7 +31,20 @@ export default class BrifleApi {
         return new Content();
     }
 
+    /**
+     * gets all the available endpoints from the brifle API for the mailbox
+     * @returns the api id
+     */
+    public static mailbox() : Mailbox {
+        return new Mailbox();
+    }
+
+    public static accounts(): Accounts{
+        return new Accounts();
+    }
+
 }
+
 
 export class Authentication {
     /**
@@ -43,7 +56,45 @@ export class Authentication {
     public async authLogin(apiId: string, request: LoginRequest): Promise<ApiResponse<LoginResponse>> {
         return window.brifleApi.authLogin(apiId, request); 
     }
+}
 
+export class Accounts {
+
+    /**
+     * get the account data from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param accountId - The account id to get
+     * @returns the account response
+     */
+    public async getById(apiId: string, accountId: string): Promise<ApiResponse<AccountInfo>> {
+        return window.brifleApi.getAccount(apiId, accountId); 
+    }
+
+}
+
+export class Mailbox {
+    /**
+     * get the outbox of the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to get the outbox for
+     * @param filter - The filter to apply to the outbox
+     * @param page - The page to get
+     * @returns the outbox response
+     */
+    public async getOutbox(apiId: string, tenantId: string, filter: OutboxFilter, page: number): Promise<ApiResponse<MailboxResponse>> {
+        return window.brifleApi.getOutbox(apiId, tenantId, filter, page); 
+    }
+
+    /**
+     * get the inbox of the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param filter - The filter to apply to the inbox
+     * @param page - The page to get
+     * @returns the inbox response
+     */
+    public async getInbox(apiId: string, filter: InboxFilter, page: number): Promise<ApiResponse<MailboxResponse>> {
+        return window.brifleApi.getInbox(apiId, filter, page);
+    }
 }
 
 export class Content {

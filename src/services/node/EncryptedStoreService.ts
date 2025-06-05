@@ -24,6 +24,26 @@ export default class EncryptedStoreService {
     }
 
     /**
+     * import an account from a string
+     * @param password the password to use
+     * @param accountData the account data as string
+     * @returns {Promise<AccountData | null>} the imported account or null if not found
+     */
+    async importAccount(password: string, accountData: string): Promise<AccountData | null> {
+        return window.encryptedStoreApi.importAccount(password,accountData);
+    }
+
+    /**
+     * export an account to a string
+     * @param password the password to use
+     * @param accountId the id of the account to export
+     * @returns {Promise<string | null>} the exported account data as string or null if not found
+     */
+    async exportAccount(password: string, accountId: AccountData): Promise<string | null> {
+        return window.encryptedStoreApi.exportAccount(password,accountId);
+    }
+
+    /**
      * delete an account from the store
      * @param encryptionKey the encryption key to use
      * @param accountId the id of the account to delete
