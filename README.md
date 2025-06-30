@@ -1,5 +1,5 @@
 > [!WARNING] 
-> Disclaimer: Early Access to the Software. Development is still in process and in early stages. Moreover, the project may discontinued at any time. Use at your own risk.
+> Disclaimer: Early Access to the Software. Development is still in process and in early stages. Moreover, the project may get discontinued at any time. Use at your own risk.
 
 # Brifle Mitarbeiter App
 
