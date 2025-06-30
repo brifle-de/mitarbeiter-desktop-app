@@ -35,6 +35,10 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         component: () => import('pages/outbox/Index.vue'),
+      },
+      {
+        path: ':id',
+        component: () => import('pages/outbox/DetailsPage.vue'),
       }
     ]
   },

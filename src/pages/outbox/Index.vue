@@ -107,6 +107,7 @@ import OutboxItem from 'src/components/OutboxItem.vue';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { useSessionStore } from 'src/stores/session-store';
 import { useBrifleStore } from 'src/stores/brifle-store';
+import { ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
 
 export default defineComponent({
   name: 'OutboxPage',
@@ -148,13 +149,20 @@ export default defineComponent({
   mounted() {
     this.isLoading = true;
     this.accountId = this.sessionStore.getSelectedAccountId
+    const account = this.encryptedStore.getAccount(this.accountId!)!;
     this.apiKey = this.encryptedStore.getAccount(this.accountId!)?.apiKey ?? '';
     this.currentTenant = this.encryptedStore.getAccount(this.accountId!)?.tenantId ?? '';
-    
-    void this.brifleStore.getApi(this.apiKey, this.encryptedStore.getAccount(this.accountId!)?.apiEnv?? '').then((apiId) => {
-      this.apiId = apiId;
-      void this.loadPage();
+
+    void this.brifleStore.getApi(account.apiKey ?? '', ApiEndpoints.getEndpoint(account.apiEnv)).then(api => {
+        if(api) {
+            this.apiId = api;            
+            void this.loadPage();        
+        } else {
+            this.apiKey = '';
+        }
     });
+    
+ 
     
     
   },
@@ -165,26 +173,25 @@ export default defineComponent({
   },
   methods: {
 
-   routeToItem(id: string) {
-      let backLink = '/outbox';
-      if (this.apiKey != null && this.apiKey.length > 0) {
-        backLink = `${backLink}?apiKey=${this.apiKey}`;
-      }
-      void this.router.push(`/outbox/${id}?back=${backLink}`);
+   routeToItem(id: string) {     
+      void this.router.push(`/outbox/${id}`);
     },
 
  async loadPage() {
       this.isLoading = true;
     
       const req : Filter = {
-        subject: this.subject
+        state: ['active'],
+        subject: this.subject,
        };
+       
       if (this.documentType !== 'all') {
         req.type = this.documentType;
       }
+      
       if (this.currentTenant != null) {
         void Brifle.mailbox().getOutbox(this.apiId, this.currentTenant, req, this.page)
-          .then((res) => {
+          .then((res) => {            
             this.values = res.isSuccess ? res.data!.results : [];
             this.total = res.isSuccess ? res.data!.total : 0;
             const receiverIds: Set<string> = new Set(this.values.map((item) => item.receiver));

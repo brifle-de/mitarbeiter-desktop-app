@@ -1,6 +1,9 @@
-# Brifle Gehalt (brifle-gehalt)
+> [!WARNING] 
+> Disclaimer: Early Access to the Software. Development is still in process and in early stages. Moreover, the project may discontinued at any time. Use at your own risk.
 
-A Desktop App to deliver payslips
+# Brifle Mitarbeiter App
+
+This Application is a Desktop Application that wrapps around the [Brifle API](https://developer.brifle.de/docs/api/brifle). Its intention is to use simple features of the Brifle API with native features such local file system access.
 
 ## Install the dependencies
 ```bash

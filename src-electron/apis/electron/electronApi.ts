@@ -5,11 +5,13 @@ import { ContextBridge, IpcRenderer } from "electron";
     
     registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRenderer){     
         contextBridge.exposeInMainWorld('electronApi', {
-            getPlatform: () => ipcRenderer.invoke('electron:getPlatform')           
+            getPlatform: () => ipcRenderer.invoke('electron:getPlatform'),          
+            getAppVersion: () => ipcRenderer.invoke('electron:getAppVersion')
         })
     }
 
  }
  export interface ElectronApiType {
     getPlatform: () => Promise<string>;
+    getAppVersion: () => Promise<string>;
 }

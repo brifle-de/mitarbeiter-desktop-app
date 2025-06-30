@@ -90,7 +90,7 @@ import {useBrifleStore} from 'src/stores/brifle-store';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
 import { useSessionStore } from 'src/stores/session-store';
-import BrifleApi, { Authentication } from 'src/services/node/Brifle';
+import BrifleApi from 'src/services/node/Brifle';
 import { ReceiverRequest } from '@brifle/brifle-sdk';
 
 export default defineComponent({
@@ -160,14 +160,7 @@ export default defineComponent({
             return defaultCol;
         },
         async checkForExistence() {
-
-            // login to the api
-            const auth : Authentication = BrifleApi.authentication() 
-            void await auth.authLogin(this.apiId, {
-                key: this.apiKey,
-                secret: this.account?.apiSecret ?? '',
-            })
-
+            
             this.isLoading = true;
             this.userExistenceStatus.clear();
             

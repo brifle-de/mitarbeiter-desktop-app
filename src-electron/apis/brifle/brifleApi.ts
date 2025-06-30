@@ -1,5 +1,5 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { AccountInfo, CheckReceiverResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
@@ -12,6 +12,8 @@ export class BrifleApi{
             getOutbox: (apiId: string, tenantId: string, filter: OutboxFilter, page: number) => ipcRenderer.invoke('brifle:getOutbox', apiId, tenantId, filter, page),
             getInbox: (apiId: string, filter: InboxFilter, page: number) => ipcRenderer.invoke('brifle:getInbox', apiId, filter, page),
             getAccount: (apiId: string, accountId: string) => ipcRenderer.invoke('brifle:getAccount', apiId, accountId),
+            contentGetContent: (apiId: string, contentId: string) => ipcRenderer.invoke('brifle:contentGetContent', apiId, contentId),
+            contentGetContentActions: (apiId: string,  contentId: string) => ipcRenderer.invoke('brifle:contentGetContentActions', apiId, contentId),
         }) 
     }
 
@@ -76,6 +78,22 @@ export class BrifleApi{
      * @returns the account data
      */
     getAccount: (apiId: string, accountId: string) => Promise<ApiResponse<AccountInfo>>;
+
+    /**
+     * get the content from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get
+     * @returns the content data
+     */
+    contentGetContent: (apiId: string, contentId: string) => Promise<ApiResponse<ContentResponse>>;
+
+    /**
+     * get the content actions from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get the actions for
+     * @returns the content actions
+     */
+    contentGetContentActions: (apiId: string, contentId: string) => Promise<ApiResponse<ContentActionsResponse>>;
 
  }
     

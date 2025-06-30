@@ -50,7 +50,7 @@
 
       </q-list>
     </div> 
-
+    <span class="app-version-text">Version: {{ appVersion }}</span>
     </q-drawer>
 
     <q-page-container class="main-container unselectable">
@@ -84,6 +84,12 @@
   }
 }
 
+.app-version-text{
+  text-align: center;
+  font-size: 0.8em;
+  color: #eeea;
+}
+
 .profile-dropdown-menu{
   margin-top: 10px !important;
 }
@@ -94,6 +100,9 @@
 import { Ref, defineComponent, ref } from 'vue';
 import EssentialLink from 'components/EssentialLink.vue';
 import { useRouter } from 'vue-router';
+
+
+
 
 
 export default defineComponent({
@@ -124,6 +133,7 @@ export default defineComponent({
     const router = useRouter();  
     const menuLinks: Ref<Array<{title: string, icon: string, link: string}>> = ref([]);
     const showRefreshLogin = ref(false);
+    const appVersion = ref<string>("");
   
 
     menuLinks.value = [
@@ -149,16 +159,19 @@ export default defineComponent({
         },
        
       ];
-  
  
+   
 
-
+    void window.electronApi.getAppVersion().then((version: string) => {
+      appVersion.value = version;
+    });
 
     return {
       essentialLinks: menuLinks,
       miniState: ref(true),
       showRefreshLogin,
       router,
+      appVersion
     };
   },
 });

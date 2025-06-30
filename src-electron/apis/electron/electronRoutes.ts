@@ -1,4 +1,4 @@
-import {  ipcMain } from 'electron'
+import {  ipcMain, app } from 'electron'
 
 
 export default class ElectronRoutes{
@@ -8,6 +8,10 @@ export default class ElectronRoutes{
         ipcMain.handle('electron:getPlatform', async () => {            
             return process.platform
         })        
+        ipcMain.handle('electron:getAppVersion', async () => {            
+            console.log('getAppVersion called', app.getVersion())
+            return app.getVersion()
+        })
 
     }
 

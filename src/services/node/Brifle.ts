@@ -1,4 +1,4 @@
-import { AccountInfo, CheckReceiverResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
+import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 /**
@@ -43,6 +43,14 @@ export default class BrifleApi {
         return new Accounts();
     }
 
+    public static signatures(): Signatures {
+        return new Signatures();
+    }
+
+}
+
+export class Signatures {
+    
 }
 
 
@@ -119,6 +127,26 @@ export class Content {
     public async contentSendContent(apiId: string, tenantId: string, request: SendContentRequest): Promise<ApiResponse<SendContentResponse>> {
         const serializedRequest = JSON.parse(JSON.stringify(request));
         return window.brifleApi.contentSendContent(apiId, tenantId, serializedRequest); 
+    }
+
+    /**
+     * get content from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get
+     * @returns the send content response
+     */
+    public async contentGetContent(apiId: string, contentId: string): Promise<ApiResponse<ContentResponse>> {
+        return window.brifleApi.contentGetContent(apiId, contentId); 
+    }
+
+    /**
+     * get content actions from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get the actions for
+     * @returns the content actions response
+     */
+    public async contentGetContentActions(apiId: string, contentId: string): Promise<ApiResponse<ContentActionsResponse>> {
+        return window.brifleApi.contentGetContentActions(apiId, contentId); 
     }
 }
 

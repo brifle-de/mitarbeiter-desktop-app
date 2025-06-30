@@ -36,7 +36,7 @@ export default class BrifleRoutes{
 
         ipcMain.handle('brifle:getOutbox', async (event, apiId: string, tenantId: string, filter: OutboxFilter, page: number) => {
             const api = this.apiMap.get(apiId)
-            if (!api) throw new Error('API not found')
+            if (!api) throw new Error('API not found')            
             return await this.castToResponse(api.mailbox().getOutbox(tenantId, filter, page))
         })
 
@@ -51,11 +51,23 @@ export default class BrifleRoutes{
             if (!api) throw new Error('API not found')
             return await this.castToResponse(api.accounts().getById(accountId))
         })
+
+        ipcMain.handle('brifle:contentGetContent', async (event, apiId: string, contentId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            return await this.castToResponse(api.content().getContent(contentId))
+        })
+
+        ipcMain.handle('brifle:contentGetContentActions', async (event, apiId: string, contentId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            return await this.castToResponse(api.content().getContentActions(contentId))
+        })
     }
 
     // cast the response to the correct type
-    private castToResponse<T>(response: Promise<ApiResponse<T>>) {
-        return response.then((res) => {
+    private castToResponse<T>(response: Promise<ApiResponse<T>>) {        
+        return response.then((res) => {            
             return {
                 data: res.data,
                 error: res.error,

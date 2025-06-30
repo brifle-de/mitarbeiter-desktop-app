@@ -66,13 +66,101 @@
     }
 }
 
+
+.q-card{
+   // margin: 10px;
+    border-radius: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    align-items: center;
+    border: 1px solid #454;
+    transition: all 0.3s;
+    overflow: hidden;
+
+    .shadowed{
+        background-color: #cccccc15;
+    }
+    &.hoverable:hover, &.q-hoverable:hover {
+        background-color: rgb(55, 67, 55);
+    }
+
+}
+
+.border-rounded {
+    border-radius: 15px;
+}
+
+.vue-pdf-embed > div{
+    margin-bottom: 20px;
+    border-radius: 15px;
+    overflow: hidden
+  }
+
+  .page-wrapper {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .dialog-window-md, .dialog-window-lg{   
+    display: flex;
+    flex-direction: column;   
+    min-width: 300px;
+    max-width: 80vw;
+    min-height: 300px;
+    max-height: 80vh;
+    // Second child to flex 1
+    > :nth-child(2){
+      flex: 1;
+      overflow: auto;
+    }
+  }
+
+  .dialog-window-md{  
+    width: 600px;
+    height: 600px; 
+  }
+
+  .dialog-window-lg{
+    width: 900px;
+    height: 700px;    
+  }
+
+  .w-100 {
+    width: 100%;
+  }
+
+    .h-100 {
+        height: 100%;
+    }
+
+.accent-bordered-radius {
+    border-radius: 20px;
+    border-bottom-left-radius: 10px;
+}
+
+.accent-bordered {
+    border: 1px solid #555;
+    border-radius: 20px;
+    border-bottom-left-radius: 10px;
+    overflow: hidden;
+    &.accent-bordered-green {
+        border: 1px solid #26351e; 
+    }
+}
+
+.accent-card{
+    background-color: #aaccaa11;
+    border: 1px solid #26351e;
+    padding: min(10px, 2em);
+}
+
 .clickable{
     cursor: pointer;
 }
 
-.unselectable {    
+.unselectable {
+    user-select: none;    
     -webkit-user-select: none;
-    user-select: none;
 }
 
 * {
