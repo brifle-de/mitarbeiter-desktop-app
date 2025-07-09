@@ -4,14 +4,15 @@ const SAMPLE_1 : DocumentSourceDirParserRules= {
     regexCatch() {
         // <receiverID>.pdf
         // receiverID = alphanumeric string
-        return `^([a-zA-Z0-9]+)\\.pdf$`;
+        return `^([^_]+_)?([a-zA-Z0-9]+)\\.pdf$`;
     },
     regexOutputReceiverID(match: RegExpMatchArray) {
+        console.log('regexOutputReceiverID', match);
         // return the first group of the regex
         if(!match || match.length <= 1) {
             return null
-        }
-        return match[1]!;
+        }  
+        return match[2]!;
     },
     regexOutputDate() {
         // return null if no date is set
@@ -61,8 +62,8 @@ export {
 
 const ALL = [
     {
-        name: 'DEMO 1 - <receiverID>.pdf',
-        description: 'file is named <receiverID>.pdf',
+        name: '<prefix>_<receiverID>.pdf',
+        description: 'Präfix_<receiverID>.pdf',
         rules: SAMPLE_1,
     }, 
     {

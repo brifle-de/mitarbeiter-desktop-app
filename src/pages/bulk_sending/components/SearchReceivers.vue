@@ -192,7 +192,8 @@ export default defineComponent({
                             } else {
                                 this.userExistenceStatus.set(id, false);
                             }
-                        }).catch(() => {
+                        }).catch((e) => {
+                            console.error('Error checking receiver existence:', e);
                             this.userExistenceStatus.set(id, false);
                         }).finally(() => {
                             this.totalChecked++;                            
@@ -211,6 +212,7 @@ export default defineComponent({
                     }
                 } else {
                     this.userExistenceStatus.set(id, false);
+                    this.totalChecked++;  
                 }
             });            
             

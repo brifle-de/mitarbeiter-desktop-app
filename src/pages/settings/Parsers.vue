@@ -13,6 +13,7 @@
                     </q-item-label>
                 </q-item-section>                
             </q-item>
+            <!-- TODO:
             <q-item clickable @click="goTo('/settings/parsers/document-records')">
                 <q-item-section avatar>
                     <q-icon name="description" size="2.5rem" color="secondary" />
@@ -25,7 +26,7 @@
                 </q-item-section>
 
             </q-item>
-           
+            -->
         </q-list>
     </p-page>
 </template>

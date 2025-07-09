@@ -21,31 +21,39 @@
         map-options
     ></q-select>
     <div class="q-my-xl" v-if="value.dirParser != null && isDirAnalysis">
-        <div class="text-h6">Filter - Datum Zeitstempel</div>        
-        <div class="row">
-            <div class="col-6">
-                <div class="q-pa-md">       
-                    <q-date v-model="dateRange" 
-                    text-color="black"
-                    color="secondary" range /> 
-                </div>               
-            </div>
-            <div class="col-6">                
-                <div class="flex-column quick-actions">
-                    <div>
-                        <q-btn color="accent" class="q-mb-md" @click="dateRangeToThisMonth()">
-                            Diesen Monat
-                        </q-btn>
-                    </div>
-                    <div>
-                        <q-btn  color="grey-3" outline @click="resetDateRange()">
-                            Zurücksetzen
-                        </q-btn>
-                    </div>
-                    
+        <q-expansion-item
+            v-model="expandedTimeFilter"
+            icon="perm_identity"
+            label="Zeitstempel Filter"
+            caption="Optional"
+        >      
+            <div class="row q-mt-md border q-pa-md rounded-borders">
+                <div class="col-6">
+                    <div class="q-pa-md">       
+                        <q-date v-model="dateRange" 
+                        text-color="black"
+                        flat
+                        bordered
+                        color="secondary" range /> 
+                    </div>               
                 </div>
-            </div>
-        </div>            
+                <div class="col-6">                
+                    <div class="flex-column quick-actions">
+                        <div>
+                            <q-btn color="accent" class="q-mb-md" @click="dateRangeToThisMonth()">
+                                Diesen Monat
+                            </q-btn>
+                        </div>
+                        <div>
+                            <q-btn  color="grey-3" outline @click="resetDateRange()">
+                                Zurücksetzen
+                            </q-btn>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>            
+        </q-expansion-item>        
     </div>
     <div v-else-if="!isDirAnalysis">
         <!-- 
@@ -391,6 +399,7 @@ export default defineComponent({
     const hasLoaded = ref<boolean>(false);
     const showSftpModalBasePath = ref<boolean>(false);
     const basePath = ref<string>('');
+    const expandedTimeFilter = ref<boolean>(false);
     
     SampleParser.forEach(element => {
         availableDirParsers.value.push({
@@ -411,6 +420,7 @@ export default defineComponent({
         availableAssignmentParser,
         showSftpModalBasePath,
         basePath,
+        expandedTimeFilter
 
     };
 
