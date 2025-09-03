@@ -132,7 +132,7 @@ export default defineComponent({
   setup() {
     const router = useRouter();  
     const menuLinks: Ref<Array<{title: string, icon: string, link: string}>> = ref([]);
-    const showRefreshLogin = ref(false);
+
     const appVersion = ref<string>("");
   
 
@@ -169,7 +169,6 @@ export default defineComponent({
     return {
       essentialLinks: menuLinks,
       miniState: ref(true),
-      showRefreshLogin,
       router,
       appVersion
     };

@@ -36,7 +36,7 @@
     <div class="overview_card">
         <div class="text-h6">Externe Empfänger werden:</div>
         <div class="text-h5">
-            Ignoriert
+            {{ actionNotBrifle.action === 'ignore' ? 'Ignoriert' : 'Per Papierpost versendet' }}
         </div>
     </div>
     <div class="overview_card q-mt-lg">
@@ -125,7 +125,7 @@
 </style>
 <script lang="ts">
 
-import { defineComponent, ref } from 'vue';
+import { defineComponent, PropType, ref } from 'vue';
 import { SendDocReq } from '../util/receivers/receiverRecord';
 import BrifleApi from 'src/services/node/Brifle';
 import Sftp from 'src/services/node/Sftp';
@@ -136,6 +136,8 @@ import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStor
 import { useSessionStore } from 'src/stores/session-store';
 
 import SendDocsModal from './modal/SendDocsModal.vue';
+import { SendContentRequest } from '@brifle/brifle-sdk';
+import { NonExistingReceiverAction } from './NonExistingReceiversAction.vue';
 
 export default defineComponent({
     name: 'SendingOverviewPage',
@@ -155,9 +157,9 @@ export default defineComponent({
             });
         },
         totalDocs(){
-            if(this.externalAction === 'ignore') {
+            if(this.actionNotBrifle.action === 'ignore') {
                 return this.brifleReceivers.length;
-            }else if(this.externalAction === 'letter') {
+            }else if(this.actionNotBrifle.action === 'papermail') {
                 return this.externalReceivers.length + this.brifleReceivers.length; 
             }
             return this.brifleReceivers.length;
@@ -172,6 +174,10 @@ export default defineComponent({
             type: String,
             required: true,
         },
+        actionNotBrifle: {
+            type: Object as PropType<NonExistingReceiverAction>,
+            required: true,
+        }
     },
     methods: {
         async sendAll() {
@@ -180,6 +186,11 @@ export default defineComponent({
             this.hasStarted = true;
             for(const record of this.brifleReceivers) {
                 void await this.sendItem(record);
+            }
+            if(this.actionNotBrifle.action === 'papermail'){
+                for(const record of this.externalReceivers) {
+                    void await this.sendItem(record);
+                }
             }
             // all sent
             this.$emit('sent', {
@@ -200,9 +211,12 @@ export default defineComponent({
         },
         async sendItem(record: SendDocReq){
             // get content
-            const contentBase64 = await this.getContent(record);            
+            const contentBase64 = await this.getContent(record);
+            const postalAddress = record.postalAddress;    
+            const enableFallback = this.actionNotBrifle.action === 'papermail' && postalAddress != null;
+
             if(contentBase64 && record.receiver ) {
-                void BrifleApi.content().contentSendContent(this.apiId, this.tenantId, {
+                const options : SendContentRequest = {
                     subject: this.subject,
                     to: record.receiver.req,
                     body: [
@@ -211,8 +225,32 @@ export default defineComponent({
                             content: contentBase64,
                         }
                     ],
-                    type: 'letter'
-                }).then((response) => {
+                    type: "letter",                    
+                };
+                if(enableFallback) {
+                    const receiverName = record.receiver.original.fullName 
+                        ? record.receiver.original.fullName 
+                        : record.receiver.original.firstName + ' ' + record.receiver.original.lastName;
+                    options.fallback = {
+                        enabled_physical_delivery: true,
+                        paper_mail: {
+                            recipient: {
+                                address_line1: receiverName,
+                                address_line2: postalAddress.street,
+                                city: postalAddress.city,
+                                postal_code: postalAddress.postcode,
+                                country: postalAddress.country,
+                            },
+                            test_mode: {
+                                email: this.actionNotBrifle.paperMailTestEmailRecipient,
+                                enabled: this.actionNotBrifle.testModePaperMail,
+                            }
+                        }
+                    };
+                }         
+                console.log("options", options)       
+
+                void BrifleApi.content().contentSendContent(this.apiId, this.tenantId, options).then((response) => {
                     if(response && response.isSuccess) {
                         this.successItems.push(record);
                     } else {
@@ -269,7 +307,6 @@ export default defineComponent({
         const showReceivers = ref<boolean>(false);
         const showReceiversRecords = ref<SendDocReq[]>([]);
         const hasStarted = ref<boolean>(false);
-        const externalAction = ref<string>('ignore');
         return {
             confirmedSend,
             failedItems,
@@ -284,7 +321,6 @@ export default defineComponent({
             showReceivers,
             showReceiversRecords,
             hasStarted,
-            externalAction
         };
     },
 });

@@ -111,7 +111,7 @@
         icon="local_post_office"
       >
         <NonExistingReceiversAction
-          @selected="actionNotBrifle = $event"
+          @update="actionNotBrifle = $event"
         />
         <q-stepper-navigation>
           <q-btn @click="step = 7" color="secondary" text-color="black" label="Weiter" />
@@ -154,6 +154,7 @@
       <SendingOverviewPage
       :subject="subject"
       :send-doc-record="docsToSend"
+      :action-not-brifle="actionNotBrifle"
       @sent="sentAll($event)"
       >
 
@@ -196,7 +197,7 @@ import SearchReceivers from './components/SearchReceivers.vue';
 
 import ReceiverRecord, { SendDocReq } from './util/receivers/receiverRecord';
 import DocumentRecord from './util/documents/documentRecord';
-import NonExistingReceiversAction from './components/NonExistingReceiversAction.vue';
+import NonExistingReceiversAction, { NonExistingReceiverAction } from './components/NonExistingReceiversAction.vue';
 import SendingOverviewPage from './components/SendingOverview.vue';
 import SendReports from './components/SendReports.vue';
 
@@ -222,7 +223,11 @@ export default defineComponent({
         const receiverRecords = ref<ReceiverRecord[]>([]);
         const documentRecords = ref<DocumentRecord[]>([]);
         const docsToSend = ref<SendDocReq[]>([]);
-        const actionNotBrifle = ref<string>('ignore');
+        const actionNotBrifle = ref<NonExistingReceiverAction>({
+          action: 'ignore',
+          testModePaperMail: false,
+          paperMailTestEmailRecipient: ''
+        });
         const subject = ref<string>('');
         const reportSuccess = ref<SendDocReq[]>([]);
         const reportError = ref<SendDocReq[]>([]);

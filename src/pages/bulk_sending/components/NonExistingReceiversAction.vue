@@ -6,7 +6,32 @@
         <div class="text-bold" 
             @click="selectAction('ignore')" :class="{ active: action === 'ignore' }">
             Ignorieren 
-        </div>        
+        </div>     
+         <div class="text-bold" 
+            @click="selectAction('papermail')" :class="{ active: action === 'papermail' }">
+            Papierpost 
+        </div>     
+    </div>
+    <div v-if="action === 'papermail'">
+        <div class="h4">Optionen</div>
+        <div>            
+            <q-toggle 
+            @update:model-value="update()"
+            v-model="testModePaperMail" 
+            color="secondary">
+
+            </q-toggle>
+            <span>
+                Testmodus für Papierpost
+            </span>            
+        </div>
+        <div v-if="testModePaperMail">
+            <q-input 
+            color="secondary"
+            v-model="paperMailTestEmailRecipient" 
+            @update:model-value="update()"
+            label="Empfänger für Testmodus" />
+        </div>
     </div>
 </template>
 
@@ -52,21 +77,42 @@ export default defineComponent({
   props: {
     
   },
-  emits: ['selected'],
+  emits: ['selected', 'update'],
   methods: {
-    selectAction(action: string) {
+    selectAction(action: 'ignore' | 'papermail') {
       this.action = action;
       this.$emit('selected', action);
+      this.update();
     },
+    update() {
+        const data : NonExistingReceiverAction = {
+            action: this.action,
+            testModePaperMail: this.testModePaperMail,
+            paperMailTestEmailRecipient: this.paperMailTestEmailRecipient
+        }
+        this.$emit('update', data);
+    }
   },
   setup() {
-    const action = ref<string>('ignore');    
-
+    const action = ref<'ignore' | 'papermail'>('ignore');
+    const testModePaperMail = ref<boolean>(false);
+    const paperMailTestEmailRecipient = ref<string>('');
     return {
-        action
+        action,
+        testModePaperMail,
+        paperMailTestEmailRecipient
     };
   },
 });
 
+interface NonExistingReceiverAction {
+  action: 'ignore' | 'papermail';
+  testModePaperMail: boolean;
+  paperMailTestEmailRecipient: string;
+}
+
+export type {
+    NonExistingReceiverAction
+}
 
 </script>

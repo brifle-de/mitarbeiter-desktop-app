@@ -84,7 +84,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 
-import ReceiverRecord, { ReceiverRecordConverter, SendDocReq } from '../util/receivers/receiverRecord';
+import ReceiverRecord, { PostalAddress, ReceiverRecordConverter, SendDocReq } from '../util/receivers/receiverRecord';
 import DocumentRecord from '../util/documents/documentRecord';
 import {useBrifleStore} from 'src/stores/brifle-store';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
@@ -128,7 +128,7 @@ export default defineComponent({
                 {
                     name: 'receiverID',
                     label: 'Empfänger ID',
-                    field: (row: SendDocReq) => row.receiver?.original.receiverId,
+                    field: (row: SendDocReq) => row.receiver?.original.receiverId ?? 'Nicht vorhanden',
                     sortable: true,
                 },
                 {
@@ -155,9 +155,23 @@ export default defineComponent({
                         return '';
                     },
                 },
+                {
+                    name: 'postalAddress',
+                    label: 'Adresse',
+                    field: (row: SendDocReq) => row.postalAddress,
+                    format: (val: PostalAddress) => val ? `${val.street}, ${val.postcode} ${val.city}, ${val.country}` : '',
+                    sortable: true,
+                }
             ];
 
             return defaultCol;
+        },
+        computeCountryCode(row: ReceiverRecord) {
+            const val = row.addressCountry ?? null;
+            if( val ) {
+                return val;
+            }
+            return "DE";
         },
         async checkForExistence() {
             
@@ -166,7 +180,7 @@ export default defineComponent({
             
             // tmp map for receiverId => receiver record
             const receiverIdMap = new Map<string, {req: ReceiverRequest, original: ReceiverRecord}>();
-            this.receiverRecords.forEach(record => {
+            this.receiverRecords.forEach(record => {                
                 if(!record.receiverId) {
                     return;
                 }
@@ -186,12 +200,8 @@ export default defineComponent({
                 if(receiverIdMap.has(id)) {
                     const record = receiverIdMap.get(id);
                     if(record) {
-                        void this.checkReceiver(record.req).then(exists => {
-                            if(exists) {
-                                this.userExistenceStatus.set(id, true);
-                            } else {
-                                this.userExistenceStatus.set(id, false);
-                            }
+                        void this.checkReceiver(record.req).then(exists => {                           
+                            this.userExistenceStatus.set(id, exists);
                         }).catch((e) => {
                             console.error('Error checking receiver existence:', e);
                             this.userExistenceStatus.set(id, false);
@@ -199,12 +209,23 @@ export default defineComponent({
                             this.totalChecked++;                            
                             if(this.totalChecked >= this.totalChecking) {
                                 this.sendDocsRecords = this.documentRecords.map(record => {
+
+                                    const receiver = receiverIdMap.get(record.receiverId) ?? null;
+
+                                    const postalAddress = receiver ? {
+                                        street: receiver?.original.addressStreet ?? '',
+                                        postcode: receiver?.original.addressPostcode ?? '',
+                                        city: receiver?.original.addressCity ?? '',
+                                        country: receiver ? this.computeCountryCode(receiver?.original) ?? 'DE' : 'DE',
+                                    } : null;
+                                    
                                     return {
                                         doc: record,
                                         receiver: receiverIdMap.get(record.receiverId) ?? null,
+                                        postalAddress: postalAddress,
                                         exists: this.userExistenceStatus.get(record.receiverId) ?? false,
                                     };
-                                });
+                                }).filter(record => record.receiver != null);
                             }
                         });
                     } else {
@@ -220,6 +241,7 @@ export default defineComponent({
         async checkReceiver(receiverRecord: ReceiverRequest) : Promise<boolean> {
             return BrifleApi.content().contentCheckReceiver(this.apiId, receiverRecord)
             .then(response => {
+                 console.log(response)
                 if(response && response.isSuccess) {
                     return response.data?.receiver != null;
                 } else {

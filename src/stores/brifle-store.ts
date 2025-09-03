@@ -1,6 +1,8 @@
 
 import { defineStore, acceptHMRUpdate } from 'pinia';
 
+// 110 minutes in milliseconds
+const MAX_AUTH_AGE = 110 * 60 * 1000; 
 
 /**
  * used to store session session data
@@ -11,6 +13,8 @@ export const useBrifleStore = defineStore('brifle-store', {
         apiIds: new Map<string, string>(),
         // hash(apiKey + endpoint) => apiSecret
         apiHasAuthenticated: new Map<string, boolean>(),
+        // last authenticated date
+        apiLastAuthenticated: new Map<string, Date>(),
     }),
     actions: {
         async getApi(apiKey: string, endpoint: string) : Promise<string> {
@@ -34,6 +38,7 @@ export const useBrifleStore = defineStore('brifle-store', {
             const hashArray = Array.from(new Uint8Array(hash));
             const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
             this.apiHasAuthenticated.set(hashHex, true);
+            this.apiLastAuthenticated.set(hashHex, new Date());
         }
     },
     getters: {
@@ -43,7 +48,22 @@ export const useBrifleStore = defineStore('brifle-store', {
             const hash = await window.crypto.subtle.digest("SHA-256", sourceBytes);
             const hashArray = Array.from(new Uint8Array(hash));
             const hashHex = hashArray.map(b => ('00' + b.toString(16)).slice(-2)).join('');
-            return state.apiHasAuthenticated.get(hashHex) || false;
+            const hasAuthenticated = state.apiHasAuthenticated.get(hashHex) || false;
+            if (hasAuthenticated) {
+                const lastAuth = state.apiLastAuthenticated.get(hashHex);
+                if (!lastAuth) {
+                    return false;
+                }
+                const now = new Date();
+                const diff = now.getTime() - lastAuth.getTime();
+                if (diff > MAX_AUTH_AGE) {
+                    // set to false if expired to prevent reuse and multiple checks to improve performance
+                    state.apiHasAuthenticated.set(hashHex, false);
+                    return false;
+                }
+                return true;
+            }
+            return false;
         }
     }
 })

@@ -5,7 +5,7 @@ import fs from 'fs'
 import { pbkdf2Sync } from "crypto"
 import argon2 from "argon2"
 import crypto from "crypto"
-import * as p from 'path'
+import path, * as p from 'path'
 
 
 export default class EncryptedStore{
@@ -80,7 +80,8 @@ export default class EncryptedStore{
             throw new Error('File already exists')
         }
         // create the directory if it does not exist
-        const dir = checkPath.substring(0, checkPath.lastIndexOf('/'))
+        const platformSeparator = path.sep;
+        const dir = checkPath.substring(0, checkPath.lastIndexOf(platformSeparator))
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true })
         }
@@ -172,9 +173,11 @@ export default class EncryptedStore{
     async storeAccount(account: AccountData, encryptionKey: string): Promise<void> {
         const js = JSON.stringify(account)       
         const accPath = await this.getAccountPath(account.id)
+        console.log("Storing account at path", accPath);
         const key = Buffer.from(encryptionKey, 'hex')
         const encryptedData = await this.encryptData(js, key)
-        const dir = accPath.substring(0, accPath.lastIndexOf('/'))
+        const platformSeparator = path.sep;
+        const dir = accPath.substring(0, accPath.lastIndexOf(platformSeparator))
         // create the directory if it does not exist
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true })
