@@ -173,17 +173,22 @@ export default class EncryptedStore{
     async storeAccount(account: AccountData, encryptionKey: string): Promise<void> {
         const js = JSON.stringify(account)       
         const accPath = await this.getAccountPath(account.id)
-        console.log("Storing account at path", accPath);
         const key = Buffer.from(encryptionKey, 'hex')
         const encryptedData = await this.encryptData(js, key)
         const platformSeparator = path.sep;
         const dir = accPath.substring(0, accPath.lastIndexOf(platformSeparator))
+
+  
         // create the directory if it does not exist
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true })
+        try {
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true })
+            }
+            // store file as binary file        
+            fs.writeFileSync(accPath, encryptedData, 'binary')
+        } catch (error) {
+            return Promise.reject(new Error("Failed to store account: " + (error as Error).message))
         }
-        // store file as binary file        
-        fs.writeFileSync(accPath, encryptedData, 'binary')
     }
 
     async addAccount(account: AccountData, encryptionKey: string): Promise<void> {       

@@ -30,10 +30,7 @@
                         color="secondary"
                         label="Gib das Passwort für das Backup ein"
                     />
-            </div>
-              <q-banner rounded class="bg-red-9 text-red-1 q-mt-lg">
-                <p>Um die Backup-Datei zu importieren, wird ein das Passwort benötigt, das beim Erstellen des Backups verwendet wurde. Bitte gib das Passwort ein, um den Import durchzuführen.</p>
-            </q-banner>
+            </div>          
         </q-card-section>
         <q-card-section>            
             <q-btn flat label="Abbrechen" @click="close()" />
@@ -103,11 +100,26 @@ export default defineComponent({
           void this.encryptedStoreService.importAccount(this.password, this.fileData).then((parsedData) => {
             if (!parsedData) {
                 console.error('No data found in file');
+                this.$q.notify({
+                    color: 'negative',
+                    message: 'Fehler beim Importieren des Kontos: Datei konnte nicht gelesen werden. Bitte überprüfe, ob die Datei korrekt ist und das Passwort stimmt.',
+                    icon: 'error'
+                });
                 return;
             }
             this.$emit('import', {accountData: parsedData});
             this.close();   
+            this.$q.notify({
+                color: 'positive',
+                message: 'Kontodaten erfolgreich importiert.',
+                icon: 'check'
+            });
           }).catch((err: Error) => {
+            this.$q.notify({
+                color: 'negative',
+                message: 'Fehler beim Importieren des Kontos: Datei konnte nicht gelesen werden. Bitte überprüfe, ob die Datei korrekt ist und das Passwort stimmt.',
+                icon: 'error'
+            });
               console.error(err);
           });              
         },

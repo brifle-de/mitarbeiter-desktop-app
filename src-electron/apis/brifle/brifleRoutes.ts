@@ -25,8 +25,6 @@ export default class BrifleRoutes{
         ipcMain.handle('brifle:contentCheckReceiver', async (event, apiId: string, receiver: ReceiverRequest) => {
             const api = this.apiMap.get(apiId)
             if (!api) throw new Error('API not found')
-            const a = api.content().checkReceiver(receiver)
-            void a.then(res => console.log("Content check receiver response:", res) );
             return await this.castToResponse(api.content().checkReceiver(receiver))
         })
 

@@ -247,8 +247,7 @@ export default defineComponent({
                             }
                         }
                     };
-                }         
-                console.log("options", options)       
+                }           
 
                 void BrifleApi.content().contentSendContent(this.apiId, this.tenantId, options).then((response) => {
                     if(response && response.isSuccess) {

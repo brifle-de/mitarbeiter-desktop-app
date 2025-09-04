@@ -241,7 +241,6 @@ export default defineComponent({
         async checkReceiver(receiverRecord: ReceiverRequest) : Promise<boolean> {
             return BrifleApi.content().contentCheckReceiver(this.apiId, receiverRecord)
             .then(response => {
-                 console.log(response)
                 if(response && response.isSuccess) {
                     return response.data?.receiver != null;
                 } else {
