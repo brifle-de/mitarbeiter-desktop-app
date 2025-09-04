@@ -38,7 +38,6 @@ export default class UnsealGuard {
                 console.error('Authentication failed:', authResponse.error);
                 return;
             }
-            console.log('Authentication successful:', authResponse.data);
             void brifleStore.authenticate(apiKey, endpoint);
         }
 

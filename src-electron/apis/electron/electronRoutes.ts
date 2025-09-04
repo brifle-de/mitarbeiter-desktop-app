@@ -8,8 +8,7 @@ export default class ElectronRoutes{
         ipcMain.handle('electron:getPlatform', async () => {            
             return process.platform
         })        
-        ipcMain.handle('electron:getAppVersion', async () => {            
-            console.log('getAppVersion called', app.getVersion())
+        ipcMain.handle('electron:getAppVersion', async () => {  
             return app.getVersion()
         })
 

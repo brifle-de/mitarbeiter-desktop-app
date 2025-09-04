@@ -25,6 +25,14 @@ export interface SendDocReq {
     doc: DocumentRecord,
     receiver: {req: ReceiverRequest, original: ReceiverRecord} | null,
     exists: boolean,
+    postalAddress?: PostalAddress | null,
+}
+
+export interface PostalAddress {
+    street: string,
+    postcode: string,
+    city: string,
+    country: string,
 }
 
 export class ReceiverRecordConverter {

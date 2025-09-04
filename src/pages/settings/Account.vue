@@ -345,7 +345,20 @@ export default defineComponent({
                 console.error('No account selected for deletion.');
                 return;
             }
-            void this.encryptedStore.deleteAccount(selectedAccountId)
+            void this.encryptedStore.deleteAccount(selectedAccountId).then(() => {
+                this.$q.notify({
+                    color: 'positive',
+                    message: 'Konto erfolgreich gelöscht.',
+                    icon: 'check'
+                });
+                void this.$router.push({ path: '/accounts' });
+            }).catch(() => {
+                this.$q.notify({
+                    color: 'negative',
+                    message: 'Fehler beim Löschen des Kontos.',
+                    icon: 'error'
+                });
+            });
         }
     },
 });

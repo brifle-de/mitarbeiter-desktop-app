@@ -179,7 +179,6 @@ export default defineComponent({
         event.accountData.sftpData?.forEach(record => {
             this.sftpServer.push(record)
         })
-        console.log(event);
     },
     addNewSftpServer () {
         this.sftpServer.push({
@@ -209,8 +208,12 @@ export default defineComponent({
         // save account data to encrypted store
         this.encryptedStore.createAccount(accountData).then(() => {
             void this.$router.push({ path: '/accounts' });
-        }).catch((err: Error) => {
-            console.error(err);
+        }).catch(() => {
+            this.$q.notify({
+                color: 'negative',
+                message: 'Fehler beim Erstellen des Kontos: Datei konnte nicht gespeichert werden.',
+                icon: 'error'
+            });
         });
     },
   },

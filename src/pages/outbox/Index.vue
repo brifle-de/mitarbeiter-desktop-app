@@ -186,7 +186,7 @@ export default defineComponent({
        };
        
       if (this.documentType !== 'all') {
-        req.type = this.documentType;
+        req.type = (this.documentType as 'letter' | 'invoice' | 'contract');
       }
       
       if (this.currentTenant != null) {
@@ -251,7 +251,6 @@ export default defineComponent({
 
 
 interface Filter extends OutboxFilter {
-  type?: string;
   subject?: string;
 }
 

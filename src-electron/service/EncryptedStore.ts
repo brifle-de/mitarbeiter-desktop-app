@@ -5,7 +5,7 @@ import fs from 'fs'
 import { pbkdf2Sync } from "crypto"
 import argon2 from "argon2"
 import crypto from "crypto"
-import * as p from 'path'
+import path, * as p from 'path'
 
 
 export default class EncryptedStore{
@@ -80,7 +80,8 @@ export default class EncryptedStore{
             throw new Error('File already exists')
         }
         // create the directory if it does not exist
-        const dir = checkPath.substring(0, checkPath.lastIndexOf('/'))
+        const platformSeparator = path.sep;
+        const dir = checkPath.substring(0, checkPath.lastIndexOf(platformSeparator))
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true })
         }
@@ -174,13 +175,20 @@ export default class EncryptedStore{
         const accPath = await this.getAccountPath(account.id)
         const key = Buffer.from(encryptionKey, 'hex')
         const encryptedData = await this.encryptData(js, key)
-        const dir = accPath.substring(0, accPath.lastIndexOf('/'))
+        const platformSeparator = path.sep;
+        const dir = accPath.substring(0, accPath.lastIndexOf(platformSeparator))
+
+  
         // create the directory if it does not exist
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true })
+        try {
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true })
+            }
+            // store file as binary file        
+            fs.writeFileSync(accPath, encryptedData, 'binary')
+        } catch (error) {
+            return Promise.reject(new Error("Failed to store account: " + (error as Error).message))
         }
-        // store file as binary file        
-        fs.writeFileSync(accPath, encryptedData, 'binary')
     }
 
     async addAccount(account: AccountData, encryptionKey: string): Promise<void> {       
