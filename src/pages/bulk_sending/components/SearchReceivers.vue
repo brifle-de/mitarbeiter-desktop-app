@@ -112,13 +112,7 @@ export default defineComponent({
         },
         getColumns(){
             // default for birth_info
-            const defaultCol = [   
-                {
-                    name: 'path',
-                    label: 'Dateipfad',
-                    field: (row: SendDocReq) => row.doc.filePath,
-                    sortable: true,
-                },
+            const defaultCol = [                  
                 {
                     name: 'exists',
                     label: 'Hat Brifle Konto',
@@ -161,7 +155,13 @@ export default defineComponent({
                     field: (row: SendDocReq) => row.postalAddress,
                     format: (val: PostalAddress) => val ? `${val.street}, ${val.postcode} ${val.city}, ${val.country}` : '',
                     sortable: true,
-                }
+                },
+                 {
+                    name: 'path',
+                    label: 'Dateipfad',
+                    field: (row: SendDocReq) => row.doc.filePath,
+                    sortable: true,
+                },
             ];
 
             return defaultCol;
