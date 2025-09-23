@@ -1,3 +1,4 @@
+import CsvLimiterGuesser from "src/utils/csv/csvLimiterGuesser";
 import CsvReader, { CsvDocument } from "src/utils/csv/csvReader";
 
 /**
@@ -44,7 +45,8 @@ export class ReceiverParser {
             const p = new XMLReceiverParser(data);
             return p.parse(rules)
         }else if(rules.type === 'csv'){
-            const p = new CsvReader();            ;
+            const s = new CsvLimiterGuesser().guess(data);
+            const p = new CsvReader(s);            
             return this.parseCsv(p.parse(data), rules);
         }
         return []; 

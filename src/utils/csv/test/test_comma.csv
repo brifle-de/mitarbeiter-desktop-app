@@ -1,0 +1,5 @@
+receiverId,firstName,lastName,nameAtBirth,email,fullName,phone,dateOfBirth,placeOfBirth,address,addressStreet,addressCity,addressPostcode
+123,John,Doe,,test@example.com,,,1990-01-01,City,,,,
+456,Jane,Doe,,jane.doe@example.com,,,1985-05-15,Town,,,,
+789,Max,Mustermann,,max.mustermann@example.com,,,1978-12-20,Village,,,,
+101,Anna,Schmidt,,anna.schmidt@example.com,,,1992-03-10,Cityville,,,,

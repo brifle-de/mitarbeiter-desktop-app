@@ -57,7 +57,11 @@
                 {{ filePath }}
             </div>
             <div class="col-3 text-right">
-                <q-btn @click="selectLocale()" color="secondary" text-color="black" label="Datei auswählen" />
+                <q-btn 
+                    :label="documentSource.destType === 'directory' ? 'Verzeichnis auswählen' : 'Datei auswählen'"
+                    @click="selectLocal()" 
+                    color="secondary" 
+                    text-color="black" />
             </div>
         </div>
       
@@ -187,9 +191,9 @@ export default defineComponent({
             this.emitValue();
         }
     },
-    selectLocale(){
+    selectLocal(){
         if(this.documentSource.destType === 'file') {
-            return this.selectLocaleFile();
+            return this.selectLocalFile();
         } else if(this.documentSource.destType === 'directory') {
             return this.selectLocalDir();
         }  
@@ -213,7 +217,7 @@ export default defineComponent({
             console.error(err);
         });
     },
-    selectLocaleFile () {
+    selectLocalFile () {
         return Files.pickFile({
             filters: [
                 { name: 'CSV', extensions: ['csv'] },

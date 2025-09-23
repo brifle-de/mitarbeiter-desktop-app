@@ -5,6 +5,7 @@
 import CsvReader, { CsvDocument } from "src/utils/csv/csvReader";
 import DocumentRecord, { DocumentRecordBase } from "./documentRecord";
 import { SftpData } from "app/src-electron/models/EncryptedStore";
+import CsvLimiterGuesser from "src/utils/csv/csvLimiterGuesser";
 
 export default class AssignmentFile {
 
@@ -26,7 +27,8 @@ export default class AssignmentFile {
             const p = new XMLAssignmentParser(data);
             return p.parse(this.rules)
         }else if(this.rules.type === 'csv'){
-            const p = new CsvReader();     
+            const s = new CsvLimiterGuesser().guess(data);
+            const p = new CsvReader(s);
             return this.parseCsv(p.parse(data), this.rules);
             
         }
