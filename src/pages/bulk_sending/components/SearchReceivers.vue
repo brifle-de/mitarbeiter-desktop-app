@@ -246,7 +246,12 @@ export default defineComponent({
                 } else {
                     return false;
                 }
-            }).catch(() => {
+            }).catch((e) => {
+                this.$q.notify({
+                    color: 'negative',
+                    message: e.message || 'Fehler beim Überprüfen des Empfängers',
+                    icon: 'error'
+                });
                 return false;
             });
 
