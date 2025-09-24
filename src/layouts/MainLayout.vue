@@ -10,9 +10,7 @@
                 color="green-3"
                 @click="$router.push('/')"
                 icon="home" >
-                <b-tooltip
-                    text="Startseite"
-                />
+                <q-tooltip :delay="1000">Startseite</q-tooltip>
             </q-btn>
             <q-btn 
                 class="titlebar-button q-ml-sm"
@@ -22,9 +20,7 @@
                 color="green-3"
                 @click="$router.back()"
                 icon="chevron_left" >
-                <b-tooltip
-                    text="Zurück"
-                />
+                <q-tooltip :delay="1000">Zurück</q-tooltip>
             </q-btn>    
         </q-toolbar>
       </q-header>  

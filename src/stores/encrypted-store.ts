@@ -62,6 +62,8 @@ export const useEncryptedStore = defineStore('encrypted-store', {
       return encryptedStoreService.initStore(password).then((meta: EncryptedStoreType) => {
         this.meta = meta;
         this._accounts = [];
+        // load init key data
+        void this.loadData(password);
       });
     },
     /**

@@ -20,8 +20,8 @@ export default class EncryptedStoreRoutes{
         ipcMain.handle('encryptedStore:exportAccount', async (event: IpcMainInvokeEvent, password: string, accountId: AccountData) => {
             return encryptedStore.exportAccount(accountId, password)
         })
-        ipcMain.handle('encryptedStore:deleteAccount', async (event: IpcMainInvokeEvent, accountId: string) => {
-            return encryptedStore.deleteAccount(accountId)
+        ipcMain.handle('encryptedStore:deleteAccount', async (event: IpcMainInvokeEvent, encryptionKey: string, accountId: string) => {
+            return encryptedStore.deleteAccount(accountId, encryptionKey)
         })
         ipcMain.handle('encryptedStore:updateAccount',async (event: IpcMainInvokeEvent, encryptionKey: string, account :AccountData) => {
             return encryptedStore.storeAccount(account, encryptionKey)

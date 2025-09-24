@@ -226,7 +226,8 @@ export default class EncryptedStore{
         return JSON.parse(js) as AccountData
     }
 
-    async deleteAccount(accountId: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async deleteAccount(accountId: string, _encryptionKey: string): Promise<void> {
         // get meta
         const meta = await this.fetchMetadata()
         // remove account from meta

@@ -3,6 +3,8 @@ import path from 'node:path';
 import os from 'os';
 import { fileURLToPath } from 'url'
 import { registerRoutes } from './apis/routes';
+import fs from 'fs';
+import { ensureConfig } from './log/logger';
 
 
 // needed in case process is undefined under Linux
@@ -11,6 +13,23 @@ const platform = process.platform || os.platform();
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 
 let mainWindow: BrowserWindow | undefined;
+
+
+initApp();
+
+function initApp(){
+  // init home directory for the app
+  const homeDir = app.getPath('home');
+  const appDataDir = path.join(homeDir, 'brifle-business')
+  // check if directory exists
+  if (!fs.existsSync(appDataDir)) {
+      fs.mkdirSync(appDataDir, { recursive: true });
+  }
+  // checks if logs.config file exist if not create
+  ensureConfig();
+}
+
+
 
 
 async function createWindow() {

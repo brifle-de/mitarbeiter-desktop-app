@@ -26,5 +26,81 @@
         document.body.classList.add(platform);
       });
     });
+
+
+    
+// Override console methods to also forward to main
+// Ignore noImplicitAny for this block
+// Keep original console methods
+const origConsole = {
+  log: console.log.bind(console),
+  info: console.info.bind(console),
+  warn: console.warn.bind(console),
+  error: console.error.bind(console),
+  debug: console.debug.bind(console)
+};
+
+/*
+ * override console methods to also send logs to main process
+ */
+// ignore noImplicitAny for this block
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+console.info = (...args) => {
+  origConsole.info(...args);
+  sendLog('info', args);
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+console.warn = (...args) => {
+  origConsole.warn(...args);
+  sendLog('warn', args);
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+console.error = (...args) => {
+  origConsole.error(...args);
+  sendLog('error', args);
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+console.debug = (...args) => {
+  origConsole.debug(...args);
+  sendLog('debug', args);
+}
+
+// function to send log to main process
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function sendLog(level, args) {
+  // convert args to string
+  const message = args.map(arg => {
+    if (typeof arg === 'string') {
+      return arg;
+    } else if (arg instanceof Error) {
+      return arg.stack || arg.message;
+    } else {     
+      try {
+        return JSON.stringify(arg);
+      } catch (e) {
+        return "[Unable to serialize object]";
+      }
+    }
+  }).join(' ');
+  
+  void window.logApi.writeLog({ level: level, message });
+}
+
+
+// Global error handlers
+window.addEventListener('error', (event) => {
+  const err = event.error || { message: event.message, filename: event.filename, lineno: event.lineno, colno: event.colno };
+  sendLog('error', [err]);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+
+  const reason = event.reason;
+  sendLog('error', [ { unhandledRejection: true, reason: reason instanceof Error ? { message: reason.message, stack: reason.stack } : reason } ]);
+});
+
+
+
   </script>
 </html>

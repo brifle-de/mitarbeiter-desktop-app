@@ -2,6 +2,8 @@
 import {  ipcMain } from 'electron'
 import { ApiV1, InboxFilter, LoginRequest, OutboxFilter, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
 import { ApiResponse } from '@brifle/brifle-sdk'
+import LogService from 'app/src-electron/service/LogService'
+import { LogLevel } from 'app/src-electron/log/types'
 
 export default class BrifleRoutes{
 
@@ -67,13 +69,22 @@ export default class BrifleRoutes{
 
     // cast the response to the correct type
     private castToResponse<T>(response: Promise<ApiResponse<T>>) {        
-        return response.then((res) => {            
+        return response.then((res) => {      
+            LogService.writeLog({
+                level: LogLevel.DEBUG,
+                message: 'API call successful: ' + JSON.stringify(res),
+            });      
             return {
                 data: res.data,
                 error: res.error,
                 isSuccess: res.isSuccess,
                 isError: res.isError,
             }
+        }).catch((err) => {
+            LogService.writeLog({
+                level: LogLevel.ERROR,
+                message: 'Error in API call: ' + err.message,
+            });
         });
     }
 

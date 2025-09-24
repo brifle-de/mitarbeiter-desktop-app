@@ -200,6 +200,7 @@ import DocumentRecord from './util/documents/documentRecord';
 import NonExistingReceiversAction, { NonExistingReceiverAction } from './components/NonExistingReceiversAction.vue';
 import SendingOverviewPage from './components/SendingOverview.vue';
 import SendReports from './components/SendReports.vue';
+import Logger from 'src/services/node/Log';
 
 
 export default defineComponent({
@@ -277,16 +278,20 @@ export default defineComponent({
         this.reportError = event.failed;        
         this.reportNotBrifle = event.notBrifle;
         this.step = 9;
+        Logger.info("Sent all documents. Success: " + this.reportSuccess.length + ", Failed: " + this.reportError.length + ", Not Brifle: " + this.reportNotBrifle.length);
       },
       onConfirmedDocuments(records : SendDocReq[]){        
         this.docsToSend = records;
         this.step = 6;
+        Logger.debug("Confirmed documents to send: " + this.docsToSend.length);
       },
       onParsedReceivers (parsed: ReceiverRecord[]) {
         this.receiverRecords = parsed;
+        Logger.debug("Parsed receivers: " + this.receiverRecords.length);
       },
       onParsedDocuments (parsed: DocumentRecord[]) {
         this.documentRecords = parsed;
+        Logger.debug("Parsed documents: " + this.documentRecords.length);
       },
         
     },

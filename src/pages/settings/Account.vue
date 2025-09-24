@@ -340,6 +340,7 @@ export default defineComponent({
             });
         },
         deleteAccount(){
+            alert(this.sessionStore.selectedAccountId)
             const selectedAccountId = this.sessionStore.selectedAccountId
             if (!selectedAccountId) {
                 console.error('No account selected for deletion.');
