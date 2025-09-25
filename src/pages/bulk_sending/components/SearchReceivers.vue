@@ -7,6 +7,9 @@
             Empfänger Suchen              
         </q-btn>
         <div class="q-mt-sm" v-if="totalChecking > 0 && totalChecked < totalChecking">
+            <div v-if="isLoading" class="q-mb-sm">
+                <q-spinner size="20px" color="secondary" />
+            </div>
             <span v-if="totalChecking > 0">
                 {{ totalChecked }} / {{ totalChecking }}
             </span>
@@ -210,14 +213,19 @@ export default defineComponent({
             const checkForIds = this.documentRecords.map(record => record.receiverId);
             this.totalChecking = checkForIds.length;
             this.totalChecked = 0;
+            Logger.debug("Found IDs to check: " + checkForIds.join(', '));
             Logger.debug("Status check for " + this.totalChecking + " receivers.");
-            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);
+            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);            
             checkForIds.forEach(id => {
                 // check if the id is in the receiverIdMap
+                Logger.debug("Checking ID: " + id);
                 if(receiverIdMap.has(id)) {
+                    Logger.debug("Checking existence for ID: " + id);
                     const record = receiverIdMap.get(id);
+                    Logger.debug("Checking Record: " + JSON.stringify(record));
                     if(record) {
-                        void this.checkReceiver(record.req).then(exists => {                           
+                        void this.checkReceiver(record.req).then(exists => {  
+                            Logger.debug("Checked existence for ID: " + id + ", exists: " + exists);                         
                             this.userExistenceStatus.set(id, exists);
                         }).catch((e) => {
                             console.error('Error checking receiver existence:', e);
@@ -244,14 +252,36 @@ export default defineComponent({
                                         exists: this.userExistenceStatus.get(record.receiverId) ?? false,
                                     };
                                 }).filter(record => record.receiver != null);
+                                this.isLoading = false;
                             }
                         });
                     } else {
+                        Logger.debug("No record found for ID: " + id);
+                        // notification
+                        this.$q.notify({
+                            color: 'negative',
+                            message: 'Fehler beim Überprüfen des Empfängers mit ID: ' + id,
+                            icon: 'error'
+                        });
                         this.userExistenceStatus.set(id, false);
+                        this.totalChecked++;
+                        if(this.totalChecked >= this.totalChecking) {
+                            this.isLoading = false;
+                        }
                     }
                 } else {
+                    Logger.debug("No receiver found for ID: " + id);
+                    // notification
+                    this.$q.notify({
+                        color: 'negative',
+                        message: 'Kein Empfänger gefunden für ID: ' + id,
+                        icon: 'error'
+                    });
                     this.userExistenceStatus.set(id, false);
                     this.totalChecked++;  
+                    if(this.totalChecked >= this.totalChecking) {
+                            this.isLoading = false;
+                    }
                 }
             });            
             
