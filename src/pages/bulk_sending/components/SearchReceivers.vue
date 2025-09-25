@@ -179,25 +179,32 @@ export default defineComponent({
         },
         async checkForExistence() {
             
-            Logger.debug("Starting to check for receiver existence...");
+            Logger.debug("Starting to check for receiver existence...");            
             this.isLoading = true;
+            Logger.debug("Start checking");
             this.userExistenceStatus.clear();
-            
+            Logger.debug("Cleared State");
             // tmp map for receiverId => receiver record
             const receiverIdMap = new Map<string, {req: ReceiverRequest, original: ReceiverRecord}>();
-           
-            this.receiverRecords.forEach(record => {                
+            Logger.debug("Created ID Map");
+            Logger.debug("Mapping " + this.receiverRecords.length + " receiver records.");
+            Logger.debug("Receiver Records: " + JSON.stringify(this.receiverRecords));
+            this.receiverRecords.forEach(record => {  
+                Logger.debug("Processing record for ID: " + record.receiverId);              
                 if(!record.receiverId) {
                     return;
                 }
+                Logger.debug("Mapping record for ID: " + record.receiverId);
                 const r = {
                     req: ReceiverRecordConverter.toReceiverRequest(record, this.receiverType),
                     original: record,
-                }
+                }                
+                Logger.debug("Mapped record for ID: " + record.receiverId);
                 receiverIdMap.set(record.receiverId, r);
+                Logger.debug("Set record for ID: " + record.receiverId);
             });
-             Logger.debug("Mapping receiver IDs: " + receiverIdMap.size);
-             Logger.debug("Receivers to check: " + receiverIdMap.keys().reduce((acc, curr) => acc + ", " + curr, ""));
+            Logger.debug("Mapping receiver IDs: " + receiverIdMap.size);
+            
             
             // only check for receivers that have a at least one document
             const checkForIds = this.documentRecords.map(record => record.receiverId);
