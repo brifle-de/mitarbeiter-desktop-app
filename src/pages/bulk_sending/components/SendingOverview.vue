@@ -54,7 +54,7 @@
         <div class="col-3 text-right">
             <q-btn color="secondary" :disable="!confirmedSend"
             :loading="hasStarted" 
-            @click="sendAll"
+            @click="sendAll()"
             text-color="black" icon="send" >
             
         </q-btn>
