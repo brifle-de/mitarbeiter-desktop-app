@@ -4,9 +4,7 @@
     </div>
     <div>
         <q-btn @click="checkForExistenceClick()" color="secondary" class="q-mt-md" text-color="black">
-            <span>
-                Empfänger Suchen
-            </span>                
+            Empfänger Suchen              
         </q-btn>
         <div class="q-mt-sm" v-if="totalChecking > 0 && totalChecked < totalChecking">
             <span v-if="totalChecking > 0">
