@@ -3,7 +3,7 @@
         Im folgenden wird geprüft, welche Empfänger bereits ein Brifle Konto haben. Es werden nur die Empfänger angefragt, für die auch Dokumente vorliegen.
     </div>
     <div>
-        <q-btn @click="checkForExistence" color="secondary" class="q-mt-md" text-color="black">
+        <q-btn @click="checkForExistenceClick()" color="secondary" class="q-mt-md" text-color="black">
             <span>
                 Empfänger Suchen
             </span>                
@@ -92,6 +92,7 @@ import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStor
 import { useSessionStore } from 'src/stores/session-store';
 import BrifleApi from 'src/services/node/Brifle';
 import { ReceiverRequest } from '@brifle/brifle-sdk';
+import Logger from 'src/services/node/Log';
 
 export default defineComponent({
   name: 'SearchReceivers',
@@ -173,13 +174,20 @@ export default defineComponent({
             }
             return "DE";
         },
+        checkForExistenceClick() {
+            void this.checkForExistence().catch((e) => {
+                Logger.error(e);
+            });
+        },
         async checkForExistence() {
             
+            Logger.debug("Starting to check for receiver existence...");
             this.isLoading = true;
             this.userExistenceStatus.clear();
             
             // tmp map for receiverId => receiver record
             const receiverIdMap = new Map<string, {req: ReceiverRequest, original: ReceiverRecord}>();
+           
             this.receiverRecords.forEach(record => {                
                 if(!record.receiverId) {
                     return;
@@ -190,11 +198,15 @@ export default defineComponent({
                 }
                 receiverIdMap.set(record.receiverId, r);
             });
+             Logger.debug("Mapping receiver IDs: " + receiverIdMap.size);
+             Logger.debug("Receivers to check: " + receiverIdMap.keys().reduce((acc, curr) => acc + ", " + curr, ""));
             
             // only check for receivers that have a at least one document
             const checkForIds = this.documentRecords.map(record => record.receiverId);
             this.totalChecking = checkForIds.length;
             this.totalChecked = 0;
+            Logger.debug("Status check for " + this.totalChecking + " receivers.");
+            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);
             checkForIds.forEach(id => {
                 // check if the id is in the receiverIdMap
                 if(receiverIdMap.has(id)) {
@@ -206,7 +218,8 @@ export default defineComponent({
                             console.error('Error checking receiver existence:', e);
                             this.userExistenceStatus.set(id, false);
                         }).finally(() => {
-                            this.totalChecked++;                            
+                            this.totalChecked++;           
+                            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);                 
                             if(this.totalChecked >= this.totalChecking) {
                                 this.sendDocsRecords = this.documentRecords.map(record => {
 
