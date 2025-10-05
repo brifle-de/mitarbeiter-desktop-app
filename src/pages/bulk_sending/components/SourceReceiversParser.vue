@@ -5,6 +5,7 @@
             filled
             v-model="parser"
             :options="getRules()"
+            @update:model-value="cacheParser($event)"
             option-label="name"
             label="Parser auswählen"
             color="secondary"
@@ -124,6 +125,15 @@ export default defineComponent({
         return "";
     },
   },
+  mounted() {
+    const cachedParser = localStorage.getItem('selectedReceiverParser');
+    if(cachedParser) {
+        const found = this.rules.find((rule) => rule.name === cachedParser);
+        if(found) {
+            this.parser = found;
+        }
+    }
+  },
   methods: {
     emitResults() {
         const receiverRecords : ReceiverRecord[] = [];
@@ -156,6 +166,14 @@ export default defineComponent({
         return this.rules.filter((rule) => {
             return rule.rules.type === this.parserType;
         });
+    },
+    cacheParser(event: {rules: ReceiverParserRules, name: string} | null) {
+        console.log('Caching parser', event);
+        if(event) {
+            localStorage.setItem('selectedReceiverParser', event.name);
+        } else {
+            localStorage.removeItem('selectedReceiverParser');
+        }
     }
   },
 

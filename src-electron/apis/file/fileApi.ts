@@ -11,7 +11,6 @@ export class FileApi{
             pathJoin: (...paths: string[]) => ipcRenderer.invoke('files:pathJoin', ...paths)
         }) 
     }
-
  }
  export interface FileApiType {
     pickFile: (opts: FilePickerOpts) => Promise<string[]>;

@@ -94,6 +94,7 @@ import { useSessionStore } from 'src/stores/session-store';
 import BrifleApi from 'src/services/node/Brifle';
 import { ReceiverRequest } from '@brifle/brifle-sdk';
 import Logger from 'src/services/node/Log';
+import BirthdayParser from 'src/utils/birthdayParser';
 
 export default defineComponent({
   name: 'SearchReceivers',
@@ -146,7 +147,7 @@ export default defineComponent({
                     sortable: true,
                     format: (val: string) => {
                         if(val) {
-                            return new Date(val).toLocaleDateString('de-DE');
+                            return BirthdayParser.parseBirthday(val)?.toLocaleDateString('de-DE');
                         }
                         return '';
                     },

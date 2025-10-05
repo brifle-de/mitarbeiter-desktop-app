@@ -195,12 +195,13 @@ import { useSessionStore } from 'src/stores/session-store';
 import { useBrifleStore } from 'src/stores/brifle-store';
 import { ContentResponse, ContentActionsSignatureResponse, EmbbededSignatureResponse, Content } from '@brifle/brifle-sdk';
 import SessionContext from 'src/utils/sessionContext';
+import LoadingSpinner from 'src/components/LoadingSpinner.vue';
 
 
 
 export default defineComponent({
   name: 'OutboxDetailsPage',
-  components: { DocumentView, SignatureModal },
+  components: { DocumentView, SignatureModal, LoadingSpinner },
   setup() {
     const route = useRoute();
     const myAccountId = ref('');

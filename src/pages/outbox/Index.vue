@@ -108,11 +108,12 @@ import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { useSessionStore } from 'src/stores/session-store';
 import { useBrifleStore } from 'src/stores/brifle-store';
 import { ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
+import LoadingSpinner from 'src/components/LoadingSpinner.vue';
 
 export default defineComponent({
   name: 'OutboxPage',
   components: {
-    OutboxItem,
+    OutboxItem, LoadingSpinner
   },
   setup() {
     const encryptedStore = useEncryptedStore();

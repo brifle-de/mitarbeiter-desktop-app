@@ -1,21 +1,23 @@
 <template>
     <q-select v-if="isDirAnalysis"
-        v-model="value.dirParser"
-        :options="availableParsers"
+        v-model="selectedDirParserName"
+        :options="availableDirParsers"
+        @update:model-value="selectDirParser($event)"
         color="secondary"
         option-label="name"
-        option-value="rules"
-        label="Parser auswählen"
+        option-value="name"
+        label="Parser auswählen" 
         emit-value
         map-options
     >
     </q-select>
     <q-select v-else
-        v-model="value.fileAssignment"
+        v-model="selectedFileParserName"
+        @update:model-value="selectFileParser($event)"
         :options="availableAssignmentParser"
         color="secondary"
         option-label="name"
-        option-value="rules"
+        option-value="name"
         label="Parser auswählen"
         emit-value
         map-options
@@ -113,11 +115,13 @@ import DocumentRecord from '../util/documents/documentRecord';
 import { SftpData } from 'app/src-electron/models/EncryptedStore';
 import AssignmentFile, { AssignmentRules } from '../util/documents/assignmentFile';
 import SampleAssignmentParser from '../util/documents/sampleAssignmentRules';
+import SftpModal from 'src/components/SftpModal.vue';
 
 
 export default defineComponent({
   name: 'SourceDocumentsParser',
   components: {
+    SftpModal,
   },
   
   computed: {
@@ -288,6 +292,7 @@ export default defineComponent({
     },
     async parseDirectoryFiles() {
         const rules = this.value.dirParser
+        
         if(rules == null) {
             return;
         }
@@ -363,19 +368,61 @@ export default defineComponent({
         } else {
             return Files.parseDirname(this.value.file ?? '/');
         }
-    }
+    },
+    selectDirParser(parserName: string | null) {        
+        // get selected index of q-select
+       // const selectedIndex = this.availableDirParsers.findIndex((parser) => JSON.stringify(parser.rules) === JSON.stringify(event));
+        console.log(JSON.stringify(parserName));
+
+        if(parserName) {
+            localStorage.setItem('selectedDocumentDirParser', parserName);
+        } else {
+            localStorage.removeItem('selectedDocumentDirParser');
+        }
+        this.value.dirParser = this.availableDirParsers.find((parser) => parser.name === parserName)!.rules;
+
+    },
+    selectFileParser(parserName: string | null) {
+        if(parserName) {
+            localStorage.setItem('selectedDocumentFileParser', parserName);
+        } else {
+            localStorage.removeItem('selectedDocumentFileParser');
+        }
+        this.value.fileAssignment = this.availableAssignmentParser.find((parser) => parser.name === parserName)!.rules;
+    },
+    loadState(){
+        const cachedDirParser = localStorage.getItem('selectedDocumentDirParser');
+        if(cachedDirParser) {
+            const found = this.availableDirParsers.find((rule) => rule.name === cachedDirParser);
+            if(found) {
+                this.value.dirParser = found.rules;
+                this.selectedDirParserName = found.name;
+            }
+        }
+        const cachedFileParser = localStorage.getItem('selectedDocumentFileParser');
+        if(cachedFileParser) {
+            const found = this.availableAssignmentParser.find((rule) => rule.name === cachedFileParser);
+            if(found) {
+                this.value.fileAssignment = found.rules;
+                this.selectedFileParserName = found.name;
+            }
+        }
+    },
+
   },
+
   mounted() {
     this.documentSource = this.modelValue;
     this.hasLoaded = false;
+    // get cached parser
+    this.loadState();
+
     void this.getDefaultBasePath().then((path: string) => {
         this.basePath = path;        
     });
     if(this.isDirAnalysis) {
         void this.readDirectory().then(() => {
-            void this.parseDirectoryFiles().then(() => {
-               
-            });
+            
         });
     }
   },
@@ -409,18 +456,22 @@ export default defineComponent({
     });
     
     const dateRange = ref<{from?: string, to?: string}>();
+    const selectedDirParserName = ref<string>('');
+    const selectedFileParserName = ref<string>('');
 
     return {
         files,
         fileReceiverMapping,
-        availableParsers: availableDirParsers,
+        availableDirParsers: availableDirParsers,
         documentSource,
         hasLoaded,
         dateRange,
         availableAssignmentParser,
         showSftpModalBasePath,
         basePath,
-        expandedTimeFilter
+        expandedTimeFilter,
+        selectedDirParserName,
+        selectedFileParserName,
 
     };
 

@@ -129,7 +129,30 @@ export default defineComponent({
         this.receiverSrc.sftp.connection = this.sftpServerSelected
         this.emitValue();
     },
+    loadFromLocalStorage() {
+        const stored = window.localStorage.getItem('bulkSendingReceiverSource');
+        if(stored) {            
+            try {
+                const parsed = JSON.parse(stored);
+                if(parsed && typeof parsed === 'object') {
+                    this.receiverSrc.type = parsed.type ? parsed.type : this.receiverSrc.type;
+                    this.receiverSrc.file = parsed.file ? parsed.file : this.receiverSrc.file;
+                    this.receiverSrc.sftp = parsed.sftp ? parsed.sftp : this.receiverSrc.sftp;
+                    if(this.receiverSrc.file) {
+                        this.filePath = this.receiverSrc.file;
+                    }
+                    if(this.receiverSrc.sftp) {
+                        this.sftpFilePath = this.receiverSrc.sftp.filePath ? this.receiverSrc.sftp.filePath : '';
+                    }
+
+                }
+            } catch (e) {
+                console.error('Error parsing bulkSendingReceiverSource from localStorage', e);
+            }
+        }
+    },
     emitValue() {
+        window.localStorage.setItem('bulkSendingReceiverSource', JSON.stringify(this.receiverSrc));
         this.$emit('update:modelValue', this.receiverSrc);
     },
     selectFile () {
@@ -168,7 +191,7 @@ export default defineComponent({
         if(accId != null) {
             this.sftpServer = this.encryptedStore.getAccount(accId)?.sftpData ?? [];           
         }
-        
+        this.loadFromLocalStorage();
   },
   setup () {   
     const receiverSrc = ref<ReceiverSource>({

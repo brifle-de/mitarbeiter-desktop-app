@@ -14,7 +14,8 @@
     <div class="src_grid q-my-lg">
         <div class="text-bold" 
             @click="selectSource('file')" :class="{ active: documentSource.type === 'file' }">
-            Lokale Datei
+            <template v-if="documentSource.destType === 'directory'">Lokales Verzeichnis</template>
+            <template v-else>Lokale Datei</template>
         </div>
         <div class="text-bold" 
             @click="selectSource('sftp')" :class="{ active: documentSource.type === 'sftp' }">
@@ -138,6 +139,17 @@ export default defineComponent({
   },
   mounted(){
     this.documentSource = this.modelValue;
+    const stored = window.localStorage.getItem('bulkSendingDocumentSource');
+    if(stored) {
+        const parsed = JSON.parse(stored);
+        this.documentSource.destType = parsed.destType ? parsed.destType : this.documentSource.destType;
+        this.documentSource.type = parsed.type ? parsed.type : this.documentSource.type;
+        this.documentSource.file = parsed.file ? parsed.file : this.documentSource.file;
+        this.documentSource.sftp = parsed.sftp ? parsed.sftp : this.documentSource.sftp;
+        if(this.documentSource.file) {
+            this.filePath = this.documentSource.file;
+        }
+    }
     const accId = this.sessionStore.selectedAccountId;
     if(accId != null) {
         this.sftpServer = this.encryptedStore.getAccount(accId)?.sftpData ?? [];           
@@ -179,6 +191,7 @@ export default defineComponent({
         this.emitValue();
     },
     emitValue() {
+        window.localStorage.setItem('bulkSendingDocumentSource', JSON.stringify(this.documentSource));
         this.$emit('update:modelValue', this.documentSource);
     },
     selectTargetSource (source: string) {        
