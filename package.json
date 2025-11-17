@@ -20,7 +20,7 @@
     "dependencies": {
         "@brifle/brifle-sdk": "^0.1.0",
         "@quasar/extras": "^1.16.4",
-        "argon2": "^0.41.1",
+        "argon2": "^0.44.0",
         "axios": "^1.2.1",
         "buffer": "^6.0.3",
         "crypto-browserify": "^3.12.1",
