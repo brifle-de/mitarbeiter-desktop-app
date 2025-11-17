@@ -19,8 +19,25 @@ let mainWindow: BrowserWindow | undefined;
 let tray: Tray | null = null;
 let isQuiting = false;
 
+const gotTheLock = app.requestSingleInstanceLock();
 
-initApp();
+if (!gotTheLock) {
+  app.quit();   // Prevent second instance from starting  
+} else {
+  app.on('second-instance', () => {   
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      if (!mainWindow.isVisible()) {
+        mainWindow.show();
+      }
+      mainWindow.focus();
+    }
+  });
+  initApp();
+}
+
 
 function initApp(){
   // init home directory for the app
@@ -110,7 +127,7 @@ const getTrayIcon = () => {
   if (process.env.DEV) {
     return path.join(process.cwd(), 'public/icons/icon.ico')
   } else {
-    return path.join(process.resourcesPath, 'public/icons/icon.ico')
+    return path.join(process.resourcesPath, 'icons/icon.ico')
   }
 }
 

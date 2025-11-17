@@ -25,6 +25,7 @@ export default class PipeSocketService {
 
     public init() {
         // Initialize the pipe socket connection
+        try {
         this.server = net.createServer((stream) => {
             stream.on('data', (data) => {
                 const message = data.toString();
@@ -32,6 +33,9 @@ export default class PipeSocketService {
             });
         })
         this.server.listen(this.getPipePath());
+        } catch (error) {
+            console.error("Failed to initialize PipeSocketService:", error);
+        }
     }
 
     public close() {

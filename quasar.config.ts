@@ -219,7 +219,13 @@ export default defineConfig((ctx) => {
 
       builder: {
         // https://www.electron.build/configuration/configuration
-
+         extraResources: [
+          {
+            from: 'src-electron/icons',
+            to: 'icons',
+            filter: ['**/*']
+          }
+        ],
         appId: 'de.brifle.mitarbeiter',
         win:{
           target: 'nsis',          
