@@ -45,8 +45,17 @@
         />
 
       </q-list>
+    </div>
+    <div class="q-pa-sm text-center">
+      <div class="q-my-sm">
+        <q-btn color="grey-8" @click="sealApplication()">
+          <q-icon name="logout" class="q-mr-sm" />
+          Sperren
+        </q-btn>
+      </div>
+      <div class="app-version-text">Version: {{ appVersion }}</div>
     </div> 
-    <span class="app-version-text">Version: {{ appVersion }}</span>
+    
     </q-drawer>
 
     <q-page-container class="main-container unselectable">
@@ -96,6 +105,7 @@
 import { Ref, defineComponent, ref } from 'vue';
 import EssentialLink from 'components/EssentialLink.vue';
 import { useRouter } from 'vue-router';
+import { useEncryptedStore } from 'src/stores/encrypted-store';
 
 
 
@@ -113,6 +123,11 @@ export default defineComponent({
     
   },
   methods: {
+    sealApplication() {
+      this.$emit('seal-app');
+      this.encryptedStore.sealData();
+      void this.router.push("/");
+    },
     checkStickyColor() {
       const toolbar = document.querySelector('.sticky-color-toolbar');
       if (toolbar) {
@@ -156,7 +171,7 @@ export default defineComponent({
        
       ];
  
-   
+    const encryptedStore = useEncryptedStore();
 
     void window.electronApi.getAppVersion().then((version: string) => {
       appVersion.value = version;
@@ -166,7 +181,8 @@ export default defineComponent({
       essentialLinks: menuLinks,
       miniState: ref(true),
       router,
-      appVersion
+      appVersion,
+      encryptedStore,
     };
   },
 });

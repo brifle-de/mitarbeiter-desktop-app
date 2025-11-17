@@ -7,6 +7,17 @@ export interface DocumentSourceDirParserRules {
     regexOutputDate(match: RegExpMatchArray): Date | null,
 }
 
+export interface DocumentParserImportRecord {
+    name: string,
+    description: string,
+    rules: {
+        regexCatch: string, // regex as string
+        dateFormat: string,  // i.e. 'YYYY-MM-DD' or 'DD.MM.YYYY'
+        datePosition: number, // set to -1 if no date is present
+        receiverIdPosition: number,
+    }
+}
+
 export interface DocumentSourceDirParserResult {
     // the file name without the path
     fileName: string,

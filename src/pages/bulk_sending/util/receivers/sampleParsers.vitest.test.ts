@@ -2,7 +2,7 @@
 // @vitest-environment jsdom
 
 import { expect, test } from "vitest";
-import { SAMPLE_XML_1, SAMPLE_CSV_1 } from "./sampleParsers";
+import { SAMPLE_XML_1, SAMPLE_CSV_1, GERMAN_SAMPLE_CSV_1 } from "./sampleParsers";
 import {ReceiverParser} from "./parsers";
 import fs from 'fs';
 
@@ -11,10 +11,11 @@ test("xml sample parser 1", () => {
     // load file from /test/test.csv
     const pathTest = `${__dirname}/test/xml/sample_personal.xml`;
     // read file
-    const xmlData = fs.readFileSync(pathTest, 'utf8');
+   
 
 
     const rules = SAMPLE_XML_1;
+    const xmlData = fs.readFileSync(pathTest);
     const result = ReceiverParser.parse(xmlData, rules);
     expect(result).toBeDefined(); 
     expect(result.length).toBe(5);
@@ -89,10 +90,11 @@ test("csv sample parser 1", () => {
     // load file from /test/test.csv
     const pathTest = `${__dirname}/test/csv/sample_personal.csv`;
     // read file
-    const xmlData = fs.readFileSync(pathTest, 'utf8');
-
-
     const rules = SAMPLE_CSV_1;
+    const xmlData = fs.readFileSync(pathTest);
+
+
+   
     const result = ReceiverParser.parse(xmlData, rules);
     expect(result).toBeDefined(); 
     expect(result.length).toBe(5);
@@ -160,3 +162,44 @@ test("csv sample parser 1", () => {
 
 
 });
+
+/**
+ * german parser csv test
+ * 
+ * Vorname;Nachname;GebDatum;Geburtsort;Stra�e und Hausnummer;Ort;L�nderschl�ssel;Postleitzahl;PersNr
+Max;Mustermann;21.12.1989;Berlin;Super Str. 1;Berlin;Deutschland;73479;424407
+Katrin;Musterfrau;11.11.1990;München;Nürbergerstr. 2;München;Deutschland;74564;1163073
+
+
+ */
+test("german csv sample parser 1", () => {
+
+    // load file from /test/test.csv
+    const pathTest = `${__dirname}/test/csv/sample_personal_de.csv`;
+    // read file  
+    
+    const rules = GERMAN_SAMPLE_CSV_1;
+    const xmlData = fs.readFileSync(pathTest);
+    const result = ReceiverParser.parse(xmlData, rules);
+    expect(result).toBeDefined(); 
+    expect(result.length).toBe(2);
+    expect(result[0]!.firstName).toBe('Max');
+    expect(result[0]!.lastName).toBe('Mustermann');
+    expect(result[0]!.dateOfBirth).toBe('21.12.1989');
+    expect(result[0]!.placeOfBirth).toBe('Berlin');
+    expect(result[0]!.addressStreet).toBe('Super Str. 1');
+    expect(result[0]!.addressCity).toBe('Berlin');
+    expect(result[0]!.addressPostcode).toBe('73479');
+    expect(result[0]!.addressCountry).toBe('Deutschland');
+    expect(result[0]!.receiverId).toBe('424407');
+    expect(result[1]!.firstName).toBe('Katrin');
+    expect(result[1]!.lastName).toBe('Musterfrau');
+    expect(result[1]!.dateOfBirth).toBe('11.11.1990');
+    expect(result[1]!.placeOfBirth).toBe('München');
+    expect(result[1]!.addressStreet).toBe('Nürbergerstr. 2');
+    expect(result[1]!.addressCity).toBe('München');
+    expect(result[1]!.addressPostcode).toBe('74564');
+    expect(result[1]!.addressCountry).toBe('Deutschland');
+    expect(result[1]!.receiverId).toBe('1163073');
+});
+

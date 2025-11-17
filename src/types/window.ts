@@ -3,6 +3,7 @@ import { ElectronApiType } from "app/src-electron/apis/electron/electronApi";
 import { EncryptedStoreApiType } from "app/src-electron/apis/encryptedStore/encryptedStoreApi";
 import { FileApiType } from "app/src-electron/apis/file/fileApi";
 import { LogApiType } from "app/src-electron/apis/logger/logApi";
+import { ParsersProviderApiType } from "app/src-electron/apis/parsersProvider/parsersProviderApi";
 import { SftpApiType } from "app/src-electron/apis/sftp/sftpApi";
 
  
@@ -15,5 +16,6 @@ declare global {
         brifleApi: BrifleApiType;
         electronApi: ElectronApiType;
         logApi: LogApiType;
+        parsersProvider: ParsersProviderApiType;
     }   
 }

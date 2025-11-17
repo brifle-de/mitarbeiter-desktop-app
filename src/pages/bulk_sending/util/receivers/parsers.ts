@@ -5,6 +5,7 @@ import CsvReader, { CsvDocument } from "src/utils/csv/csvReader";
  * selector rules to pupulate the fields
  */
 export interface ReceiverParserRules {
+    encoding: BufferEncoding,
     type: 'xml' | 'csv',
     firstName?: string,
     lastName?: string,
@@ -40,16 +41,22 @@ export interface ReceiverParserResult {
 }
 
 export class ReceiverParser {
-    static parse(data: string, rules: ReceiverParserRules): ReceiverParserResult[] {
+    static parse(data: Buffer, rules: ReceiverParserRules): ReceiverParserResult[] {
+        const decodedStr = ReceiverParser.decodeData(data, rules.encoding);
         if(rules.type === 'xml'){
-            const p = new XMLReceiverParser(data);
+            const p = new XMLReceiverParser(decodedStr);
             return p.parse(rules)
         }else if(rules.type === 'csv'){
-            const s = new CsvLimiterGuesser().guess(data);
+            const s = new CsvLimiterGuesser().guess(decodedStr);
             const p = new CsvReader(s);            
-            return this.parseCsv(p.parse(data), rules);
+            return this.parseCsv(p.parse(decodedStr), rules);
         }
         return []; 
+    }
+
+    private static decodeData(data: Buffer, encoding: BufferEncoding) : string {        
+        const decoder = new TextDecoder(encoding); 
+        return decoder.decode(data);
     }
 
     private static parseCsv(csv: CsvDocument, rules: ReceiverParserRules) : ReceiverParserResult[]{
@@ -79,6 +86,12 @@ export class ReceiverParser {
         return results;
     }
 } 
+
+export interface ReceiversParserDefinition {
+    name: string,
+    description: string,
+    rules: ReceiverParserRules,
+}
 
 class XMLReceiverParser{
 

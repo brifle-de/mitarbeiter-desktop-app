@@ -43,6 +43,8 @@ import Files from 'src/services/node/Files';
 import { ReceiverParser } from '../util/receivers/parsers';
 import ReceiverRecord from '../util/receivers/receiverRecord';
 import Sftp from 'src/services/node/Sftp';
+import { Buffer } from 'buffer';
+import { ParsersProvider } from 'src/services/node/ParsersProvider';
 
 
 export default defineComponent({
@@ -102,6 +104,9 @@ export default defineComponent({
             sortable: true,
         }
     ]);
+
+    const parsersProvider = ref(new ParsersProvider());
+
     return {      
       parser,
       directories,
@@ -111,7 +116,8 @@ export default defineComponent({
       rules,
       content,
       receivers,
-      receiverColumns
+      receiverColumns,
+     parsersProvider,
     };
   },
   emits: ['update:modelValue', 'parsed'],
@@ -127,12 +133,24 @@ export default defineComponent({
   },
   mounted() {
     const cachedParser = localStorage.getItem('selectedReceiverParser');
-    if(cachedParser) {
-        const found = this.rules.find((rule) => rule.name === cachedParser);
-        if(found) {
-            this.parser = found;
+    this.parsersProvider.getReceiversParsers().then((parsers) => {
+        const customParsers = Object.values(parsers);
+        this.rules = this.rules.concat(customParsers);
+        if(cachedParser) {
+            const found = this.rules.find((rule) => rule.name === cachedParser);
+            if(found) {
+                this.parser = found;
+            }
         }
-    }
+    }).catch((err: Error) => {
+        console.error('Error fetching custom parsers:', err);
+        this.$q.notify({
+            message: 'Fehler beim Laden der benutzerdefinierten Parser',
+            color: 'red',
+            position: 'top',
+            timeout: 2000,
+        });
+    });    
   },
   methods: {
     emitResults() {
@@ -143,23 +161,35 @@ export default defineComponent({
         });
         this.$emit('parsed', receiverRecords);
     },
-    async readFile() {
+    async readFile(encoding: BufferEncoding) : Promise<string> {
         if(this.receiverSource.type){
             if(this.receiverSource.type === 'file' && this.receiverSource.file){
-                return Files.readFile(this.receiverSource.file, 'utf8');
+                return Files.readFile(this.receiverSource.file, encoding);
             }else if(this.receiverSource.type === 'sftp' && this.receiverSource.sftp?.filePath && this.receiverSource.sftp?.connection){
-                return Sftp.readFile(this.receiverSource.sftp.filePath, this.receiverSource.sftp.connection, 'utf8');
+                return Sftp
+                .readFile(this.receiverSource.sftp.filePath, this.receiverSource.sftp.connection, encoding)
+                .then((data => {
+                    if (data) return data;
+                    return "";
+                }));
+
             }
         }
         return "";
     },
-    async parseFile() {
-        const fileContent = await this.readFile();
+    async parseFile() {        
         if(!this.parser){
             console.error('No parser selected');
             return;
         }
-        this.receivers = ReceiverParser.parse(fileContent??'', this.parser.rules);   
+        const fileContent = await this.readFile(this.parser.rules.encoding);     
+        const buffer = new TextEncoder().encode(fileContent);
+        // text encoder users utf-8 therefore override the encoding in rules to utf-8,
+        //  use deep copy to avoid modifying original rules and cause conflicts
+        const rulesCopy = JSON.parse(JSON.stringify(this.parser.rules));
+        rulesCopy.encoding = 'utf-8';
+
+        this.receivers = ReceiverParser.parse(Buffer.from(buffer), rulesCopy);  
         this.emitResults();  
     },
     getRules(){

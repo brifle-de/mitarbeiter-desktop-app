@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { LogLevel } from './types';
 import { app } from 'electron';
+import { AppDirectoryName } from "../const/AppConst";
 
 export interface LogConfig {
     level: LogLevel;
@@ -13,7 +14,7 @@ export interface LogConfig {
 // read path of app data directory
 const homeDir = app.getPath('home');
 
-const basePath: string = path.join(homeDir, 'brifle-business','logs')
+const basePath: string = path.join(homeDir, AppDirectoryName,'logs')
 
 const defaultLogConfig: LogConfig = {
     level: LogLevel.INFO,

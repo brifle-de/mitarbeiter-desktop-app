@@ -36,6 +36,12 @@ export const useEncryptedStore = defineStore('encrypted-store', {
         return account;
       });
     },
+    // clears all loaded data from the store
+    sealData(){
+      this.meta = null;
+      this._accounts = [];
+      this.key = null;
+    },
     loadData(password: string) {      
       return encryptedStoreService.loadMetadata(password).then(async (data: EncryptedStoreType) => {       
         this.meta = data;

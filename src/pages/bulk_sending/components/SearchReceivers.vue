@@ -182,7 +182,9 @@ export default defineComponent({
             });
         },
         async checkForExistence() {
-            
+            const ignoreLeadingZeros = (id: string) => {
+                return id.replace(/^0+/, '');
+            };
             Logger.debug("Starting to check for receiver existence...");            
             this.isLoading = true;
             Logger.debug("Start checking");
@@ -198,13 +200,14 @@ export default defineComponent({
                 if(!record.receiverId) {
                     return;
                 }
+                record.receiverId = ignoreLeadingZeros(record.receiverId);
                 Logger.debug("Mapping record for ID: " + record.receiverId);
                 const r = {
                     req: ReceiverRecordConverter.toReceiverRequest(record, this.receiverType),
                     original: record,
                 }                
                 Logger.debug("Mapped record for ID: " + record.receiverId);
-                receiverIdMap.set(record.receiverId, r);
+                receiverIdMap.set(ignoreLeadingZeros(record.receiverId), r);
                 Logger.debug("Set record for ID: " + record.receiverId);
             });
             Logger.debug("Mapping receiver IDs: " + receiverIdMap.size);
@@ -218,26 +221,29 @@ export default defineComponent({
             Logger.debug("Status check for " + this.totalChecking + " receivers.");
             Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);            
             checkForIds.forEach(id => {
+                const preparedId = ignoreLeadingZeros(id);
                 // check if the id is in the receiverIdMap
-                Logger.debug("Checking ID: " + id);
-                if(receiverIdMap.has(id)) {
-                    Logger.debug("Checking existence for ID: " + id);
-                    const record = receiverIdMap.get(id);
+                Logger.debug("Checking ID: " + preparedId);
+                if(receiverIdMap.has(preparedId)) {
+                    Logger.debug("Checking existence for ID: " + preparedId);
+                    const record = receiverIdMap.get(preparedId);
                     Logger.debug("Checking Record: " + JSON.stringify(record));
                     if(record) {
                         void this.checkReceiver(record.req).then(exists => {  
-                            Logger.debug("Checked existence for ID: " + id + ", exists: " + exists);                         
-                            this.userExistenceStatus.set(id, exists);
+                            Logger.debug("Checked existence for ID: " + preparedId + ", exists: " + exists);                         
+                            this.userExistenceStatus.set(preparedId, exists);
                         }).catch((e) => {
                             console.error('Error checking receiver existence:', e);
-                            this.userExistenceStatus.set(id, false);
+                            this.userExistenceStatus.set(preparedId, false);
                         }).finally(() => {
                             this.totalChecked++;           
                             Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);                 
                             if(this.totalChecked >= this.totalChecking) {
                                 this.sendDocsRecords = this.documentRecords.map(record => {
+                                    const preparedDocReceiverId = ignoreLeadingZeros(record.receiverId);
+                                    const receiver = receiverIdMap.get(preparedDocReceiverId) ?? null;
 
-                                    const receiver = receiverIdMap.get(record.receiverId) ?? null;
+                                    console.log(receiverIdMap, record.receiverId)
 
                                     const postalAddress = receiver ? {
                                         street: receiver?.original.addressStreet ?? '',
@@ -246,39 +252,40 @@ export default defineComponent({
                                         country: receiver ? this.computeCountryCode(receiver?.original) ?? 'DE' : 'DE',
                                     } : null;
                                     
+                                  
                                     return {
                                         doc: record,
-                                        receiver: receiverIdMap.get(record.receiverId) ?? null,
+                                        receiver: receiver,
                                         postalAddress: postalAddress,
-                                        exists: this.userExistenceStatus.get(record.receiverId) ?? false,
+                                        exists: this.userExistenceStatus.get(preparedDocReceiverId) ?? false,
                                     };
                                 }).filter(record => record.receiver != null);
                                 this.isLoading = false;
                             }
                         });
                     } else {
-                        Logger.debug("No record found for ID: " + id);
+                        Logger.debug("No record found for ID: " + preparedId);
                         // notification
                         this.$q.notify({
                             color: 'negative',
-                            message: 'Fehler beim Überprüfen des Empfängers mit ID: ' + id,
+                            message: 'Fehler beim Überprüfen des Empfängers mit ID: ' + preparedId,
                             icon: 'error'
                         });
-                        this.userExistenceStatus.set(id, false);
+                        this.userExistenceStatus.set(preparedId, false);
                         this.totalChecked++;
                         if(this.totalChecked >= this.totalChecking) {
                             this.isLoading = false;
                         }
                     }
                 } else {
-                    Logger.debug("No receiver found for ID: " + id);
+                    Logger.debug("No receiver found for ID: " + preparedId);
                     // notification
                     this.$q.notify({
                         color: 'negative',
-                        message: 'Kein Empfänger gefunden für ID: ' + id,
+                        message: 'Kein Empfänger gefunden für ID: ' + preparedId,
                         icon: 'error'
                     });
-                    this.userExistenceStatus.set(id, false);
+                    this.userExistenceStatus.set(preparedId, false);
                     this.totalChecked++;  
                     if(this.totalChecked >= this.totalChecking) {
                             this.isLoading = false;

@@ -12,11 +12,15 @@
            <div class="q-ma-lg q-px-sm">
             <div class="row">
               <div class="col">
-                <q-btn @click="navBack">
+                <q-btn @click="backToRoot">
+                  <q-icon name="home" />
+                </q-btn>
+                <q-btn @click="navBack"  class="q-mx-md">
                   <q-icon name="arrow_back" />
                 </q-btn>
+                
               </div>
-              <div class="col-11">
+              <div class="col-9">
                   <q-input outlined color="secondary"
                 readonly
                 dense v-model="path" label="Pfad" />
@@ -180,6 +184,10 @@ export default defineComponent({
     this.path = this.initPath;
   },
   methods: {
+    backToRoot() {
+      this.path = '/';
+      this.searchCurrentPath();
+    },
     selectDirectory() {
       this.$emit('selectFile', this.path);
       this.value = false;

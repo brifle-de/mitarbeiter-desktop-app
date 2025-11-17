@@ -1,10 +1,13 @@
-import { app, BrowserWindow  } from 'electron';
+import { app, BrowserWindow, Tray, Menu } from 'electron';
 import path from 'node:path';
 import os from 'os';
 import { fileURLToPath } from 'url'
 import { registerRoutes } from './apis/routes';
 import fs from 'fs';
 import { ensureConfig } from './log/logger';
+import PipeSocketService from './service/PipeSocketService';
+import { AppDirectoryName, AppPipeName } from "./const/AppConst";
+import ParsersService from './service/ParsersService';
 
 
 // needed in case process is undefined under Linux
@@ -13,6 +16,8 @@ const platform = process.platform || os.platform();
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 
 let mainWindow: BrowserWindow | undefined;
+let tray: Tray | null = null;
+let isQuiting = false;
 
 
 initApp();
@@ -20,13 +25,18 @@ initApp();
 function initApp(){
   // init home directory for the app
   const homeDir = app.getPath('home');
-  const appDataDir = path.join(homeDir, 'brifle-business')
+  const appDataDir = path.join(homeDir, AppDirectoryName);
+  const parsersService = new ParsersService();
+  const pipeSocketService = new PipeSocketService(AppPipeName);
   // check if directory exists
   if (!fs.existsSync(appDataDir)) {
       fs.mkdirSync(appDataDir, { recursive: true });
   }
+  // initialize parsers directory
+  parsersService.initDirectory();
   // checks if logs.config file exist if not create
   ensureConfig();
+  pipeSocketService.init();
 }
 
 
@@ -87,15 +97,54 @@ async function createWindow() {
     });
   }
 
-  mainWindow.on('closed', () => {
-    mainWindow = undefined;
+  mainWindow.on('close', (event: { preventDefault: () => void; }) => {
+     if (mainWindow && !isQuiting) {
+      event.preventDefault()
+      mainWindow.hide()
+    }
   });
+  
 }
+
+const getTrayIcon = () => {
+  if (process.env.DEV) {
+    return path.join(process.cwd(), 'public/icons/icon.ico')
+  } else {
+    return path.join(process.resourcesPath, 'public/icons/icon.ico')
+  }
+}
+
+function createTray() {
+
+  
+  tray = new Tray(getTrayIcon()) // Windows prefers .ico
+  const trayMenu = Menu.buildFromTemplate([
+    {
+      label: 'App anzeigen',
+      click: () => mainWindow?.show()
+    },
+    {
+      label: 'Schließen',
+      click: () => {
+        isQuiting = true
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setToolTip('Brifle Business App')
+  tray.setContextMenu(trayMenu)
+
+  tray.on('click', () => {
+    mainWindow?.show() // Left click restores your window
+  })
+}
+
 
 void app.whenReady().then(() => {
   registerRoutes();  
-
   void createWindow(); 
+  void createTray();
 });
 
 app.on('window-all-closed', () => {

@@ -5,10 +5,11 @@ import path from "node:path";
 import fs from "fs";
 import { app } from "electron";
 import { LogLevel } from "./types";
+import { AppDirectoryName } from "../const/AppConst";
 
 
 const homeDir = app.getPath('home');
-const defaultLogDir = path.join(homeDir, 'brifle-business','logs')
+const defaultLogDir = path.join(homeDir, AppDirectoryName,'logs')
 const logDir = config.logDir ? config.logDir : defaultLogDir;
 const logConfigPath = path.join(logDir, 'logs.config.json');
 const defaultConfig : LogConfig = {

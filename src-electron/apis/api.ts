@@ -5,6 +5,7 @@ import { SftpApi } from './sftp/sftpApi';
 import { BrifleApi } from './brifle/brifleApi';
 import { ElectronApi } from './electron/electronApi';
 import { LogApi } from './logger/logApi';
+import { ParsersProviderApi } from './parsersProvider/parsersProviderApi';
 
 const encryptedStoreApi = new EncryptedStoreApi();
 const fileApi = new FileApi();
@@ -12,6 +13,7 @@ const sftpApi = new SftpApi();
 const brifleApi = new BrifleApi();
 const electronApi = new ElectronApi();
 const logApi = new LogApi();
+const parsersProvidersApi = new ParsersProviderApi();
 
 
 export function registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRenderer){
@@ -22,6 +24,7 @@ export function registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRender
     brifleApi.registerApi(contextBridge, ipcRenderer)
     electronApi.registerApi(contextBridge, ipcRenderer)
     logApi.registerApi(contextBridge, ipcRenderer)
+    parsersProvidersApi.registerApi(contextBridge, ipcRenderer)
  
     
 }

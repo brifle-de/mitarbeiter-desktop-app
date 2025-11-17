@@ -5,7 +5,7 @@
         class="q-dialog--fullscreen q-dialog--border-radius-none"
         transition-show="slide-up">
         <q-card class="send-docs-card dialog-window-lg" flat bordered>
-            <div>
+            <div class="w-100">
                 <q-toolbar class="bg-secondary text-black">
                     <q-toolbar-title class="text-h6">
                         {{ parser.name }}
@@ -13,7 +13,7 @@
                     <q-btn flat round icon="close" @click="$emit('update:modelValue', false)" />
                 </q-toolbar>
             </div>
-            <q-card-section class="q-pt-none">
+            <q-card-section class="q-pt-none w-100">
                 <div class="text-h6 q-my-md">Beschreibung</div>
                 <div class="text-subtitle2 q-mb-md">{{ parser.description }}</div>
                 <span class="float-right">
@@ -77,17 +77,18 @@ export default defineComponent({
     methods: {
         cpToClipBoard(value: string) {
             copyToClipboard(value).then(() => {
+           
                 this.$q.notify({
                     message: 'In Zwischenablage kopiert',
-                    color: 'green',
-                    position: 'top',
+                    color: 'positive',
+                    icon: 'check',
                     timeout: 2000,
                 });
             }).catch(() => {
                 this.$q.notify({
                     message: 'Fehler beim Kopieren',
-                    color: 'red',
-                    position: 'top',
+                    color: 'negative',
+                    icon: 'error',
                     timeout: 2000,
                 });
             });
