@@ -1,5 +1,21 @@
+type CountryCodeID = 
+    | 'DE' | 'AT' | 'CH' | 'FR' | 'IT' | 'ES' | 'PL' | 'NL' | 'BE' | 'SE' 
+    | 'NO' | 'FI' | 'DK' | 'PT' | 'CZ' | 'HU' | 'RO' | 'SK' | 'SI' | 'HR'
+    | 'BG' | 'EE' | 'LV' | 'LT' | 'IS' | 'LI' | 'MC' | 'SM' | 'VA' 
+    | 'US' | 'CA' | 'MX' | 'BR' | 'AR' | 'CO' | 'PE' | 'VE' | 'CL' | 'EC'
+    | 'PY' | 'UY' | 'BO' | 'GY' | 'SR' | 'TT'
+    | 'CN' | 'JP' | 'IN' | 'KR' | 'ID' | 'MY' | 'PH' | 'TH' | 'VN' | 'SG'
+    | 'HK' | 'TW' | 'PK' | 'BD' | 'LK' | 'NP' | 'MM' | 'KH' | 'LA' | 'MN'
+    | 'BT' | 'MV' | 'TL'
+    | 'ZA' | 'NG' | 'EG' | 'KE' | 'GH' | 'DZ' | 'MA'
+    | 'TN' | 'ET' | 'UG' | 'TZ' | 'CM' | 'CI' | 'SN' | 'ML' | 'BF' | 'NE'
+    | 'RW' | 'BI' | 'SL' | 'LR' | 'TG' | 'BJ' | 'MW' | 'ZM' | 'ZW' | 'MZ'
+    | 'AO' | 'CD' | 'CG' | 'GA' | 'GQ' | 'ST'
+    | 'AU' | 'NZ' | 'FJ' | 'PG' | 'SB' | 'VU' | 'NC' | 'PF';
+
+
 interface CountryCode{
-    code: string;
+    code: CountryCodeID;
     name: string;
 }
 
@@ -139,7 +155,7 @@ class CountryCodeUtil {
         return country ? country.name : null;
     }
 
-    public static getCountryCode(name: string): string | null {
+    public static getCountryCode(name: string): CountryCodeID | null {
         const normalizedCountryName = name.trim().toLowerCase();
         const country = this.countryCodes.find(c => c.name.toLowerCase() === normalizedCountryName);
         return country ? country.code : null;
@@ -148,7 +164,26 @@ class CountryCodeUtil {
     public static getAllCountryCodes(): CountryCode[] {
         return this.countryCodes;
     }
+
+    private static findCountryCode(input: string): CountryCodeID | null {
+        const normalizedInput = input.trim().toUpperCase();
+        const country = this.countryCodes.find(c => c.code === normalizedInput);
+        return country ? country.code : null;
+    }
+
+    public static parseCode(input: string) : CountryCodeID | null {
+        const normalizedInput = input.trim();
+        const country =  this.findCountryCode(normalizedInput);
+        if (country) {
+            return country;
+        }
+        if (normalizedInput.length > 2) {
+            return this.getCountryCode(normalizedInput)
+        }
+        return null;
+    }
 }
 
 
-export type { CountryCode, CountryCodeUtil };
+export type { CountryCode };
+export { CountryCodeUtil };

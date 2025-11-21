@@ -95,6 +95,7 @@ import BrifleApi from 'src/services/node/Brifle';
 import { ReceiverRequest } from '@brifle/brifle-sdk';
 import Logger from 'src/services/node/Log';
 import BirthdayParser from 'src/utils/birthdayParser';
+import { CountryCodeUtil } from 'src/utils/countryCodes';
 
 export default defineComponent({
   name: 'SearchReceivers',
@@ -172,7 +173,7 @@ export default defineComponent({
         computeCountryCode(row: ReceiverRecord) {
             const val = row.addressCountry ?? null;
             if( val ) {
-                return val;
+                return CountryCodeUtil.parseCode(val)?.toString() ?? "DE";
             }
             return "DE";
         },
