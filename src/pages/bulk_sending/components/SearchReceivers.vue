@@ -182,55 +182,23 @@ export default defineComponent({
                 Logger.error(e);
             });
         },
-        async checkForExistence() {
-            const ignoreLeadingZeros = (id: string) => {
-                return id.replace(/^0+/, '');
-            };
-            Logger.debug("Starting to check for receiver existence...");            
-            this.isLoading = true;
-            Logger.debug("Start checking");
-            this.userExistenceStatus.clear();
-            Logger.debug("Cleared State");
-            // tmp map for receiverId => receiver record
-            const receiverIdMap = new Map<string, {req: ReceiverRequest, original: ReceiverRecord}>();
-            Logger.debug("Created ID Map");
-            Logger.debug("Mapping " + this.receiverRecords.length + " receiver records.");
-            Logger.debug("Receiver Records: " + JSON.stringify(this.receiverRecords));
-            this.receiverRecords.forEach(record => {  
-                Logger.debug("Processing record for ID: " + record.receiverId);              
-                if(!record.receiverId) {
-                    return;
-                }
-                record.receiverId = ignoreLeadingZeros(record.receiverId);
-                Logger.debug("Mapping record for ID: " + record.receiverId);
-                const r = {
-                    req: ReceiverRecordConverter.toReceiverRequest(record, this.receiverType),
-                    original: record,
-                }                
-                Logger.debug("Mapped record for ID: " + record.receiverId);
-                receiverIdMap.set(ignoreLeadingZeros(record.receiverId), r);
-                Logger.debug("Set record for ID: " + record.receiverId);
-            });
-            Logger.debug("Mapping receiver IDs: " + receiverIdMap.size);
+        async checkFoxExistenceChunk(checkForIds: string[], receiverIdMap: Map<string, {req: ReceiverRequest, original: ReceiverRecord}>) {
             
-            
-            // only check for receivers that have a at least one document
-            const checkForIds = this.documentRecords.map(record => record.receiverId);
-            this.totalChecking = checkForIds.length;
-            this.totalChecked = 0;
-            Logger.debug("Found IDs to check: " + checkForIds.join(', '));
-            Logger.debug("Status check for " + this.totalChecking + " receivers.");
-            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);            
-            checkForIds.forEach(id => {
-                const preparedId = ignoreLeadingZeros(id);
+            return Promise.all(
+                checkForIds
+                .sort() // keep consistent order
+                .map(id => {
+                const preparedId = this.ignoreLeadingZeros(id);
                 // check if the id is in the receiverIdMap
                 Logger.debug("Checking ID: " + preparedId);
+               
+
                 if(receiverIdMap.has(preparedId)) {
                     Logger.debug("Checking existence for ID: " + preparedId);
                     const record = receiverIdMap.get(preparedId);
                     Logger.debug("Checking Record: " + JSON.stringify(record));
                     if(record) {
-                        void this.checkReceiver(record.req).then(exists => {  
+                        return this.checkReceiver(record.req).then(exists => {  
                             Logger.debug("Checked existence for ID: " + preparedId + ", exists: " + exists);                         
                             this.userExistenceStatus.set(preparedId, exists);
                         }).catch((e) => {
@@ -241,10 +209,8 @@ export default defineComponent({
                             Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);                 
                             if(this.totalChecked >= this.totalChecking) {
                                 this.sendDocsRecords = this.documentRecords.map(record => {
-                                    const preparedDocReceiverId = ignoreLeadingZeros(record.receiverId);
+                                    const preparedDocReceiverId = this.ignoreLeadingZeros(record.receiverId);
                                     const receiver = receiverIdMap.get(preparedDocReceiverId) ?? null;
-
-                                    console.log(receiverIdMap, record.receiverId)
 
                                     const postalAddress = receiver ? {
                                         street: receiver?.original.addressStreet ?? '',
@@ -292,7 +258,69 @@ export default defineComponent({
                             this.isLoading = false;
                     }
                 }
-            });            
+            })); 
+        },
+        ignoreLeadingZeros(id: string) : string {
+            return id.replace(/^0+/, '');
+        },
+        async checkForExistence() {           
+            Logger.debug("Starting to check for receiver existence...");            
+            this.isLoading = true;
+            Logger.debug("Start checking");
+            this.userExistenceStatus.clear();
+            Logger.debug("Cleared State");
+            // tmp map for receiverId => receiver record
+            const receiverIdMap = new Map<string, {req: ReceiverRequest, original: ReceiverRecord}>();
+            Logger.debug("Created ID Map");
+            Logger.debug("Mapping " + this.receiverRecords.length + " receiver records.");
+            Logger.debug("Receiver Records: " + JSON.stringify(this.receiverRecords));
+            this.receiverRecords.forEach(record => {  
+                Logger.debug("Processing record for ID: " + record.receiverId);              
+                if(!record.receiverId) {
+                    return;
+                }
+                record.receiverId = this.ignoreLeadingZeros(record.receiverId);
+                Logger.debug("Mapping record for ID: " + record.receiverId);
+                const r = {
+                    req: ReceiverRecordConverter.toReceiverRequest(record, this.receiverType),
+                    original: record,
+                }                
+                Logger.debug("Mapped record for ID: " + record.receiverId);
+                receiverIdMap.set(this.ignoreLeadingZeros(record.receiverId), r);
+                Logger.debug("Set record for ID: " + record.receiverId);
+            });
+            Logger.debug("Mapping receiver IDs: " + receiverIdMap.size);
+            
+            
+            // only check for receivers that have a at least one document, sort to keep order consistent
+            const checkForIds = this.documentRecords.map(record => record.receiverId).sort();
+ 
+            this.totalChecking = checkForIds.length;
+            this.totalChecked = 0;
+            const chunkSize = 5; // send a maximum of 10 requests in parallel to avoid rate limiting
+            const chunkBatchDelay = 50; // delay between batches in ms
+            Logger.debug("Found IDs to check: " + checkForIds.join(', '));
+            Logger.debug("Status check for " + this.totalChecking + " receivers.");
+            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);      
+            const checkChunks = [];
+            for (let i = 0; i < checkForIds.length; i += chunkSize) {
+                checkChunks.push(checkForIds.slice(i, i + chunkSize));
+            }     
+            for (let chunkIndex = 0; chunkIndex < checkChunks.length; chunkIndex++) {
+                const chunkIds = checkChunks[chunkIndex];
+                if (chunkIds == null || chunkIds.length === 0) {
+                    continue;
+                }
+            
+                // check if the id is in the receiverIdMap
+                Logger.debug("Checking for Chunk : " + (chunkIndex + 1) + " with IDs: " + chunkIds.join(', '));
+                await this.checkFoxExistenceChunk(chunkIds, receiverIdMap).catch((e) => {
+                    Logger.error("Error checking chunk " + (chunkIndex + 1) + ": " + e);
+                });                
+                // wait for a short time to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, chunkBatchDelay));
+            }
+                    
             
         },
         async checkReceiver(receiverRecord: ReceiverRequest) : Promise<boolean> {
