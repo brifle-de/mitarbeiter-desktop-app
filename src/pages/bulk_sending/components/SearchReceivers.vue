@@ -206,29 +206,8 @@ export default defineComponent({
                             this.userExistenceStatus.set(preparedId, false);
                         }).finally(() => {
                             this.totalChecked++;           
-                            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);                 
-                            if(this.totalChecked >= this.totalChecking) {
-                                this.sendDocsRecords = this.documentRecords.map(record => {
-                                    const preparedDocReceiverId = this.ignoreLeadingZeros(record.receiverId);
-                                    const receiver = receiverIdMap.get(preparedDocReceiverId) ?? null;
-
-                                    const postalAddress = receiver ? {
-                                        street: receiver?.original.addressStreet ?? '',
-                                        postcode: receiver?.original.addressPostcode ?? '',
-                                        city: receiver?.original.addressCity ?? '',
-                                        country: receiver ? this.computeCountryCode(receiver?.original) ?? 'DE' : 'DE',
-                                    } : null;
-                                    
-                                  
-                                    return {
-                                        doc: record,
-                                        receiver: receiver,
-                                        postalAddress: postalAddress,
-                                        exists: this.userExistenceStatus.get(preparedDocReceiverId) ?? false,
-                                    };
-                                }).filter(record => record.receiver != null);
-                                this.isLoading = false;
-                            }
+                            Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);                
+                            
                         });
                     } else {
                         Logger.debug("No record found for ID: " + preparedId);
@@ -239,10 +218,7 @@ export default defineComponent({
                             icon: 'error'
                         });
                         this.userExistenceStatus.set(preparedId, false);
-                        this.totalChecked++;
-                        if(this.totalChecked >= this.totalChecking) {
-                            this.isLoading = false;
-                        }
+                        this.totalChecked++;                       
                     }
                 } else {
                     Logger.debug("No receiver found for ID: " + preparedId);
@@ -253,10 +229,7 @@ export default defineComponent({
                         icon: 'error'
                     });
                     this.userExistenceStatus.set(preparedId, false);
-                    this.totalChecked++;  
-                    if(this.totalChecked >= this.totalChecking) {
-                            this.isLoading = false;
-                    }
+                    this.totalChecked++;                      
                 }
             })); 
         },
@@ -297,12 +270,13 @@ export default defineComponent({
  
             this.totalChecking = checkForIds.length;
             this.totalChecked = 0;
-            const chunkSize = 5; // send a maximum of 10 requests in parallel to avoid rate limiting
+            const chunkSize = 5; // send a maximum of 5 requests in parallel to avoid rate limiting
             const chunkBatchDelay = 50; // delay between batches in ms
             Logger.debug("Found IDs to check: " + checkForIds.join(', '));
             Logger.debug("Status check for " + this.totalChecking + " receivers.");
             Logger.debug("Status: " + this.totalChecked + " / " + this.totalChecking);      
             const checkChunks = [];
+            Logger.debug("Creating chunks of size " + chunkSize); 
             for (let i = 0; i < checkForIds.length; i += chunkSize) {
                 checkChunks.push(checkForIds.slice(i, i + chunkSize));
             }     
@@ -320,6 +294,35 @@ export default defineComponent({
                 // wait for a short time to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, chunkBatchDelay));
             }
+            // update table
+            Logger.debug("All checks done. Preparing sendDocsRecords...");            
+            this.sendDocsRecords = this.documentRecords.map(record => {
+                const preparedDocReceiverId = this.ignoreLeadingZeros(record.receiverId);
+                const receiver = receiverIdMap.get(preparedDocReceiverId) ?? null;
+
+                const postalAddress = receiver ? {
+                    street: receiver?.original.addressStreet ?? '',
+                    postcode: receiver?.original.addressPostcode ?? '',
+                    city: receiver?.original.addressCity ?? '',
+                    country: receiver ? this.computeCountryCode(receiver?.original) ?? 'DE' : 'DE',
+                } : null;
+                
+                
+                return {
+                    doc: record,
+                    receiver: receiver,
+                    postalAddress: postalAddress,
+                    exists: this.userExistenceStatus.get(preparedDocReceiverId) ?? false,
+                };
+            })
+            .filter(record => record.receiver != null)
+            .sort((a, b) => {
+                const idA = a.receiver?.original.receiverId ?? '';
+                const idB = b.receiver?.original.receiverId ?? '';
+                return idA.localeCompare(idB);
+            });
+            this.isLoading = false;
+        
                     
             
         },
