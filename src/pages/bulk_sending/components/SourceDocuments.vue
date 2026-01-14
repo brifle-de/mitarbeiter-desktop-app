@@ -3,23 +3,49 @@
     <div class="src_grid q-my-lg">
         <div class="text-bold" 
             @click="selectTargetSource('file')" :class="{ active: documentSource.destType === 'file' }">
-            Zuweisungsdatei 
+            <div>
+                <!-- icon -->
+                <q-icon name="text_snippet" size="32px" class="q-mb-sm" />
+            </div>
+            <div>
+                Zuweisungsdatei 
+            </div>
+            
         </div>
         <div class="text-bold" 
             @click="selectTargetSource('directory')" :class="{ active: documentSource.destType === 'directory' }">
-            Verzeichnis Analyse
+            <div>
+                <!-- icon -->
+                <q-icon name="folder_open" size="32px" class="q-mb-sm" />
+            </div>
+            <div>
+                Verzeichnis Analyse
+            </div>
         </div>
     </div>
     <h5>Ursprung</h5>
     <div class="src_grid q-my-lg">
         <div class="text-bold" 
             @click="selectSource('file')" :class="{ active: documentSource.type === 'file' }">
-            <template v-if="documentSource.destType === 'directory'">Lokales Verzeichnis</template>
-            <template v-else>Lokale Datei</template>
+            <div>
+                <!-- icon -->
+                <q-icon name="computer" size="32px" class="q-mb-sm" />              
+                
+            </div>
+            <div>
+                <template v-if="documentSource.destType === 'directory'">Lokales Verzeichnis</template>
+                <template v-else>Lokale Datei</template>
+            </div>
         </div>
         <div class="text-bold" 
             @click="selectSource('sftp')" :class="{ active: documentSource.type === 'sftp' }">
-            SFTP-Server
+            <div>
+                <!-- icon -->
+                <q-icon name="storage" size="32px" class="q-mb-sm" />
+            </div>
+            <div>
+                SFTP-Server
+            </div>
         </div>
     </div>
     <div v-if="value.type === 'sftp'">

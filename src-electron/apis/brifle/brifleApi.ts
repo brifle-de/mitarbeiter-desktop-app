@@ -1,5 +1,5 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
@@ -14,6 +14,12 @@ export class BrifleApi{
             getAccount: (apiId: string, accountId: string) => ipcRenderer.invoke('brifle:getAccount', apiId, accountId),
             contentGetContent: (apiId: string, contentId: string) => ipcRenderer.invoke('brifle:contentGetContent', apiId, contentId),
             contentGetContentActions: (apiId: string,  contentId: string) => ipcRenderer.invoke('brifle:contentGetContentActions', apiId, contentId),
+            contentCoverLettersList(apiId: string, tenantId: string) {
+                return ipcRenderer.invoke('brifle:contentCoverLettersList', apiId, tenantId);
+            },
+            contentCoverLetterGet(apiId: string, tenantId: string, type: string, name: string, contentType: 'pdf' | 'html') {
+                return ipcRenderer.invoke('brifle:contentCoverLetterGet', apiId, tenantId, type, name, contentType);
+            }
         }) 
     }
 
@@ -94,6 +100,24 @@ export class BrifleApi{
      * @returns the content actions
      */
     contentGetContentActions: (apiId: string, contentId: string) => Promise<ApiResponse<ContentActionsResponse>>;
+
+    /**
+     * list all cover letters for the tenant
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to get the cover letters for
+     * @returns list of cover letters
+     */
+    contentCoverLettersList(apiId: string, tenantId: string): Promise<ApiResponse<CoverLetterOverviewResponse>>;
+
+    /**
+     * get a specific cover letter
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to get the cover letter for
+     * @param type - The type of cover letter
+     * @param name - The name of the cover letter
+     * @returns the cover letter content
+     */
+    contentCoverLetterGet(apiId: string, tenantId: string, type: string, name: string): Promise<ApiResponse<string>>;
 
  }
     

@@ -65,6 +65,31 @@ export default class BrifleRoutes{
             if (!api) throw new Error('API not found')
             return await this.castToResponse(api.content().getContentActions(contentId))
         })
+
+        ipcMain.handle('brifle:contentCoverLettersList', async (event, apiId: string, tenantId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            return await this.castToResponse(api.content().listCoverLetters(tenantId))
+        })
+
+        ipcMain.handle('brifle:contentCoverLetterGet', async (event, apiId: string, tenantId: string, type: "custom" | "default", name: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().getCoverLetterContent(tenantId, type, name, 'base64')
+            .then(res => {
+                /*
+                const binaryStr = res.data as unknown as string; // assuming the response data binary string
+                if(res.status !== 200){
+                    return ApiResponse.error({message: `not found`, code: res.status, status: res.status});
+                }
+                // convert base64 to binary
+                const binaryData = Buffer.from(binaryStr).toString('base64');
+                */
+                return ApiResponse.success(res.data as unknown as string);
+            })
+            console.log('response', response)
+            return await this.castToResponse(response)
+        })
     }
 
     // cast the response to the correct type

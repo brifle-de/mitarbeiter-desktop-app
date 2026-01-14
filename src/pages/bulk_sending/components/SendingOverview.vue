@@ -130,10 +130,7 @@ import { SendDocReq } from '../util/receivers/receiverRecord';
 import BrifleApi from 'src/services/node/Brifle';
 import Sftp from 'src/services/node/Sftp';
 import Files from 'src/services/node/Files';
-import { useBrifleStore } from 'src/stores/brifle-store';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
-import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
-import { useSessionStore } from 'src/stores/session-store';
 
 import SendDocsModal from './modal/SendDocsModal.vue';
 import { SendContentRequest } from '@brifle/brifle-sdk';
@@ -169,6 +166,14 @@ export default defineComponent({
         sendDocRecord: {
             type: Array<SendDocReq>,
             required: true,
+        },
+        tenantId: {
+            type: String,
+            required: true
+        },
+        apiId:{
+            type: String,
+            required: true
         },
         subject: {
             type: String,
@@ -271,38 +276,14 @@ export default defineComponent({
         },
     },
     mounted() {
-        // get session data
-        const accountId = this.session.getSelectedAccountId as string;
-        // get account data
-        this.account = this.encryptedStore.getAccount(accountId) ?? null;
-        this.apiKey = this.account?.apiKey ?? '';
-        // get api 
-        if(this.account) {            
-            this.tenantId = this.account.tenantId ?? '';
-             void this.brifleStore.getApi(this.account.apiKey ?? '', ApiEndpoints.getEndpoint(this.account.apiEnv)).then(api => {
-                if(api) {
-                    this.apiId = api;                    
-                } else {
-                    this.apiKey = '';
-                }
-            });
-        } else {
-            this.apiKey = '';
-            this.apiId = '';
-        }
+      
     
     },
     setup () {
         const confirmedSend = ref(false);
         const failedItems = ref<SendDocReq[]>([]);
         const successItems = ref<SendDocReq[]>([]);
-        const apiKey = ref<string>('');
-        const apiId = ref<string>('');
-        const brifleStore = useBrifleStore();
         const encryptedStore = useEncryptedStore();
-        const account = ref<AccountData | null>(null);
-        const session = useSessionStore();
-        const tenantId = ref<string>('');
         const showReceivers = ref<boolean>(false);
         const showReceiversRecords = ref<SendDocReq[]>([]);
         const hasStarted = ref<boolean>(false);
@@ -310,13 +291,7 @@ export default defineComponent({
             confirmedSend,
             failedItems,
             successItems,
-            apiKey,
-            apiId,
-            brifleStore,
             encryptedStore,
-            account,
-            session,
-            tenantId,
             showReceivers,
             showReceiversRecords,
             hasStarted,

@@ -2,7 +2,12 @@
     <q-page class="wrapper">
         <h4 class="text-center">Konto auswählen</h4>
         <div class="q-mt-xl">
-            <q-list bordered class="rounded-borders q-pa-lg q-lg-xl">
+            <div v-if="isLoading" class="text-center">
+                <q-spinner color="secondary" size="50px" />
+                <div class="q-my-lg">Verbinden mit Server</div>
+
+            </div>
+            <q-list v-else bordered class="rounded-borders q-pa-lg q-lg-xl">
                 <q-item-label header>Konten</q-item-label>
                 <q-item clickable v-ripple v-for="account in availableAccounts" 
                     :key="account.id"
@@ -45,18 +50,24 @@ export default defineComponent({
        const selectedAccount = ref<string|null>(null);
        const encryptedStore = useEncryptedStore();
        const sessionStore = useSessionStore();
+       const isLoading = ref<boolean>(false);
        return {
             availableAccounts,
             selectedAccount,
             encryptedStore,
-            sessionStore
+            sessionStore,
+            isLoading,
+
         };
     },
     methods: {
         selectAccount(accountId: string) {
-            this.selectedAccount = accountId;
-            this.sessionStore.setSelectedAccountId(accountId);
-            void this.$router.push({ path: '/' });
+            this.isLoading = true;
+            this.selectedAccount = accountId;           
+            this.sessionStore.setSelectedAccountId(accountId);                      
+            void this.$router.push({ path: '/' }).finally(() => {
+                this.isLoading = false; 
+            });
         },
     },
     mounted() {

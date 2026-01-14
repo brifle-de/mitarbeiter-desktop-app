@@ -1,4 +1,4 @@
-import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
+import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 /**
@@ -148,5 +148,28 @@ export class Content {
     public async contentGetContentActions(apiId: string, contentId: string): Promise<ApiResponse<ContentActionsResponse>> {
         return window.brifleApi.contentGetContentActions(apiId, contentId); 
     }
+
+    /**
+     * get the cover letter content from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to get the cover letter for
+     * @param type - The type of the cover letter (custom or default)
+     * @param name - The name of the cover letter
+     * @returns the cover letter content
+     */
+    public async contentCoverLetterGet(apiId: string, tenantId: string, type: "custom" | "default", name: string): Promise<ApiResponse<string>> {
+        return window.brifleApi.contentCoverLetterGet(apiId, tenantId, type, name); 
+    }
+
+    /**
+     * list the cover letters from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to list the cover letters for
+     * @returns the cover letter overview response
+     */
+    public async listCoverLetters(apiId: string, tenantId: string): Promise<ApiResponse<CoverLetterOverviewResponse>> {
+        return window.brifleApi.contentCoverLettersList(apiId, tenantId);
+    }
+
 }
 

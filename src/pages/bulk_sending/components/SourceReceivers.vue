@@ -5,11 +5,23 @@
     <div class="src_grid q-my-lg">
         <div class="text-bold" 
             @click="selectSource('file')" :class="{ active: value.type === 'file' }">
-            Lokale Datei
+            <div>
+                <!-- icon -->
+                <q-icon name="file_open" size="32px" class="q-mb-sm" />
+            </div>
+            <div>
+                Lokale Datei
+            </div>
         </div>
         <div class="text-bold" 
             @click="selectSource('sftp')" :class="{ active: value.type === 'sftp' }">
-            SFTP-Server
+            <div>
+                <!-- icon -->
+                <q-icon name="storage" size="32px" class="q-mb-sm" />
+            </div>
+            <div>
+                SFTP-Server
+            </div>
         </div>
     </div>
     <div v-if="value.type === 'sftp'">

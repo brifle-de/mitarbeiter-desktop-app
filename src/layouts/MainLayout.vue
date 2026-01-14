@@ -116,6 +116,7 @@ export default defineComponent({
   components: {
     EssentialLink,
   },
+  emits: ['seal-app'],
   unmounted() {
    
   },
@@ -126,7 +127,10 @@ export default defineComponent({
     sealApplication() {
       this.$emit('seal-app');
       this.encryptedStore.sealData();
-      void this.router.push("/");
+      void this.router.push("/unseal")
+      .catch((err) => {
+        console.error('Router push error on seal:', err);
+      });
     },
     checkStickyColor() {
       const toolbar = document.querySelector('.sticky-color-toolbar');

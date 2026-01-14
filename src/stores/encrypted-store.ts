@@ -37,7 +37,7 @@ export const useEncryptedStore = defineStore('encrypted-store', {
       });
     },
     // clears all loaded data from the store
-    sealData(){
+    sealData(){    
       this.meta = null;
       this._accounts = [];
       this.key = null;

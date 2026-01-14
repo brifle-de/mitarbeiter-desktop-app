@@ -111,11 +111,10 @@
         icon="local_post_office"
       >
         <NonExistingReceiversAction
-          @update="actionNotBrifle = $event"
+        :api-id="apiId"
+        :tenant-id="tenantId"
+          @update="goToPage7($event)" 
         />
-        <q-stepper-navigation>
-          <q-btn @click="step = 7" color="secondary" text-color="black" label="Weiter" />
-        </q-stepper-navigation>
     
     </q-step>
     <q-step
@@ -153,6 +152,9 @@
 
       <SendingOverviewPage
       :subject="subject"
+      :api-key="apiKey"
+      :api-id="apiId"
+      :tenant-id="tenantId"
       :send-doc-record="docsToSend"
       :action-not-brifle="actionNotBrifle"
       @sent="sentAll($event)"
@@ -201,6 +203,8 @@ import NonExistingReceiversAction, { NonExistingReceiverAction } from './compone
 import SendingOverviewPage from './components/SendingOverview.vue';
 import SendReports from './components/SendReports.vue';
 import Logger from 'src/services/node/Log';
+import { useBrifleStore } from 'src/stores/brifle-store';
+import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
 
 
 export default defineComponent({
@@ -209,6 +213,26 @@ export default defineComponent({
         SourceReceivers, SourceReceiversParser, SourceDocuments, 
         SourceDocumentsParser, SearchReceivers, NonExistingReceiversAction,
         SendingOverviewPage, SendReports,
+    },
+    mounted() {
+       const accountId = this.sessionStore.getSelectedAccountId as string;
+        // get account data
+        this.account = this.encryptedStore.getAccount(accountId) ?? null;
+        this.apiKey = this.account?.apiKey ?? '';
+        // get api 
+        if(this.account) {            
+            this.tenantId = this.account.tenantId ?? '';
+             void this.brifleStore.getApi(this.account.apiKey ?? '', ApiEndpoints.getEndpoint(this.account.apiEnv)).then(api => {
+                if(api) {
+                    this.apiId = api;                    
+                } else {
+                    this.apiKey = '';
+                }
+            });
+        } else {
+            this.apiKey = '';
+            this.apiId = '';
+        }
     },
     setup () {
         const sessionStore = useSessionStore();
@@ -227,12 +251,19 @@ export default defineComponent({
         const actionNotBrifle = ref<NonExistingReceiverAction>({
           action: 'ignore',
           testModePaperMail: false,
-          paperMailTestEmailRecipient: ''
+          paperMailTestEmailRecipient: '',
+          useCoverLetter: false,
+          selectedCoverLetter: null,
         });
         const subject = ref<string>('');
         const reportSuccess = ref<SendDocReq[]>([]);
         const reportError = ref<SendDocReq[]>([]);
         const reportNotBrifle = ref<SendDocReq[]>([]);
+           const apiKey = ref<string>('');
+        const apiId = ref<string>('');
+        const brifleStore = useBrifleStore();
+        const account = ref<AccountData | null>(null);
+        const tenantId = ref<string>('');
         return {
             sessionStore,
             encryptedStore,
@@ -247,6 +278,11 @@ export default defineComponent({
             reportSuccess,
             reportError,
             reportNotBrifle,
+            apiKey,
+            apiId,  
+            brifleStore,
+            tenantId,
+            account,
         };
     },
     computed: {
@@ -269,6 +305,10 @@ export default defineComponent({
       },
     },
     methods: {
+      goToPage7($event: NonExistingReceiverAction) {
+        this.actionNotBrifle = $event;
+        this.step = 7;
+      },
       sentAll(event: {
         success: SendDocReq[],
         failed: SendDocReq[],

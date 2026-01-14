@@ -10,7 +10,7 @@
               </q-btn>
               </div>
               <q-space />
-              <q-btn icon="close" flat round dense v-close-popup />
+              <q-btn icon="close" flat round dense v-close-popup @click="close()" />
             </q-card-section>
 
             <q-card-section>
