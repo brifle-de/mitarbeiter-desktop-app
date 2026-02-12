@@ -1,10 +1,10 @@
 <template>    
         <div  v-if="content != null">
             <div v-for="(cont, index) in content"
-            :key="'content'+index" >
-                <div :key="pdfRefreshCounter">
-                    <vue-pdf-embed :source="buildPdfContent(cont)" />
-                </div>
+            :key="baseKey+'_content'+index" >
+                <div>
+                    <vue-pdf-embed :key="baseKey+'_'+pdfRefreshCounter" :source="buildPdfContent(cont)" />
+                </div> 
             </div>
         </div>
 </template>
@@ -24,6 +24,10 @@ export default defineComponent({
       type: Array<Content>,
       default: () => [],
     },
+    baseKey: {
+      type: String,
+      default: '',
+    },
   },
   computed: {
   
@@ -34,6 +38,9 @@ export default defineComponent({
         return PdfBuilder.buildPdfContent(content.content);
       }
       return content.content;
+    },
+    rerender() {
+      this.pdfRefreshCounter++;
     },
   },
   setup() {

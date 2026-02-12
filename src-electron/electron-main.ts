@@ -6,7 +6,7 @@ import { registerRoutes } from './apis/routes';
 import fs from 'fs';
 import { ensureConfig } from './log/logger';
 import PipeSocketService from './service/PipeSocketService';
-import { AppDirectoryName, AppPipeName } from "./const/AppConst";
+import { getAppDirectoryName, AppPipeName } from "./const/AppConst";
 import ParsersService from './service/ParsersService';
 
 
@@ -42,7 +42,7 @@ if (!gotTheLock) {
 function initApp(){
   // init home directory for the app
   const homeDir = app.getPath('home');
-  const appDataDir = path.join(homeDir, AppDirectoryName);
+  const appDataDir = path.join(homeDir, getAppDirectoryName());
   const parsersService = new ParsersService();
   const pipeSocketService = new PipeSocketService(AppPipeName);
   // check if directory exists

@@ -9,6 +9,7 @@ export class ParsersProvider {
      */
     getReceiversParsers(): Promise<Record<string, ReceiversParserDefinition>> {
         const rawData = window.parsersProvider.fetchParsersByType('receivers');
+        
         return rawData.then((data) => {
             const jsonData: Record<string, ReceiversParserDefinition> = {};
             for (const key in data) {

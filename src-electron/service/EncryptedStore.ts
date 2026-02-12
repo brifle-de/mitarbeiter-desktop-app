@@ -1,6 +1,6 @@
 import { AccountData, EncryptedStoreType } from "../models/EncryptedStore"
 import { app } from 'electron'
-import { AppDirectoryName } from "../const/AppConst";
+import { getAppDirectoryName } from "../const/AppConst";
 
 import fs from 'fs'
 import { pbkdf2Sync } from "crypto"
@@ -11,7 +11,7 @@ import path, * as p from 'path'
 
 export default class EncryptedStore{
 
-    private readonly basePath: string = p.join(AppDirectoryName,'encryptedStore')
+    private readonly basePath: string = p.join(getAppDirectoryName(),'encryptedStore')
     private readonly metaFile: string = 'meta.json'
 
      

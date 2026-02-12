@@ -6,6 +6,7 @@ import { BrifleApi } from './brifle/brifleApi';
 import { ElectronApi } from './electron/electronApi';
 import { LogApi } from './logger/logApi';
 import { ParsersProviderApi } from './parsersProvider/parsersProviderApi';
+import { OcrApi } from './ocr/ocrApi';
 
 const encryptedStoreApi = new EncryptedStoreApi();
 const fileApi = new FileApi();
@@ -14,6 +15,7 @@ const brifleApi = new BrifleApi();
 const electronApi = new ElectronApi();
 const logApi = new LogApi();
 const parsersProvidersApi = new ParsersProviderApi();
+const ocrApi = new OcrApi();
 
 
 export function registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRenderer){
@@ -25,6 +27,7 @@ export function registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRender
     electronApi.registerApi(contextBridge, ipcRenderer)
     logApi.registerApi(contextBridge, ipcRenderer)
     parsersProvidersApi.registerApi(contextBridge, ipcRenderer)
+    ocrApi.registerApi(contextBridge, ipcRenderer)
  
     
 }

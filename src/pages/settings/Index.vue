@@ -17,6 +17,12 @@
                 <q-item-section class="text-h6">Parsers</q-item-section>
 
             </q-item>
+            <q-item clickable @click="goTo('/settings/cover_letters')">
+                <q-item-section avatar>
+                    <q-icon name="apps" size="2.5rem" color="secondary" />
+                </q-item-section>
+                <q-item-section class="text-h6">Deckblatt Vorlagen</q-item-section>
+            </q-item>
            
         </q-list>
     </p-page>

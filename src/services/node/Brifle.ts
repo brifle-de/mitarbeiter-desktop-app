@@ -1,4 +1,4 @@
-import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 /**
@@ -116,6 +116,17 @@ export class Content {
         const serializedRequest = JSON.parse(JSON.stringify(receiver));
         return window.brifleApi.contentCheckReceiver(apiId, serializedRequest); 
     }
+    
+    /**
+     * check if the receivers are valid and exist in the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param receivers - The list of receiver requests
+     * @return the list of check receiver responses
+     */
+    public async contentCheckReceiverBulk(apiId: string, receivers: ReceiverRequest[]): Promise<ApiResponse<CheckMultipleReceiversResponse>> {
+        const serializedRequest = JSON.parse(JSON.stringify(receivers));
+        return window.brifleApi.contentCheckReceiverBulk(apiId, serializedRequest); 
+     }
 
     /**
      * send content to the brifle API
@@ -169,6 +180,31 @@ export class Content {
      */
     public async listCoverLetters(apiId: string, tenantId: string): Promise<ApiResponse<CoverLetterOverviewResponse>> {
         return window.brifleApi.contentCoverLettersList(apiId, tenantId);
+    }
+
+    /**
+     * create a new cover letter in the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to create the cover letter for
+     * @param name - The name of the cover letter
+     * @param content - The content of the cover letter
+     * @param options - Additional options for the cover letter
+     * @returns the created cover letter overview item
+     */
+    public async createCoverLetter(apiId: string, tenantId: string, name: string, content: string, options: {description?: string}): Promise<ApiResponse<CoverLetterOverviewItem>> {
+        return window.brifleApi.contentCoverLetterCreate(apiId, tenantId, name, content, options);
+    }
+
+    /**
+     * delete a cover letter in the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to delete the cover letter for
+     * @param name - The name of the cover letter to delete
+     * @return the deleted cover letter name
+     * 
+     */
+    public async deleteCoverLetter(apiId: string, tenantId: string, name: string): Promise<ApiResponse<string>> {
+        return window.brifleApi.contentCoverLetterDelete(apiId, tenantId, name);
     }
 
 }

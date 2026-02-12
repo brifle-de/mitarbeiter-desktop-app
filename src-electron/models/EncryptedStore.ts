@@ -2,12 +2,14 @@ enum ApiEnvironment {
     PRODUCTION = 'production',
     SANDBOX = 'sandbox',
     INTERNAL = 'internal',
+    DEVELOPMENT = 'development',
 }
 
 export class ApiEndpoints {
     static PRODUCTION = 'https://api.brifle.de';
     static SANDBOX = 'https://sandbox-api.brifle.de';
     static INTERNAL = 'https://internaltest-api.brifle.de';
+    static DEVELOPMENT = 'http://localhost:4001';
 
     static getEndpoint(env: ApiEnvironment): string {
         switch (env) {
@@ -17,6 +19,8 @@ export class ApiEndpoints {
                 return this.SANDBOX;
             case ApiEnvironment.INTERNAL:
                 return this.INTERNAL;
+            case ApiEnvironment.DEVELOPMENT:
+                return this.DEVELOPMENT;
             default:
                 return this.PRODUCTION;
         }

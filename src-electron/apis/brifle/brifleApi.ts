@@ -1,5 +1,5 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { AccountInfo, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
@@ -8,6 +8,7 @@ export class BrifleApi{
             newApi: (endpoint: string) => ipcRenderer.invoke('brifle:newSession', endpoint),
             authLogin: (apiId: string, request: LoginRequest) => ipcRenderer.invoke('brifle:authLogin', apiId, request),
             contentCheckReceiver: (apiId: string, receiver: ReceiverRequest) => ipcRenderer.invoke('brifle:contentCheckReceiver', apiId, receiver),
+            contentCheckReceiverBulk: (apiId: string, receivers: ReceiverRequest[]) => ipcRenderer.invoke('brifle:contentCheckReceiverBulk', apiId, receivers),
             contentSendContent: (apiId: string, tenantId: string, request: SendContentRequest) => ipcRenderer.invoke('brifle:contentSendContent', apiId, tenantId, request),
             getOutbox: (apiId: string, tenantId: string, filter: OutboxFilter, page: number) => ipcRenderer.invoke('brifle:getOutbox', apiId, tenantId, filter, page),
             getInbox: (apiId: string, filter: InboxFilter, page: number) => ipcRenderer.invoke('brifle:getInbox', apiId, filter, page),
@@ -19,7 +20,14 @@ export class BrifleApi{
             },
             contentCoverLetterGet(apiId: string, tenantId: string, type: string, name: string, contentType: 'pdf' | 'html') {
                 return ipcRenderer.invoke('brifle:contentCoverLetterGet', apiId, tenantId, type, name, contentType);
+            },
+            contentCoverLetterCreate(apiId: string, tenantId: string, name: string, content: string, options: {description?: string}) {
+                return ipcRenderer.invoke('brifle:contentCoverLetterCreate', apiId, tenantId, name, content, options);
+            },
+            contentCoverLetterDelete(apiId: string, tenantId: string, name: string) {
+                return ipcRenderer.invoke('brifle:contentCoverLetterDelete', apiId, tenantId, name);
             }
+
         }) 
     }
 
@@ -48,6 +56,14 @@ export class BrifleApi{
      * @returns the check receiver response
      */
     contentCheckReceiver: (apiId: string, receiver: ReceiverRequest) => Promise<ApiResponse<CheckReceiverResponse>>;
+
+    /**
+     * check if the receivers are valid and exist in the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param receivers - The list of receiver requests
+     * @returns the list of check receiver responses
+     */
+    contentCheckReceiverBulk: (apiId: string, receivers: ReceiverRequest[]) => Promise<ApiResponse<CheckMultipleReceiversResponse>>;
 
     /**
      * send content to the brifle API
@@ -118,6 +134,26 @@ export class BrifleApi{
      * @returns the cover letter content
      */
     contentCoverLetterGet(apiId: string, tenantId: string, type: string, name: string): Promise<ApiResponse<string>>;
+
+    /**
+     * create a new cover letter
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to create the cover letter for
+     * @param name - The name of the cover letter
+     * @param content - The content of the cover letter
+     * @param options - Additional options for the cover letter
+     * @returns the created cover letter overview item
+     */
+    contentCoverLetterCreate(apiId: string, tenantId: string, name: string, content: string, options: {description?: string}): Promise<ApiResponse<CoverLetterOverviewItem>>;
+
+    /**
+     * delete a cover letter
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to delete the cover letter for
+     * @param name - The name of the cover letter to delete
+     * @returns the deleted cover letter name
+     */
+    contentCoverLetterDelete(apiId: string, tenantId: string, name: string): Promise<ApiResponse<string>>;
 
  }
     

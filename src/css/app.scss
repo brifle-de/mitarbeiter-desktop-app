@@ -307,4 +307,23 @@
         }
     }
 
+  
+
 } 
+
+.material-card{
+    background-color: #ffffff11;
+    border: 1px solid #444;
+    box-shadow: none;
+
+    &.clickable{
+        cursor: pointer;
+        &:hover {
+            background-color: #ffffff22;            
+        }
+    }
+}
+
+.text-outline, .text-muted {
+    color: #dfdfdf;
+}

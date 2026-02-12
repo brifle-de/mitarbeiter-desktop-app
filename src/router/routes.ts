@@ -22,6 +22,10 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/settings/Parsers.vue'),
       },
       {
+        path: 'cover_letters',
+        component: () => import('pages/settings/CoverLetters.vue'),
+      },
+      {
         path: 'parsers/receiver-records',
         component: () => import('pages/settings/parsers/receiversFiles.vue'),
       }
@@ -35,6 +39,10 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         component: () => import('pages/outbox/Index.vue'),
+      },      
+      {
+        path: 'send',
+        component: () => import('pages/outbox/SendDocumentPage.vue'),
       },
       {
         path: ':id',
@@ -50,7 +58,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         component: () => import('pages/bulk_sending/Index.vue'),
-      }
+      },
+      {
+        path: 'receiver_check',
+        component: () => import('pages/bulk_sending/ReceiverCheckPage.vue'),
+      },
     ]
   },
   {

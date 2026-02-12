@@ -30,6 +30,12 @@ export default class BrifleRoutes{
             return await this.castToResponse(api.content().checkReceiver(receiver))
         })
 
+        ipcMain.handle('brifle:contentCheckReceiverBulk', async (event, apiId: string, receivers: ReceiverRequest[]) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            return await this.castToResponse(api.content().checkMultipleReceivers(receivers))
+        })
+
         ipcMain.handle('brifle:contentSendContent', async (event, apiId: string, tenantId: string, request: SendContentRequest) => {
             const api = this.apiMap.get(apiId)
             if (!api) throw new Error('API not found')
@@ -76,18 +82,30 @@ export default class BrifleRoutes{
             const api = this.apiMap.get(apiId)
             if (!api) throw new Error('API not found')
             const response = api.content().getCoverLetterContent(tenantId, type, name, 'base64')
-            .then(res => {
-                /*
-                const binaryStr = res.data as unknown as string; // assuming the response data binary string
-                if(res.status !== 200){
-                    return ApiResponse.error({message: `not found`, code: res.status, status: res.status});
-                }
-                // convert base64 to binary
-                const binaryData = Buffer.from(binaryStr).toString('base64');
-                */
+            .then(res => {              
                 return ApiResponse.success(res.data as unknown as string);
             })
-            console.log('response', response)
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:contentCoverLetterCreate', async (event, apiId: string, tenantId: string, name: string, content: string, options: {description?: string}) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().createCoverLetter(tenantId, name, content, options.description)
+            .then(res => {
+                console.log('Cover letter created successfully:', res);
+                return ApiResponse.success(res.data as unknown as string);
+            })
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:contentCoverLetterDelete', async (event, apiId: string, tenantId: string, name: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().deleteCoverLetter(tenantId, name)
+            .then(res => {
+                return ApiResponse.success(res.data as unknown as string);
+            })
             return await this.castToResponse(response)
         })
     }

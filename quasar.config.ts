@@ -224,6 +224,11 @@ export default defineConfig((ctx) => {
             from: 'src-electron/icons',
             to: 'icons',
             filter: ['**/*']
+          },
+          {
+            from: 'src-electron/ocr_data',
+            to: 'ocr_data',
+            filter: ['**/*']
           }
         ],
         appId: 'de.brifle.mitarbeiter',

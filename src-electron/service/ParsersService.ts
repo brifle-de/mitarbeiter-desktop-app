@@ -1,4 +1,4 @@
-import { AppDirectoryName } from "../const/AppConst";
+import { getAppDirectoryName } from "../const/AppConst";
 import path from "node:path";
 import { app } from "electron";
 import fs from "fs";
@@ -13,7 +13,7 @@ export default class ParsersService {
 
     private getBaseDirectoryPath(): string {
         const homeDir = app.getPath('home');
-        const defaultLogDir = path.join(homeDir, AppDirectoryName, ParsersService.DIRECTORY_NAME)
+        const defaultLogDir = path.join(homeDir, getAppDirectoryName(), ParsersService.DIRECTORY_NAME)
         return defaultLogDir;
     }
 

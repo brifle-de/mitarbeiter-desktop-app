@@ -104,6 +104,7 @@ export default defineComponent({
             sortable: true,
         }
     ]);
+    
 
     const parsersProvider = ref(new ParsersProvider());
 
@@ -198,7 +199,6 @@ export default defineComponent({
         });
     },
     cacheParser(event: {rules: ReceiverParserRules, name: string} | null) {
-        console.log('Caching parser', event);
         if(event) {
             localStorage.setItem('selectedReceiverParser', event.name);
         } else {

@@ -43,7 +43,7 @@ export class ReceiverRecordConverter {
      * @param type the type of the receiver request
      * @returns 
      */
-    public static toReceiverRequest(record: ReceiverRecord, type : 'tel' | 'email' | 'birth_info') : ReceiverRequest {
+    public static toReceiverRequest(record: ReceiverRecord, type : 'tel' | 'email' | 'birth_info', opts?: ToReceiverRequestsOpts) : ReceiverRequest {
         if(type === 'tel' ){
             return {
                 tel: record.phone??'',
@@ -64,6 +64,9 @@ export class ReceiverRecordConverter {
             if(!address && hasAddress) {
                 address = `${record.addressPostcode} ${record.addressCity}, ${record.addressStreet}`
             }
+
+            const useBirthInfoWithAddress = opts?.useBirthInfoWithAddress ?? false;
+
             return {
                 birth_information: {
                     place_of_birth: record.placeOfBirth??'',
@@ -71,7 +74,7 @@ export class ReceiverRecordConverter {
                     given_names: record.firstName??'',
                     last_name: record.lastName??'',
                     ...(record.nameAtBirth ? { first_name: record.firstName } : {}),
-                    ...(hasAddress ? { address: address } : {}),
+                    ...(useBirthInfoWithAddress && hasAddress ? { postal_address: address } : {}),
                 },
                 }             
         }
@@ -80,4 +83,8 @@ export class ReceiverRecordConverter {
 
     }
 
+}
+
+export interface ToReceiverRequestsOpts {
+    useBirthInfoWithAddress?: boolean,
 }
