@@ -85,7 +85,7 @@
            <div class="q-ma-lg">
             <q-card-actions class="q-table-actions justify-between">
                 <q-btn label="Abbrechen" outline @click="value = false" />
-                <q-btn label="Öffnen"  outline @click="selectDirectory()"
+                <q-btn :label="selectText" outline @click="selectDirectory()"
                 color="secondary" ></q-btn>
             </q-card-actions>
            </div>
@@ -179,6 +179,17 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    selectText: {
+      type: String,
+      default: 'Datei auswählen',
+    },
+    showPath: {
+      type: Boolean,
+      default: true,
+    },
+
+
+
   },
   mounted() {
     this.path = this.initPath;

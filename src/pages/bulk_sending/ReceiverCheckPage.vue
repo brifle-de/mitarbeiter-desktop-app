@@ -73,7 +73,7 @@
             </div>
             <div class="row q-my-md" v-if="sftpServerSelected != null">   
                 <div class="col-9">
-                    {{ sftpFilePath }}
+              
                 </div>
                 <div class="col-3 text-right">
                     <SftpModal 
@@ -90,15 +90,41 @@
         </div>
         <div>
                 <!-- files grid -->
-                <div class="row q-col-gutter-md q-mt-md" v-if="sftpFilePath"> 
+                <div class="row q-col-gutter-md q-mt-md" v-if="sftpFilePaths.length > 0">
+                     <div v-for="filePath in sftpFilePaths" :key="filePath+'file_paths'" class="col-4">
                     <div class="col-4">
                         <q-card class="bg-fading rounded-borders q-pa-md">
-                            <div class="text-h6">{{ sftpFilePath }}</div>       
+                            <div class="text-h6">{{ filePath }}</div>       
                             <!-- delete -->                
-                            <q-btn icon="delete" color="red-5" flat round dense class="absolute-top-right" @click="sftpFilePath = ''" />
+                            <q-btn icon="delete" color="red-5" flat round dense class="absolute-top-right" @click="sftpFilePaths.splice(sftpFilePaths.indexOf(filePath), 1)" />
                         </q-card>   
                     </div>
+                    </div>
                 </div>
+        </div>
+        <div class="q-mt-lg" v-if="sftpFilePaths.length > 0">
+        <!-- Select Box to pick rules -->
+            <q-select
+                filled
+                v-model="parser"
+                :options="getRules()"
+                @update:model-value="cacheParser($event)"
+                option-label="name"
+                label="Parser auswählen"
+                color="secondary"
+                map-options
+                ></q-select>            
+        </div>
+        <div>
+            <!-- Search Btn -->
+            <div class="row q-my-md" v-if="sftpFilePaths.length > 0">   
+                <div class="col-9">
+            
+                </div>
+                <div class="col-3 text-right">
+                    <q-btn color="secondary" text-color="black" label="Einlesen" @click="parseSftpFiles()" />
+                </div>
+            </div>
         </div>
        
       </div>
@@ -116,7 +142,7 @@
             ></q-select>            
     </div>
     <div class="q-my-lg text-right" v-if="files.length > 0">
-        <q-btn color="secondary" text-color="black" label="Einlesen" @click="parseFile()" />
+        <q-btn color="secondary" text-color="black" label="Einlesen" @click="parseLocalFile()" />
     </div>
     <div v-if="receivers.length > 0">
         <q-separator class="q-mb-lg q-mt-lg" />
@@ -178,21 +204,7 @@ export default defineComponent({
   },
   methods: {
     selectSftpFile (filePath: string) {
-        this.sftpFilePath = filePath;
-    },
-    async parseFile(){
-        if(!this.parser){
-            console.error('No parser selected');
-            return;
-        }
-        this.receivers = [];
-        this.isLoading = true;
-        for(const file of this.files){
-            const rulesCopy = JSON.parse(JSON.stringify(this.parser.rules)); 
-            const parsedReceivers = ReceiverParser.parse(Buffer.from(file.content), rulesCopy);
-            this.receivers.push(...parsedReceivers);
-        }
-        this.isLoading = false;
+        this.sftpFilePaths.push(filePath);
     },
     async readFile(receiverSource: ReceiverSource, encoding: BufferEncoding) : Promise<string> {
         if(receiverSource.type){
@@ -210,6 +222,53 @@ export default defineComponent({
         }
         return "";
     },
+    async parseSftpFiles() : Promise<ReceiverParserResult[]> {
+        if(!this.parser){
+            console.error('No parser selected');
+            return Promise.reject(new Error('No parser selected'));
+        }
+        this.receivers = [];
+
+        const receiverSources: ReceiverSource[] = this.sftpFilePaths.map((filePath) => {
+            return {
+                type: 'sftp',
+                sftp: {
+                    filePath,
+                    connection: this.sftpServerSelected as SftpData
+                }
+            }
+        });
+
+        const fileContents = await Promise.all(receiverSources.map((source) => this.readFile(source, this.parser!.rules.encoding)));
+
+        for (const fileContent of fileContents) {  
+            console.log('File content read:', fileContent.substring(0, 100)); // Log the first 100 characters of the file content for debugging
+            const buffer = new TextEncoder().encode(fileContent);
+            // text encoder users utf-8 therefore override the encoding in rules to utf-8,
+            //  use deep copy to avoid modifying original rules and cause conflicts
+            const rulesCopy = JSON.parse(JSON.stringify(this.parser.rules));
+            rulesCopy.encoding = 'utf-8';
+
+            const parsedReceivers = ReceiverParser.parse(Buffer.from(buffer), rulesCopy);  
+            this.receivers.push(...parsedReceivers);
+        }
+
+        return this.receivers;
+    },
+    async parseLocalFile(){
+        if(!this.parser){
+            console.error('No parser selected');
+            return;
+        }
+        this.receivers = [];
+        this.isLoading = true;
+        for(const file of this.files){
+            const rulesCopy = JSON.parse(JSON.stringify(this.parser.rules)); 
+            const parsedReceivers = ReceiverParser.parse(Buffer.from(file.content), rulesCopy);
+            this.receivers.push(...parsedReceivers);
+        }
+        this.isLoading = false;
+    },  
     getRules(){
         return this.rules.filter((rule) => {
             return rule.rules.type === this.parserType;
@@ -319,7 +378,7 @@ export default defineComponent({
     const sftpServer = ref<SftpData[]>([]);
     const sftpServerSelected = ref<SftpData|null>(null);
     const showSftpModal = ref<boolean>(false);
-    const sftpFilePath = ref<string>('');
+    const sftpFilePaths = ref<string[]>([]);
   
     return {
       fileSource,
@@ -334,7 +393,7 @@ export default defineComponent({
         sftpServer,
         sftpServerSelected,
         showSftpModal,
-        sftpFilePath,
+        sftpFilePaths,
         encryptedStore
     };
   },

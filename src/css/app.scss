@@ -200,6 +200,18 @@
     border-top: 1px solid var(--titlebar-border-color);
 }
 
+.height-100-titlebar {
+    height: calc(100vh - var(--titlebar-height));
+}
+
+.padding-top-titlebar {
+    padding-top: var(--titlebar-height);
+}
+
+.no-padding {
+    padding: 0;
+}
+
 .border{
     border: 1px solid #9996;
 }
@@ -322,8 +334,30 @@
             background-color: #ffffff22;            
         }
     }
+
+    &.material-card-filled {
+        background-color: #151515;
+    }
 }
 
 .text-outline, .text-muted {
     color: #dfdfdf;
+}
+
+.selection-item-box {
+    background-color: #292929;
+    transition: box-shadow 0.3s ease;
+    border: 1px solid transparent;
+    &:hover {
+        background-color: #3a3a3a;
+        border: 1px solid #555;
+    }
+    &.active {
+        background-color: #343d34;
+        border: 1px solid #617f54;
+        &:hover {
+            background-color: #3b4b3b;
+            border: 1px solid #617f54;
+        }
+    }
 }

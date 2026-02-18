@@ -1,5 +1,5 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
@@ -26,7 +26,13 @@ export class BrifleApi{
             },
             contentCoverLetterDelete(apiId: string, tenantId: string, name: string) {
                 return ipcRenderer.invoke('brifle:contentCoverLetterDelete', apiId, tenantId, name);
-            }
+            },
+            contentCreateSignatureReference(apiId: string, tenantId: string, referenceData : CreateSignatureReferenceRequest) {
+                return ipcRenderer.invoke('brifle:contentCreateSignatureReference', apiId, tenantId, referenceData);
+             },
+            parsePostalAddress(apiId: string, addressString: string) {
+                return ipcRenderer.invoke('brifle:parsePostalAddress', apiId, addressString);
+             },
 
         }) 
     }
@@ -154,6 +160,23 @@ export class BrifleApi{
      * @returns the deleted cover letter name
      */
     contentCoverLetterDelete(apiId: string, tenantId: string, name: string): Promise<ApiResponse<string>>;
+
+
+    /**
+     * parse addresses with the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param addressString - The address string to parse
+     * @returns the parsed address response
+     */
+    parsePostalAddress(apiId: string, addressString: string): Promise<ApiResponse<ParsedAddressResponse>>;
+
+
+    /**
+     * create a signature reference with the brifle API
+     * @param referenceData - The data to create the signature reference with
+     * @returns the created signature reference
+     */
+    contentCreateSignatureReference(apiId: string, tenantId: string, referenceData : CreateSignatureReferenceRequest): Promise<ApiResponse<CreateSignatureReferenceResponse>>;
 
  }
     

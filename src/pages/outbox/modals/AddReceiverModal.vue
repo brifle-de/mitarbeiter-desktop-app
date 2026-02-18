@@ -52,6 +52,8 @@
                             v-model="currentReceiver!.dateOfBirth"
                             label="Geburtsdatum"
                             color="secondary"
+                            fill-mask
+                            mask="##/##/####"
                             class="q-mb-md"
                         />
                     </div>
@@ -72,7 +74,7 @@
                         <div class="col-6 q-px-lg">
                             <q-input 
                                 v-model="currentReceiver!.addressStreet"
-                                label="Straße und Hausnummer*"
+                                label="Straße und Hausnummer"
                                 color="secondary"
                                 class="q-mb-md"
                             />
@@ -80,7 +82,9 @@
                         <div class="col-6 q-px-lg">
                             <q-input 
                                 v-model="currentReceiver!.addressPostcode"
-                                label="Postleitzahl*"
+                                label="Postleitzahl"
+                                fill-mask
+                                mask="#####"
                                 color="secondary"
                                 class="q-mb-md"
                             />   
@@ -88,7 +92,7 @@
                         <div class="col-6 q-px-lg">
                             <q-input 
                                 v-model="currentReceiver!.addressCity"
-                                label="Stadt*"
+                                label="Stadt"
                                 color="secondary"
                                 class="q-mb-md"
                             />   
@@ -192,12 +196,48 @@ export default defineComponent({
         },
         close() {            
             this.value = false;
-            this.currentReceiver = JSON.parse(JSON.stringify(this.initValue))
+            this.reset();
             this.$emit('close');
+        },
+        reset(){
+            if(this.initValue){
+            // deep copy to avoid mutating the parent component's data
+            this.currentReceiver = JSON.parse(JSON.stringify(this.initValue));
+            }else{
+                this.currentReceiver = {
+                    firstName: '',
+                    lastName: '',
+                    dateOfBirth: '',
+                    placeOfBirth: '',
+                    addressStreet: '',
+                    addressPostcode: '',
+                    addressCity: '',
+                    addressCountry: 'DE',
+                    phone: '',
+                    email: ''
+                };
+            }
         },
         save() {
             if (this.validateInput()) {
-                this.$emit('save', this.currentReceiver);
+
+                // deep copy value
+                const val = JSON.parse(JSON.stringify(this.currentReceiver));
+
+                // convert date of birth to iso string if it's not already in that format
+                // convert dd/mm/yyyy to iso string (yyyy-mm-dd) 
+                const dob = val!.dateOfBirth ?? null;
+                if(dob != null) {
+                    const dobParts = dob.split(/[/.]/);
+                    if(dobParts.length === 3) {
+                        const day = dobParts[0]!.padStart(2, '0');
+                        const month = dobParts[1]!.padStart(2, '0');
+                        const year = dobParts[2];
+                        val.dateOfBirth = `${year}-${month}-${day}`;
+                    }
+                } 
+                
+                this.$emit('save', val);
                 this.close();
             } else {
                 this.$q.notify({
@@ -209,23 +249,7 @@ export default defineComponent({
         }
     },
     mounted() {
-        if(this.initValue){
-            // deep copy to avoid mutating the parent component's data
-            this.currentReceiver = JSON.parse(JSON.stringify(this.initValue));
-        }else{
-            this.currentReceiver = {
-                firstName: '',
-                lastName: '',
-                dateOfBirth: '',
-                placeOfBirth: '',
-                addressStreet: '',
-                addressPostcode: '',
-                addressCity: '',
-                addressCountry: 'DE',
-                phone: '',
-                email: ''
-            };
-        }
+        this.reset();
     },
     setup() {      
         const countriesValues = getAllCountriesWithNames("de");
