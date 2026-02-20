@@ -15,7 +15,7 @@
       </div>
       <div class="row justify- q-col-gutter-lg">
       <div class="col-12 col-md-4 col-lg-3">
-        <q-card class="no-shadow" bordered>
+        <div class="no-shadow material-card" bordered>
           <div v-if="isLoading" class="text-center q-pa-xl">
             <LoadingSpinner></LoadingSpinner>
           </div>
@@ -55,9 +55,30 @@
           </q-card-actions>
           </div>
 
-        </q-card>
+        </div>
 
-        <q-card v-if="signatures" class="no-shadow q-mt-lg q-pa-md" bordered>
+          <div class="q-mt-lg q-pb-md auto-hypens material-card" v-if="deliveryCertifcateResponse != null">
+          <div class="text-h6 q-px-md">Zustellungsurkunde</div>
+          <template  :key="'deliveryCertifcateResponse'+item.key"
+            v-for="item in getDeliveryCertRows()">
+            <div class="row q-px-md q-py-sm">
+              <div class="col-6" >
+                {{item.key}}
+              </div>
+              <div class="col" style="line-break: anywhere;">
+                {{item.value}}
+              </div>
+            </div>
+            <q-separator inset />
+          </template>
+          <div class="q-px-lg q-mt-md">
+            <q-btn icon="download" @click="downloadDeliveryCertificate()" color="secondary" outline>
+              <q-tooltip>{{$t('outbox_page.delivery_cert.download')}}</q-tooltip>
+            </q-btn>
+          </div>
+        </div>
+
+        <div v-if="signatures" class="no-shadow q-mt-lg q-pa-md material-card" bordered>
             <div class="text-center text-h6">{{ $t('inbox_page.signatures.title') }}</div>
               <div class="q-py-md"
               v-for="(embeddedSignature, index) in signatures?.embedded_signatures"
@@ -129,7 +150,7 @@
                 </div>
               </div>
             </div>
-        </q-card>
+        </div>
        
 
         <SignatureModal v-model="showDetails"
@@ -193,9 +214,10 @@ import Brifle from 'src/services/node/Brifle';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { useSessionStore } from 'src/stores/session-store';
 import { useBrifleStore } from 'src/stores/brifle-store';
-import { ContentResponse, ContentActionsSignatureResponse, EmbbededSignatureResponse, Content } from '@brifle/brifle-sdk';
+import { ContentResponse, ContentActionsSignatureResponse, ContentBody, EmbbededSignatureResponse, DeliveryCertificateResponse } from '@brifle/brifle-sdk';
 import SessionContext from 'src/utils/sessionContext';
 import LoadingSpinner from 'src/components/LoadingSpinner.vue';
+import { DeliveryCertificateParser } from 'src/services/helper/deliveryCertificateParser';
 
 
 
@@ -227,6 +249,7 @@ export default defineComponent({
     const sessionStore = useSessionStore();
     const brifleStore = useBrifleStore();
     const sessionContext = new SessionContext()
+    const deliveryCertifcateResponse : Ref<DeliveryCertificateResponse | undefined> = ref(undefined);
     return {
       route,
       content,
@@ -251,6 +274,7 @@ export default defineComponent({
       sessionStore,
       brifleStore,
       sessionContext,
+      deliveryCertifcateResponse,
       t,
     };
   },
@@ -269,17 +293,54 @@ export default defineComponent({
     downloadSignature() {   
      
     },
+    downloadDeliveryCertificate() {
+      if (this.deliveryCertifcateResponse == null) {
+        return;
+      }
+      const blob = new Blob([this.deliveryCertifcateResponse.certificate], { type: 'text/plain' });
+      Downloader.downloadXMLString(blob, 'delivery_certificate.xml');
+    },
+    getDeliveryCertRows() {
+      if (this.deliveryCertifcateResponse == null) {
+        return [];
+      }
+      return [
+        { key: 'ID', value: this.deliveryCertifcateResponse?.meta.id },
+        { key: 'Dokument ID', value: this.deliveryCertifcateResponse?.meta.document_id },
+        { key: 'Art', value: this.t(`sealing.${this.deliveryCertifcateResponse?.meta.type}`) },
+      ].concat(this.parseDeliveryCertificate());
+    },
+    parseDeliveryCertificate() {
+      if (this.deliveryCertifcateResponse == null) {
+        return [];
+      }
+      const parser = new DeliveryCertificateParser()
+      return parser.parseDeliveryCertificate(this.deliveryCertifcateResponse);
+    },
     async loadItem(){
         this.isLoading = true;
     const apiId = await this.sessionContext.getCurrentApiId();
 
     void Brifle.content().contentGetContent(apiId, this.docId).then((response) => {
-      if (response == null || response.data == null) {
-        this.isLoading = false;
+      if (response == null || response.data == null) {       
+        if(response.isError){
+          // show push notification with error message
+          this.$q.notify({
+            type: 'negative',
+            message: `Fehlercode: ${response.error?.code}`,
+          }); 
+        }
         return;
       }
       const res = response.data;
       this.content = res;
+      void Brifle.content().getDeliveryCertificate(apiId, this.docId).then((deliveryResponse) => {
+        if (deliveryResponse != null && deliveryResponse.data != null) {
+          this.deliveryCertifcateResponse = deliveryResponse.data;
+        }
+        }).finally(() => { 
+          this.isLoading = false;
+        });
       if (res != null) {
         this.hasResponsiveContent = res.meta?.size_responsive != null
             && res.meta.size_responsive > 0;
@@ -339,7 +400,7 @@ export default defineComponent({
     openMyFoldersModal() {
       this.showMyFoldersModal = true;
     },
-    buildPdfContent(content : Content) {
+    buildPdfContent(content : ContentBody) {
       if (content.type === 'application/pdf') {
         return PdfBuilder.buildPdfContent(content.content);
       }

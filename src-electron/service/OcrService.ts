@@ -3,8 +3,40 @@ import { createWorker, OEM } from 'tesseract.js';
 import path from 'node:path';
 import { app } from 'electron';
 import { getAppDirectoryName } from '../const/AppConst';
+import { OrcDocumentAnalysisResult } from '../apis/ocr/ocrApi';
+import DocumentAnalyser from './ocr/DocumentAnalyser';
 
 export default class OcrService{
+
+ readonly ibanCountries = [
+  'AT', // Austria
+  'BE', // Belgium
+  'BG', // Bulgaria
+  'HR', // Croatia
+  'CY', // Cyprus
+  'CZ', // Czech Republic
+  'DK', // Denmark
+  'EE', // Estonia
+  'FI', // Finland
+  'FR', // France
+  'DE', // Germany
+  'GR', // Greece
+  'HU', // Hungary
+  'IE', // Ireland
+  'IT', // Italy
+  'LV', // Latvia
+  'LT', // Lithuania
+  'LU', // Luxembourg
+  'MT', // Malta
+  'NL', // Netherlands
+  'PL', // Poland
+  'PT', // Portugal
+  'RO', // Romania
+  'SK', // Slovakia
+  'SI', // Slovenia
+  'ES', // Spain
+  'SE'  // Sweden
+];
 
     getHomeDirectoryPath() {
         const homeDir = app.getPath('home');
@@ -26,6 +58,83 @@ export default class OcrService{
         await worker.terminate();
         return ret.data.text;
           
+    }
+
+    /**
+     * analyse document with multiple pages. each page is represented as a base64 string in the input array. Each base64 string represents an image of a page. The method should return a structured result containing the extracted information from all pages.
+     * 
+     * @param pagesBase64Data the 
+     */
+    async performDocumentAnalysisOnBase64Data(pagesBase64Data: string[]) : Promise<OrcDocumentAnalysisResult> {
+        const ocrDataPath = path.join(this.getHomeDirectoryPath(), 'ocr_data');
+        const worker = await createWorker(
+            ["deu"],
+            OEM.DEFAULT,
+            {
+                langPath: ocrDataPath,
+                cachePath: ocrDataPath,
+            }                           
+        );
+        let fullText = "";
+        for (const base64Data of pagesBase64Data) {
+            const ret = await worker.recognize(base64Data);
+            fullText += ret.data.text + "\n";
+        } 
+        await worker.terminate();
+        const documentAnalyser = new DocumentAnalyser();
+        const type = documentAnalyser.checkDocumentType(fullText);
+        const invoiceNumberDetection = documentAnalyser.extractInvoiceNumber(fullText);
+        
+
+
+
+        // find ibans
+        const ibanRegex = /([A-Z]{2}\d{2}([ ]?[0-9]{1,30}){1,6})/g;
+        
+        const ibans = [];
+
+        for(const match of fullText.matchAll(ibanRegex)) {
+            const iban = match[0].replace(/\s/g, ''); // remove spaces from IBAN
+            const countryCode = iban.slice(0, 2);
+            if (!this.ibanCountries.includes(countryCode.toUpperCase())) {
+                console.warn(`Detected IBAN with unsupported country code: ${countryCode}. Skipping this IBAN: ${iban}`);
+                continue;
+            }
+            if (iban.length >= 15 && iban.length <= 34) { // IBAN length check
+                ibans.push(iban);
+            }
+        }
+
+        const getEURAmountRegex = [
+            /€\s?(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))/g, 
+            /EUR\s?(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))/g,
+            /(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))\s?€/g, 
+            /(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))\s?EUR/g
+        ];
+        const amounts : string[] = [];
+        for (const regex of getEURAmountRegex) {
+
+            for(const match of fullText.matchAll(regex)) {
+                amounts.push(match[1]!);
+            }
+        }
+        const invoiceDetection = {
+            amounts: amounts,
+            ibans: ibans,
+            invoiceNumber:  invoiceNumberDetection
+        }
+
+        /**
+         * Rechnungsnummer: Nummer
+         * Rechnung # Nummer
+         * Invoice Number: Nummer
+         * Invoice #: Nummer
+         * 
+         */
+
+
+
+        return { raw: fullText, typeDetection: type, invoiceDetection: invoiceDetection };
     }
 
 }

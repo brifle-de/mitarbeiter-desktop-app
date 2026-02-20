@@ -1,0 +1,419 @@
+{
+    "version": "1.0",
+    "languages": {
+        "de": {
+            "invoiceNumber": {
+                "regexPatterns": [
+                    {
+                        "pattern": "Rechnungs?nummer[ —-]*[:#-]?[ —-]*([A-Z0-9][A-Za-z0-9\\/—-]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Rechnungs?[ —-]*[:#-]?[ —-]*([A-Z0-9][A-Za-z0-9\\/—-]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Rechnung\\s*#?\\s*([A-Z0-9][A-Za-z0-9\\-\\/—]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Rechnungs?nummer\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Rechnungs?\\s*Nr\\.?\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Beleg\\s*Nr\\.?\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Belegnummer\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Invoice\\s*#?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Invoice\\s*(Number|No\\.?|Nr\\.?)\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 2
+                    },
+                    {
+                        "pattern": "Inv\\.?\\s*(No\\.?|#)?\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 2
+                    },
+                    {
+                        "pattern": "Reference\\s*(No\\.?|#)?\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 2
+                    },
+                    {
+                        "pattern": "Ref\\.?\\s*(No\\.?|#)?\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
+                        "group": 2
+                    }
+                ]
+            },
+            "categories": {
+                "invoice": {
+                    "threshold": 6,
+                    "keywords": [
+                        {
+                            "value": "Rechnung",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Rechnungsnummer",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Rechnungs-Nr.",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Rechnungsdatum",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Leistungsdatum",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Kundennummer",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Zahlungsziel",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Fälligkeitsdatum",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Gesamtbetrag",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Rechnungsbetrag",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Bruttobetrag",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Nettobetrag",
+                            "weight": 2
+                        },
+                        {
+                            "value": "MwSt.",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Umsatzsteuer",
+                            "weight": 2
+                        },
+                        {
+                            "value": "USt.",
+                            "weight": 2
+                        },
+                        {
+                            "value": "USt-IdNr.",
+                            "weight": 1
+                        },
+                        {
+                            "value": "IBAN",
+                            "weight": 1
+                        },
+                        {
+                            "value": "BIC",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Bankverbindung",
+                            "weight": 1
+                        }
+                    ],
+                    "regexPatterns": [
+                        {
+                            "pattern": "Rechnungs?(-|\\s)?Nr\\.?\\s*:?\\s*[A-Z0-9-]+",
+                            "weight": 3
+                        },
+                        {
+                            "pattern": "\\d{1,3}[.,]\\d{2}\\s?€",
+                            "weight": 1
+                        },
+                        {
+                            "pattern": "\\d{1,2}\\s?%\\s?(MwSt|USt)",
+                            "weight": 2
+                        }
+                    ],
+                    "structuralSignals": [
+                        {
+                            "type": "multipleCurrencyAmounts",
+                            "weight": 2
+                        },
+                        {
+                            "type": "lineItemsTable",
+                            "weight": 2
+                        }
+                    ]
+                },
+                "contract": {
+                    "threshold": 6,
+                    "keywords": [
+                        {
+                            "value": "Vertrag",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Mietvertrag",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Kaufvertrag",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Dienstleistungsvertrag",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Arbeitsvertrag",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Vertragsparteien",
+                            "weight": 2
+                        },
+                        {
+                            "value": "zwischen",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Laufzeit",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Kündigung",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Kündigungsfrist",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Haftung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Gewährleistung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Salvatorische Klausel",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Gerichtsstand",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Unterschrift",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Vertragspartner",
+                            "weight": 1
+                        }
+                    ],
+                    "regexPatterns": [
+                        {
+                            "pattern": "§\\s?\\d+",
+                            "weight": 3
+                        }
+                    ],
+                    "structuralSignals": [
+                        {
+                            "type": "longParagraphs",
+                            "weight": 2
+                        },
+                        {
+                            "type": "signatureBlock",
+                            "weight": 2
+                        }
+                    ]
+                },
+                "letter": {
+                    "threshold": 3,
+                    "keywords": [
+                        {
+                            "value": "Sehr geehrte",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Mit freundlichen Grüßen",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Betreff",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Schreiben",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Information",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Mitteilung",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Erinnerung",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Mahnung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Angebot",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Bestätigung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Einladung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Protokoll",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Bericht",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Anfrage",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Gehalt",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Lohn",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Abrechnung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Gehaltsabrechnung",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Lohnabrechnung",
+                            "weight": 3
+                        },
+                        {
+                            "value": "Verdienstbescheinigung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Abrechnungsmonat",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Personalnummer",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Steuerklasse",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Kinderfreibetrag",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Bruttogehalt",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Nettogehalt",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Lohnsteuer",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Solidaritätszuschlag",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Kirchensteuer",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Sozialversicherung",
+                            "weight": 2
+                        },
+                        {
+                            "value": "Rentenversicherung",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Krankenversicherung",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Arbeitslosenversicherung",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Pflegeversicherung",
+                            "weight": 1
+                        },
+                        {
+                            "value": "RV",
+                            "weight": 1
+                        },
+                        {
+                            "value": "KV",
+                            "weight": 1
+                        },
+                        {
+                            "value": "AV",
+                            "weight": 1
+                        },
+                        {
+                            "value": "PV",
+                            "weight": 1
+                        },
+                        {
+                            "value": "Entgelt",
+                            "weight": 1
+                        }
+                    ],
+                    "regexPatterns": [],
+                    "structuralSignals": [
+                        {
+                            "type": "greetingAndClosing",
+                            "weight": 2
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

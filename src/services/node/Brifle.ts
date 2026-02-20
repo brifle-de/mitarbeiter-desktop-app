@@ -1,4 +1,4 @@
-import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, DeliveryCertificateResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 /**
@@ -47,9 +47,19 @@ export default class BrifleApi {
         return new Signatures();
     }
 
+    public static address() : Address {
+        return new Address();
+    }
+
+  
+
 }
 
 export class Signatures {
+
+    public async createSignatureReference(apiId: string, tenantId: string, signatureData : CreateSignatureReferenceRequest): Promise<ApiResponse<CreateSignatureReferenceResponse>> {
+        return window.brifleApi.contentCreateSignatureReference(apiId, tenantId, signatureData);
+     }
     
 }
 
@@ -104,6 +114,20 @@ export class Mailbox {
         return window.brifleApi.getInbox(apiId, filter, page);
     }
 }
+
+
+export class Address {
+    /**
+     * parse an address string into a structured format using the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param addressString - The address string to parse
+     * @returns the parsed address response
+     * */
+    public async parsePostalAddress(apiId: string, addressString: string): Promise<ApiResponse<ParsedAddressResponse>> {
+        return window.brifleApi.parsePostalAddress(apiId, addressString); 
+    }
+}
+
 
 export class Content {
     /**
@@ -173,6 +197,26 @@ export class Content {
     }
 
     /**
+     * get the delivery certificate for a content from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get the delivery certificate for
+     * @returns the delivery certificate response
+     */
+    public async getDeliveryCertificate(apiId: string, contentId: string): Promise<ApiResponse<DeliveryCertificateResponse>> {
+        return window.brifleApi.contentGetDeliveryCertificate(apiId, contentId); 
+    }
+
+    /**
+     * get the delivery status for a content from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get the delivery status for
+     * @return the delivery status response
+     * */
+    public async getDeliveryStatus(apiId: string, contentId: string): Promise<ApiResponse<string>> {
+        return window.brifleApi.contentGetDeliveryStatus(apiId, contentId); 
+    }
+
+    /**
      * list the cover letters from the brifle API
      * @param apiId - The api id returned from newApi
      * @param tenantId - The tenant id to list the cover letters for
@@ -207,5 +251,8 @@ export class Content {
         return window.brifleApi.contentCoverLetterDelete(apiId, tenantId, name);
     }
 
+
 }
+
+
 

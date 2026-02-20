@@ -15,6 +15,12 @@ export default class OcrRoutes{
             const ocrResult = await this.ocrService.performOcrOnBase64Data(base64Data);
             return ocrResult;
         })
+        ipcMain.handle('ocr:performDocumentAnalysisBase64Data', async (event, base64DataPages: string[]) => {
+            // Implement your OCR logic here
+            // For example, you might call an OCR service or library
+            const ocrResult = await this.ocrService.performDocumentAnalysisOnBase64Data(base64DataPages);
+            return ocrResult;
+        })
     }
 
 

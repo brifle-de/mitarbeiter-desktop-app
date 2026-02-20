@@ -11,7 +11,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import VuePdfEmbed from 'vue-pdf-embed';
-import { Content } from '@brifle/brifle-sdk';
+import { ContentBody } from '@brifle/brifle-sdk';
 import PdfBuilder from 'src/utils/pdfBuilder';
 
 export default defineComponent({
@@ -21,7 +21,7 @@ export default defineComponent({
   },
   props: {
     content: {
-      type: Array<Content>,
+      type: Array<ContentBody>,
       default: () => [],
     },
     baseKey: {
@@ -31,9 +31,9 @@ export default defineComponent({
   },
   computed: {
   
-  },
+  }, 
   methods: {
-    buildPdfContent(content : Content) {
+    buildPdfContent(content : ContentBody) {
       if (content.type === 'application/pdf') {
         return PdfBuilder.buildPdfContent(content.content);
       }

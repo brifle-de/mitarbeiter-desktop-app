@@ -1,6 +1,6 @@
 
 import {  ipcMain } from 'electron'
-import { ApiV1, InboxFilter, LoginRequest, OutboxFilter, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
+import { ApiV1, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, ErrorResponse, InboxFilter, LoginRequest, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
 import { ApiResponse } from '@brifle/brifle-sdk'
 import LogService from 'app/src-electron/service/LogService'
 import { LogLevel } from 'app/src-electron/log/types'
@@ -105,6 +105,55 @@ export default class BrifleRoutes{
             const response = api.content().deleteCoverLetter(tenantId, name)
             .then(res => {
                 return ApiResponse.success(res.data as unknown as string);
+            })
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:contentCreateSignatureReference', async (event, apiId: string, tenantId: string, referenceData : CreateSignatureReferenceRequest) => {
+           
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.signature().createSignatureReference(tenantId, referenceData)
+            .then(res => {
+                return ApiResponse.success(res.data as unknown as CreateSignatureReferenceResponse);
+            })
+            .catch(err => {
+                console.error('Error creating signature reference:', err);
+                return ApiResponse.error(err.data as unknown as ErrorResponse);
+            });
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:contentGetDeliveryCertificate', async (event, apiId: string, contentId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().getDeliveryCertificate(contentId)
+            .then(res => {
+                return ApiResponse.success(res.data as unknown as string);
+            })
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:contentGetDeliveryStatus', async (event, apiId: string, contentId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().getDeliveryStatus(contentId)
+            .then(res => {
+                return ApiResponse.success(res.data as unknown as string);
+            })
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:parsePostalAddress', async (event, apiId: string, addressString: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.address().parseAddress({address: addressString})
+            .then(res => {
+                return ApiResponse.success(res.data as unknown as ParsedAddressResponse);
+            })
+            .catch(err => {
+                console.error('Error parsing postal address:', err);
+                return ApiResponse.error(err.data as unknown as ErrorResponse);
             })
             return await this.castToResponse(response)
         })

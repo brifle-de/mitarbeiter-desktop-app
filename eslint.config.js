@@ -41,6 +41,7 @@ export default defineConfigWithVueTs(
         'error',
         { prefer: 'type-imports' }
       ],
+      '@typescript-eslint/no-redundant-type-constituents': 'warn'
     }
   },
   // https://github.com/vuejs/eslint-config-typescript
