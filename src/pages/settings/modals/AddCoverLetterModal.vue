@@ -49,11 +49,12 @@
 </template>
 <script lang="ts">
 
-import { Content } from '@brifle/brifle-sdk';
+
 import { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
 import { defineComponent, PropType, ref } from 'vue';
 
 import DocumentView from 'src/components/ui-elements/DocumentView.vue';
+import { ContentBody } from '@brifle/brifle-sdk';
 
 export interface CoverLetterCreateValue {
     name: string;
@@ -90,7 +91,7 @@ export default defineComponent({
 
             return btoa(binary);
         },
-        getPreviewContent() : Content[] {      
+        getPreviewContent() : ContentBody[] {      
             console.log('Content Value:', this.contentValue);
             const b64encoded = this.uint8ToBase64(this.contentValue?.content || new Uint8Array());           
             return [{

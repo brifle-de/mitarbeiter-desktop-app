@@ -54,9 +54,52 @@ function initApp(){
   // checks if logs.config file exist if not create
   ensureConfig();
   pipeSocketService.init();
+  copyOcrFiles(appDataDir); 
 }
 
 
+function getBundledTessdataPath(): string {
+  if (app.isPackaged) {
+    // production (inside app bundle)
+    return path.join(
+      process.resourcesPath,
+      "ocr_data",
+    );
+  }
+
+  // dev (filesystem)
+  return path.join(
+    process.cwd(),
+    "src-electron",
+    "ocr_data"
+  );
+
+}
+
+function copyOcrFiles(appDataDir: string){
+  const tessdataSourceDir = getBundledTessdataPath();
+  const tessdataTargetDir = path.join(appDataDir, "ocr_data");
+  if (!fs.existsSync(tessdataTargetDir)) {
+    fs.mkdirSync(tessdataTargetDir, { recursive: true });
+  }
+  fs.readdir(tessdataSourceDir, (err, files) => {
+    if (err) {
+      console.error("Error reading tessdata source directory:", err);
+      return;
+    }
+    files.forEach(file => {
+      const sourcePath = path.join(tessdataSourceDir, file);
+      const targetPath = path.join(tessdataTargetDir, file);
+      fs.copyFile(sourcePath, targetPath, (copyErr) => {
+        if (copyErr) {
+          console.error(`Error copying ${file}:`, copyErr);
+        } else {
+          console.log(`Copied ${file} to ${targetPath}`);
+        }
+      });
+    });
+  });
+}
 
 
 async function createWindow() {

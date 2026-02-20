@@ -1,4 +1,4 @@
-import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, DeliveryCertificateResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 /**
@@ -194,6 +194,26 @@ export class Content {
      */
     public async contentCoverLetterGet(apiId: string, tenantId: string, type: "custom" | "default", name: string): Promise<ApiResponse<string>> {
         return window.brifleApi.contentCoverLetterGet(apiId, tenantId, type, name); 
+    }
+
+    /**
+     * get the delivery certificate for a content from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get the delivery certificate for
+     * @returns the delivery certificate response
+     */
+    public async getDeliveryCertificate(apiId: string, contentId: string): Promise<ApiResponse<DeliveryCertificateResponse>> {
+        return window.brifleApi.contentGetDeliveryCertificate(apiId, contentId); 
+    }
+
+    /**
+     * get the delivery status for a content from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get the delivery status for
+     * @return the delivery status response
+     * */
+    public async getDeliveryStatus(apiId: string, contentId: string): Promise<ApiResponse<string>> {
+        return window.brifleApi.contentGetDeliveryStatus(apiId, contentId); 
     }
 
     /**

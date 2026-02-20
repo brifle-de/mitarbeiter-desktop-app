@@ -5,6 +5,14 @@
             "invoiceNumber": {
                 "regexPatterns": [
                     {
+                        "pattern": "Rechnungs?nummer[ —-]*[:#-]?[ —-]*([A-Z0-9][A-Za-z0-9\\/—-]+)",
+                        "group": 1
+                    },
+                    {
+                        "pattern": "Rechnungs?[ —-]*[:#-]?[ —-]*([A-Z0-9][A-Za-z0-9\\/—-]+)",
+                        "group": 1
+                    },
+                    {
                         "pattern": "Rechnung\\s*#?\\s*([A-Z0-9][A-Za-z0-9\\-\\/—]+)",
                         "group": 1
                     },
@@ -14,10 +22,6 @@
                     },
                     {
                         "pattern": "Rechnungs?\\s*Nr\\.?\\s*[:\\-]?\\s*([A-Z0-9][A-Za-z0-9\\-\\/]+)",
-                        "group": 1
-                    },
-                    {
-                        "pattern": "Rechnungs?[ ]?[:#-]?[ ]?([A-Z0-9][A-Za-z0-9\\/—-]+)",
                         "group": 1
                     },
                     {

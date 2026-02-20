@@ -101,7 +101,7 @@ import { useSessionStore } from 'src/stores/session-store';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { useBrifleStore } from 'src/stores/brifle-store';
 import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
-import { Content } from '@brifle/brifle-sdk';
+import { ContentBody } from '@brifle/brifle-sdk';
 import FileDragAndDrop, { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
 
  
@@ -260,7 +260,7 @@ export default defineComponent({
                 this.loading = false;
             });
         },
-    getPreviewContent() : Content[] {       
+    getPreviewContent() : ContentBody[] {       
         return this.previewContent ? [{
             type: 'application/pdf',
             content: this.previewContent

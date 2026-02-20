@@ -133,6 +133,10 @@
         height: 100%;
     }
 
+  .h-100v{
+    height: calc(100vh - $titlebar-height);
+  }
+
 .accent-bordered-radius {
     border-radius: 20px;
     border-bottom-left-radius: 10px;

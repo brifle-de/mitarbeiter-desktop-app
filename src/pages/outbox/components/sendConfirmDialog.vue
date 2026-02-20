@@ -38,6 +38,7 @@
                             <div><strong>Betrag:</strong> {{ data.paymentData.amount }} {{ data.paymentData.currency }}</div>
                             <div><strong>IBAN:</strong> {{ formatedIban }}</div>
                             <div><strong>Fälligkeitsdatum:</strong> {{ data.paymentData.dueDate ? data.paymentData.dueDate : 'Nicht angegeben' }}</div>
+                            <div><strong>Name des Zahlungsempfängers:</strong> {{ data.paymentData.paymentReceiverName ? data.paymentData.paymentReceiverName : 'Nicht angegeben' }}</div>
                         </template>
                         <template v-if="data.signatureData && data.attachSignatureData">
                             <div class="text-h6 q-my-md">
@@ -462,6 +463,8 @@ export default defineComponent({
                             reference: this.data.paymentData?.reference ?? "",
                             due_date: this.data.paymentData?.dueDate?? "",
                             description: this.data.paymentData?.description ?? "",
+                            recipient_name: this.data.paymentData?.paymentReceiverName ?? "",
+
                         }
                     }
                 }
@@ -482,7 +485,8 @@ export default defineComponent({
             }
             const eventData : SendConfirmEventData = {
                 requestData: requests,
-                signatureData: this.data.attachSignatureData ? this.data.signatureData : undefined
+                signatureData: this.data.attachSignatureData ? this.data.signatureData : undefined,
+                receivers: this.data.receivers
             }
             this.$emit('confirm', eventData);
             this.close();

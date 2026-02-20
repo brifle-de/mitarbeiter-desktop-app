@@ -8,6 +8,36 @@ import DocumentAnalyser from './ocr/DocumentAnalyser';
 
 export default class OcrService{
 
+ readonly ibanCountries = [
+  'AT', // Austria
+  'BE', // Belgium
+  'BG', // Bulgaria
+  'HR', // Croatia
+  'CY', // Cyprus
+  'CZ', // Czech Republic
+  'DK', // Denmark
+  'EE', // Estonia
+  'FI', // Finland
+  'FR', // France
+  'DE', // Germany
+  'GR', // Greece
+  'HU', // Hungary
+  'IE', // Ireland
+  'IT', // Italy
+  'LV', // Latvia
+  'LT', // Lithuania
+  'LU', // Luxembourg
+  'MT', // Malta
+  'NL', // Netherlands
+  'PL', // Poland
+  'PT', // Portugal
+  'RO', // Romania
+  'SK', // Slovakia
+  'SI', // Slovenia
+  'ES', // Spain
+  'SE'  // Sweden
+];
+
     getHomeDirectoryPath() {
         const homeDir = app.getPath('home');
         const appDataDir = path.join(homeDir, getAppDirectoryName());
@@ -53,7 +83,6 @@ export default class OcrService{
         await worker.terminate();
         const documentAnalyser = new DocumentAnalyser();
         const type = documentAnalyser.checkDocumentType(fullText);
-        console.log(`Document type detection result: ${JSON.stringify(type)}`);
         const invoiceNumberDetection = documentAnalyser.extractInvoiceNumber(fullText);
         
 
@@ -64,22 +93,29 @@ export default class OcrService{
         
         const ibans = [];
 
-        for(let match; (match = ibanRegex.exec(fullText)) !== null; ) {
+        for(const match of fullText.matchAll(ibanRegex)) {
             const iban = match[0].replace(/\s/g, ''); // remove spaces from IBAN
+            const countryCode = iban.slice(0, 2);
+            if (!this.ibanCountries.includes(countryCode.toUpperCase())) {
+                console.warn(`Detected IBAN with unsupported country code: ${countryCode}. Skipping this IBAN: ${iban}`);
+                continue;
+            }
             if (iban.length >= 15 && iban.length <= 34) { // IBAN length check
                 ibans.push(iban);
             }
         }
 
         const getEURAmountRegex = [
-            /€\s?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g, 
-            /EUR\s?(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2}))/g
+            /€\s?(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))/g, 
+            /EUR\s?(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))/g,
+            /(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))\s?€/g, 
+            /(\d{1,3}(?:[.,]?\d{3})*(?:[.,]\d{2})|([0-9]{1,10}))\s?EUR/g
         ];
         const amounts : string[] = [];
-        let matchAmount;
         for (const regex of getEURAmountRegex) {
-            while ((matchAmount = regex.exec(fullText)) !== null) {
-                amounts.push(matchAmount[1]!);
+
+            for(const match of fullText.matchAll(regex)) {
+                amounts.push(match[1]!);
             }
         }
         const invoiceDetection = {

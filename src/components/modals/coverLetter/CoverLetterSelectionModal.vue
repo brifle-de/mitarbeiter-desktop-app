@@ -85,7 +85,7 @@
 import { defineComponent, ref } from 'vue';
 
 import BrifleApi from 'src/services/node/Brifle';
-import { Content } from '@brifle/brifle-sdk';
+import { ContentBody } from '@brifle/brifle-sdk';
 import DocumentView from 'src/components/ui-elements/DocumentView.vue'; 
 
 
@@ -129,7 +129,7 @@ export default defineComponent({
     },
   },
   methods: {
-    getPreviewContent() : Content[] {
+    getPreviewContent() : ContentBody[] {
         return this.previewContent ? [{
             type: 'application/pdf',
             content: this.previewContent

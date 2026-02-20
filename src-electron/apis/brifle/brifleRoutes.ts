@@ -124,6 +124,25 @@ export default class BrifleRoutes{
             return await this.castToResponse(response)
         })
 
+        ipcMain.handle('brifle:contentGetDeliveryCertificate', async (event, apiId: string, contentId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().getDeliveryCertificate(contentId)
+            .then(res => {
+                return ApiResponse.success(res.data as unknown as string);
+            })
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:contentGetDeliveryStatus', async (event, apiId: string, contentId: string) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().getDeliveryStatus(contentId)
+            .then(res => {
+                return ApiResponse.success(res.data as unknown as string);
+            })
+            return await this.castToResponse(response)
+        })
 
         ipcMain.handle('brifle:parsePostalAddress', async (event, apiId: string, addressString: string) => {
             const api = this.apiMap.get(apiId)

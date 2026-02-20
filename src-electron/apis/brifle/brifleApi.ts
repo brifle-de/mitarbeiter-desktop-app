@@ -1,5 +1,5 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, DeliveryCertificateResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
@@ -30,6 +30,12 @@ export class BrifleApi{
             contentCreateSignatureReference(apiId: string, tenantId: string, referenceData : CreateSignatureReferenceRequest) {
                 return ipcRenderer.invoke('brifle:contentCreateSignatureReference', apiId, tenantId, referenceData);
              },
+            contentGetDeliveryCertificate(apiId: string, contentId: string) {
+                return ipcRenderer.invoke('brifle:contentGetDeliveryCertificate', apiId, contentId);
+            },
+            contentGetDeliveryStatus(apiId: string, contentId: string) {
+                return ipcRenderer.invoke('brifle:contentGetDeliveryStatus', apiId, contentId);
+            },
             parsePostalAddress(apiId: string, addressString: string) {
                 return ipcRenderer.invoke('brifle:parsePostalAddress', apiId, addressString);
              },
@@ -177,6 +183,23 @@ export class BrifleApi{
      * @returns the created signature reference
      */
     contentCreateSignatureReference(apiId: string, tenantId: string, referenceData : CreateSignatureReferenceRequest): Promise<ApiResponse<CreateSignatureReferenceResponse>>;
+
+
+    /**
+     * get the delivery certificate for a content
+     * @param apiId - The api id returned from newApi
+     * @param contentId - The content id to get the delivery certificate for
+     * @returns the delivery certificate response
+     */
+    contentGetDeliveryCertificate(apiId: string, contentId: string): Promise<ApiResponse<DeliveryCertificateResponse>>;
+
+    /**
+     *  get the delivery status for a content
+     * @param apiId the api id returned from newApi
+     * @param contentId the content id to get the delivery status for
+     */
+    contentGetDeliveryStatus(apiId: string, contentId: string): Promise<ApiResponse<string>>;
+
 
  }
     

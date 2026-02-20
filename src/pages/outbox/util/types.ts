@@ -9,6 +9,7 @@ export interface PaymentData {
     reference: string;
     iban: string;
     description?: string;
+    paymentReceiverName: string;
 }
 
 export interface SignatureRecord {
@@ -41,5 +42,6 @@ export interface SendConfirmData {
 
 export interface SendConfirmEventData {
     requestData: SendContentRequest[];
+    receivers: TrackableReceiverRecord[]; 
     signatureData ?: SignatureRecord[] | undefined;
 }

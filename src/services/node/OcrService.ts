@@ -61,7 +61,6 @@ export default class OcrService {
         // extract postcode (5 digits) and city (rest of the line after postcode)
         let postalCode = '';
         let city = '';
-        console.log('Postcode City Line:', postcodeCityLine);
         if (postcodeCityLine.includes(',')) {
             const parts = postcodeCityLine.split(',', 2);
             const postalCodePartIndex = parts[0]!.trim().match(/\d{5}/) ? 0 : 1;

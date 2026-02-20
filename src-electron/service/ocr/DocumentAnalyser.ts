@@ -23,8 +23,11 @@ export default class DocumentAnalyser{
         for (const pattern of invoiceNumberConfig.regexPatterns) {
             const regex = new RegExp(pattern.pattern, "gi");
             const match = Array.from(rawText.matchAll(regex));
-            if (match && match.length > 0) {
-                for (const m of match) {                   
+            if(invoiceNumber && invoiceNumber.trim() !== "") {
+                break; // stop if we already found an invoice number
+            }
+            if (match && match.length > 0) {                
+                for (const m of match) {                
                     const expectedGroupContent = m[pattern.group];
                     if (!expectedGroupContent || expectedGroupContent.trim() === '') {
                         console.warn(`Expected group ${pattern.group} is undefined or empty for match: ${m[0]}. Skipping this match.`);

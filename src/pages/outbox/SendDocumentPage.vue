@@ -1,5 +1,27 @@
 <template>
     <q-page class="q-px-xl">
+        <!-- overlay showing that it is sending -->
+         <div class="relative-position fixed w-100 h-100v" style="left:0px; top: 0px; z-index: 10000;" v-if="isSending"> 
+
+            <!-- Overlay Card -->
+            <q-card class="absolute-center q-pa-lg material-card material-card-filled " style="width: 700px;">
+            <q-card-section>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-h6 text-center">Brifle unterwegs</div>
+                        <div class="text-muted q-my-lg text-center">Das Dokument wird übermittelt...</div>
+                        <div class="text-center q-my-xl">
+                            <q-spinner color="secondary" size="50px" class="q-mt-lg" />
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <img src="~assets/img/sending.png" style="width: 100%; max-width: 300px;" />
+                    </div>
+                </div>
+            </q-card-section>
+            </q-card>
+
+        </div>
             
         <q-dialog v-model="recommendationDrawerOpen" position="right" maximized persistent  no-shake  transition-show="none"
   transition-hide="none">
@@ -45,10 +67,24 @@
             @confirm="onSendConfirm($event)"
             :apiId="apiId"
             />
-
-        <div class="text-h4 q-mb-xl">
-            Dokument versenden
+        <div class="row">
+            <div class="col-10">
+                <div class="text-h4 q-mb-xl">
+                    Dokument versenden
+                </div>
+            </div>
+            <div class="col-2 text-right">
+                <div v-if="isProcessingOcr">
+                    <span class="q-pr-sm">
+                        <q-spinner color="secondary" size="20px" />                        
+                    </span>
+                    <span class="text-muted">
+                        Textanalyse läuft
+                    </span>                    
+                </div>
+            </div>
         </div>
+        
         <q-separator class="q-mb-xl" />
         <div class="row">
             <div class="col-12 col-lg-4 q-pr-xl">
@@ -56,6 +92,7 @@
                  <div class="material-card q-pa-md rounded-borders">                 
                     <div class="text-h6 q-mt-lg q-mb-md">Betreff</div>
                     <q-input 
+                        :readonly="readonly"
                         v-model="subject"
                         color="secondary"
                         label="Betreff des Briefes"
@@ -225,7 +262,7 @@
                                 <q-btn color="secondary" text-color="green-9"
                                 @click="checkReceivers()"
 
-                                >Prüfen</q-btn>                                
+                                >Prüfen & Anwenden</q-btn>                                
                             </div>
                         </div>
 
@@ -258,14 +295,14 @@
                                     v-model="attachInvoiceData"
                                     color="secondary"
                                 />
-                                <span class="q-ml-md">Rechnungsdaten anhängen (nur für Dokumententyp Rechnung)</span>
+                                <span class="q-ml-md">Rechnungsdaten anhängen</span>
                             </div>
                             <div class="col-12 q-px-md" v-if="canAttachSignature">
                                 <q-toggle 
                                     v-model="attachSignatureData"
                                     color="secondary"
                                 />
-                                <span class="q-ml-md">Signaturdaten anhängen (nur für Dokumententyp Vertrag)</span>
+                                <span class="q-ml-md">Signaturdaten anhängen</span>
                             </div>
                         </div>
                     </div>
@@ -277,6 +314,7 @@
                         <div class="row">
                             <div class="col-6 q-px-lg">
                                 <q-input 
+                                    :readonly="readonly"
                                     v-model.number="paymentData.amount"
                                     label="Betrag"
                                     color="secondary"
@@ -298,7 +336,7 @@
                         </div>
                         <div class="row">
                             <div class="col-6 q-px-lg">                              
-                                <q-input v-model="paymentData.dueDate" mask="##/##/####">
+                                <q-input v-model="paymentData.dueDate" mask="##/##/####" color="secondary" :readonly="readonly">
                                     <template v-slot:append>
                                         <q-icon name="event" class="cursor-pointer">
                                         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -314,6 +352,7 @@
                             </div>
                             <div class="col-6 q-px-lg">
                                 <q-input 
+                                    :readonly="readonly"
                                     v-model="paymentData.reference"
                                     label="Referenznummer*"
                                     color="secondary"
@@ -324,6 +363,7 @@
                         <div class="row">
                             <div class="col-12 q-px-lg">
                                 <q-input 
+                                    :readonly="readonly"
                                     v-model="paymentData.iban"
                                     label="IBAN"
                                     color="secondary"
@@ -337,6 +377,18 @@
                         <div class="row">
                             <div class="col-12 q-px-lg">
                                 <q-input 
+                                    :readonly="readonly"
+                                    v-model="paymentData.paymentReceiverName"
+                                    label="Name des Zahlungsempfängers"
+                                    color="secondary"
+                                    class="q-mb-md"
+                                /> 
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 q-px-lg">
+                                <q-input 
+                                    :readonly="readonly"
                                     v-model="paymentData.description"
                                     label="Beschreibung (optional, max. 100 Zeichen)"
                                     color="secondary"
@@ -500,7 +552,7 @@ import { useSessionStore } from 'src/stores/session-store';
 
 import FileDragAndDrop, { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
 import DocumentView from 'src/components/ui-elements/DocumentView.vue';
-import { BirthInformation, Content, CreateSignatureReferenceRequest, ParsedAddressResponse, ReceiverRequest, SendContentResponse } from '@brifle/brifle-sdk';
+import { BirthInformation, ContentBody, CreateSignatureReferenceRequest, ParsedAddressResponse, ReceiverRequest, SendContentResponse } from '@brifle/brifle-sdk';
 import OcrService, { OrcAddressResult } from 'src/services/node/OcrService';
 
 
@@ -534,7 +586,7 @@ export default defineComponent({
     },
     computed: {
         canSend(): boolean {
-            return this.subject.trim() !== '' && this.receivers.length > 0 && this.files.length > 0;
+            return this.subject.trim() !== '' && this.receivers.length > 0 && this.files.length > 0 && this.hasCheckedReceivers;
         },
         canAttachInvoice(): boolean {
             return this.docType === 'invoice';
@@ -669,9 +721,8 @@ export default defineComponent({
                         req.postal_address.date_of_birth = receiver.dateOfBirth;
                     }
                 }
-                console.log("Checking receiver with data:", req);
 
-                void BrifleApi.content().contentCheckReceiver(this.apiId, req).then((res)=>{
+                await BrifleApi.content().contentCheckReceiver(this.apiId, req).then((res)=>{
                     if(res.isSuccess) {
                         receiver.existsBrifle = true;                            
                         this.$q.notify({
@@ -694,14 +745,19 @@ export default defineComponent({
                         message: `Fehler bei der Überprüfung von ${receiver.firstName} ${receiver.lastName}`,
                         timeout: 5000
                     });
-                });
+                }); 
             }
+            this.hasCheckedReceivers = true;
         },
         sendDocument() {
             this.sendConfirmDialogOpen = true;  
         },
         async onSendConfirm(eventData: SendConfirmEventData) {
-            console.log("Confirmed send with data:", eventData); 
+            this.readonly = true; // disable form inputs while sending to prevent changes during the sending process
+            this.sendConfirmDialogOpen = false;
+            this.isSending = true; // you can use this flag to show a loading indicator in the UI if desired
+            // wait for 250ms to ensure the waiting dialog is shown before starting the sending process, this improves perceived performance by ensuring the user sees the feedback that the sending process has started, especially if the sending process is fast
+            await new Promise(resolve => setTimeout(resolve, 250));
             // handle the actual sending logic here, e.g. call an API to send the document with the provided data
             const signatureRefReq : CreateSignatureReferenceRequest = {
                 fields: (eventData.signatureData ?? []).map(field => ({
@@ -711,11 +767,9 @@ export default defineComponent({
                 }))
             }
             const requiresSignatureRef = signatureRefReq.fields.length > 0;
-            if(requiresSignatureRef) {
-                console.log("Creating signature reference with data:", signatureRefReq);           
+            if(requiresSignatureRef) {        
                 const signatureRef = await BrifleApi.signatures().createSignatureReference(this.apiId, this.tenantId, signatureRefReq);
                 if(signatureRef.isSuccess) {
-                    console.log("Created signature reference:", signatureRef.data);
                     // proceed with sending the document, including the signature reference ID in the payload if needed
                     const sref = signatureRef.data?.id;
                     const sendRequest = eventData.requestData
@@ -735,13 +789,16 @@ export default defineComponent({
             }
 
             // now handle the sending of the document with the provided data, including the signature reference if it was created successfully
-            const resp = [] as SendContentResponse[];
-            for(const req of eventData.requestData) {
+            const resp = [] as SendContentResponse[];            
+            for(const [index, req] of eventData.requestData.entries()) {
                 console.log("Sending document with request data:", req);
                 try {
                     const response = await BrifleApi.content().contentSendContent(this.apiId, this.tenantId, req);
                     if(response.isSuccess) {
-                        console.log("Document sent successfully:", response.data);
+                        // remove successfully sent document receivers from the receivers list to prevent duplicate sending if the user tries to send again
+                        if (eventData.receivers && eventData.receivers[index]) {
+                            this.removeReceiver(eventData.receivers[index]); 
+                        }
                         resp.push(response.data as SendContentResponse);
                     } else {
                         console.error("Failed to send document:", response.error);
@@ -760,11 +817,53 @@ export default defineComponent({
                     });
                 }
             }
-
-            this.sendConfirmDialogOpen = false;
+            if(resp.length === eventData.requestData.length) {
+                // all documents sent successfully
+                this.$q.notify({
+                    type: 'positive',
+                    message: 'Dokument erfolgreich versendet',
+                    timeout: 5000
+                });
+                this.reset();  
+            }else{
+                // some documents failed to send, you can choose how to handle this case, e.g. show a summary of which documents were sent and which failed
+                this.$q.notify({
+                    type: 'error',
+                    message: `Dokument teilweise versendet: ${resp.length} von ${eventData.requestData.length} erfolgreich`,
+                    timeout: 5000
+                });
+            }
+            
+            this.isSending = false;
+        },
+        reset() {
+            this.subject = "";
+            this.receivers = [];
+            this.files = [];
+            this.paymentData = {
+                amount: 0,
+                currency: 'EUR',
+                dueDate: '',
+                iban: '',
+                reference: '',
+                paymentReceiverName: ''
+            };
+            this.signatureFields = [];
+            this.docType = 'letter';
+            this.attachInvoiceData = false;
+            this.attachSignatureData = false;
+            this.allowPapermail = false;
+            this.requestBrifleDeliveryCertificate = false;
+            this.readonly = false;
+            this.hasCheckedReceivers = false;
         },
         newRecord(receiver: ReceiverRecord) {        
             this.receivers.push(receiver);
+            this.hasCheckedReceivers = false; // reset receiver check status when a new receiver is added, user needs to re-check receivers before sending
+        },
+        removeReceiver(receiver: ReceiverRecord) {
+            this.receivers = this.receivers.filter(r => !this.isReceiverMatch(r, receiver));
+            this.hasCheckedReceivers = false;
         },
         getReceiverAddressString(receiver: ReceiverRecord) : string {
             const parts = [
@@ -786,7 +885,7 @@ export default defineComponent({
 
             for(let pageNum = 1; pageNum <= numPages; pageNum++) {
                 const page = await pdf.getPage(pageNum);
-                const scale = 2; // increase for higher resolution
+                const scale = 3; // increase for higher resolution
                 const viewport = page.getViewport({ scale });
 
                 const canvas = document.createElement("canvas");
@@ -857,11 +956,23 @@ export default defineComponent({
             // PNG as base64
             return canvas.toDataURL("image/png");
             },
+        isReceiverMatch(record1: ReceiverRecord, record2: ReceiverRecord): boolean {
+            const nameMatch = record1.firstName === record2.firstName && record1.lastName === record2.lastName;
+            const addressMatch = record1.addressStreet === record2.addressStreet &&
+                record1.addressCity === record2.addressCity &&
+                record1.email === record2.email &&
+                record1.phone === record2.phone &&
+                record1.dateOfBirth === record2.dateOfBirth &&
+                record1.placeOfBirth === record2.placeOfBirth &&
+                record1.addressPostcode === record2.addressPostcode;
+            return nameMatch && addressMatch;
+        },
         runOcrAnalysis(content: string[]) : Promise<RecommendationRecord[]> {
              return this.ocrService.performDocumentAnalysisOnBase64Data(content).then((result: OrcDocumentAnalysisResult)=>{
                 this.recommendationDrawerOpen = true;
                 const recs: RecommendationRecord[] = [];
                 let type = "";
+                console.log("OCR analysis result:", result);
                 const typeDectionKeys = Object.keys(result.typeDetection);
                 let typeDetectionScore = 0;
                 for (const key of typeDectionKeys) {
@@ -988,7 +1099,8 @@ export default defineComponent({
             }); 
             if (this.files.length == 1) {
                 this.firstPageImage = '';
-                const firstPagePromise = this
+                this.isProcessingOcr = true;
+                const firstPagePromise = this                
                 .pdfFirstPageToPNG(this.files[0]!.content)
                 .then((dataUrl)=>{
                     this.firstPageImage = dataUrl;
@@ -1004,7 +1116,7 @@ export default defineComponent({
                 }).catch((error)=>{
                     console.error("Error generating page previews:", error);
                 });
-                const res = await Promise.all([firstPagePromise, imagesRes])      
+                const res = await Promise.all([firstPagePromise, imagesRes]);                 
                 // merge res arrays in one array of recommendations
                 const allRecs: RecommendationRecord[] = [];
                 if(res[0]) {
@@ -1023,22 +1135,20 @@ export default defineComponent({
                     this.recommendationDrawerOpen = true;
                     this.selectRecommendations(this.recommendations); // select all by default
                 }
-              
+                this.isProcessingOcr = false;
             }
         },
         uint8ToBase64(bytes: Uint8Array): string {
             let binary = "";
             const chunkSize = 0x8000; // 32 KB chunks
-
             for (let i = 0; i < bytes.length; i += chunkSize) {
                 binary += String.fromCharCode(
                 ...bytes.subarray(i, i + chunkSize)
                 );
             }
-
             return btoa(binary);
         },
-        getPreviewContent() : Content[] {   
+        getPreviewContent() : ContentBody[] {   
             return this.files.map((file)=>{         
                 const b64encoded = this.uint8ToBase64(file.content);           
                 return {
@@ -1052,7 +1162,8 @@ export default defineComponent({
         const accountId = this.sessionStore.getSelectedAccountId as string;
         // get account data
         this.account = this.encryptedStore.getAccount(accountId) ?? null;
-        this.apiKey = this.account?.apiKey ?? '';
+        this.apiKey = this.account?.apiKey ?? ''; 
+        
         if(this.account) {            
             this.tenantId = this.account.tenantId ?? '';
              void this.brifleStore.getApi(this.account.apiKey ?? '', ApiEndpoints.getEndpoint(this.account.apiEnv)).then(api => {
@@ -1088,6 +1199,7 @@ export default defineComponent({
         const brifleStore = useBrifleStore();
         const account = ref<AccountData | null>(null);
         const tenantId = ref<string>('');
+        const hasCheckedReceivers = ref<boolean>(false);
 
         const allowPapermail = ref<boolean>(false);
         const requestBrifleDeliveryCertificate = ref<boolean>(false);
@@ -1098,18 +1210,23 @@ export default defineComponent({
             currency: 'EUR',
             dueDate: '',
             reference: '',
-            iban: ''
+            iban: '',
+            paymentReceiverName: ''
         });
         const supportedCurrencies = ['EUR'];
         const signatureFields = ref<SignatureRecord[]>([]);
         const showAddSignatureFieldModal = ref<boolean>(false);
         const recommendationDrawerOpen = ref<boolean>(false);
         const recommendations = ref<RecommendationRecord[]>([]);
-        const selectedRecommendations = ref<RecommendationRecord[]>([]);
-            
+        const selectedRecommendations = ref<RecommendationRecord[]>([]);            
         const sendConfirmDialogOpen = ref<boolean>(false);
 
         const addressStore = useAddressStore();
+
+        const readonly = ref<boolean>(false);
+        const isSending = ref<boolean>(false);
+
+        const isProcessingOcr = ref<boolean>(false);
 
         return {
             brifleApi,
@@ -1139,7 +1256,11 @@ export default defineComponent({
             recommendations,
             selectedRecommendations,
             sendConfirmDialogOpen,
-            addressStore
+            addressStore,
+            hasCheckedReceivers,
+            readonly,
+            isSending,
+            isProcessingOcr
         };
     }
 });
