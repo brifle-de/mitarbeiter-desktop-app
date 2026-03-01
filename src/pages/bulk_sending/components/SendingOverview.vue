@@ -239,6 +239,10 @@ export default defineComponent({
                     options.fallback = {
                         enabled_physical_delivery: true,
                         paper_mail: {
+                            cover_letter: this.actionNotBrifle.useCoverLetter ? {
+                                type: this.actionNotBrifle.selectedCoverLetter?.type?? 'default',
+                                name: this.actionNotBrifle.selectedCoverLetter?.name?? '',                                
+                            }: undefined,
                             recipient: {
                                 address_line1: receiverName,
                                 address_line2: postalAddress.street,

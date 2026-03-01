@@ -29,9 +29,8 @@
         <q-table            
             :rows="records"
             :columns="getColumns()"    
-            class="q-mt-md search-receiver-table"
+            class="q-mt-md search-receiver-table material-card material-card-muted"
             flat
-            bordered
             v-model:selected="selected"
         >
          <template v-slot:header-cell-exists="props">

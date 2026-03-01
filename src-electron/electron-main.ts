@@ -8,6 +8,8 @@ import { ensureConfig } from './log/logger';
 import PipeSocketService from './service/PipeSocketService';
 import { getAppDirectoryName, AppPipeName } from "./const/AppConst";
 import ParsersService from './service/ParsersService';
+import ScriptsService from './service/ScriptsService';
+import BulkSendTemplateService from './service/BulkSendTemplateService';
 
 
 // needed in case process is undefined under Linux
@@ -44,17 +46,21 @@ function initApp(){
   const homeDir = app.getPath('home');
   const appDataDir = path.join(homeDir, getAppDirectoryName());
   const parsersService = new ParsersService();
+  const scriptsService = new ScriptsService();
+  const sendTemplateService = new BulkSendTemplateService();
   const pipeSocketService = new PipeSocketService(AppPipeName);
   // check if directory exists
   if (!fs.existsSync(appDataDir)) {
       fs.mkdirSync(appDataDir, { recursive: true });
-  }
+  }  
   // initialize parsers directory
   parsersService.initDirectory();
   // checks if logs.config file exist if not create
   ensureConfig();
   pipeSocketService.init();
   copyOcrFiles(appDataDir); 
+  scriptsService.initScriptsDirectory();
+  sendTemplateService.initTemplatesDirectory();
 }
 
 

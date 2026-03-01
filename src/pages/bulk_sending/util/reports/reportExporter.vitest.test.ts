@@ -14,7 +14,8 @@ test("test json exporter", () => {
             doc: {
                 filePath: 'path/sample.pdf',
                 receiverId: '123',
-                type: 'file'
+                type: 'file',
+                docType: null
             },
             exists: true,
             receiver: {
@@ -39,7 +40,8 @@ test("test json exporter", () => {
             doc: {
                 filePath: 'path/sample2.pdf',
                 receiverId: '456',
-                type: 'file'
+                type: 'file',
+                docType: null
             },
             exists: true,
             receiver: {
@@ -64,7 +66,8 @@ test("test json exporter", () => {
             doc: {
                 filePath: 'path/sample3.pdf',
                 receiverId: '789',
-                type: 'file'
+                type: 'file',
+                docType: null
             },
             exists: false,
             receiver: {
@@ -89,7 +92,8 @@ test("test json exporter", () => {
             doc: {
                 filePath: 'path/sample4.pdf',
                 receiverId: '101',
-                type: 'file'
+                type: 'file',
+                docType: null
             },
             exists: true,
             receiver: {

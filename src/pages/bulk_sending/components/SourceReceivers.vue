@@ -3,7 +3,7 @@
         Lege die Quelle der Empfänger fest.
     </div>
     <div class="src_grid q-my-lg">
-        <div class="text-bold" 
+        <div class="text-bold selection-item-box clickable" 
             @click="selectSource('file')" :class="{ active: value.type === 'file' }">
             <div>
                 <!-- icon -->
@@ -13,7 +13,7 @@
                 Lokale Datei
             </div>
         </div>
-        <div class="text-bold" 
+        <div class="text-bold selection-item-box clickable" 
             @click="selectSource('sftp')" :class="{ active: value.type === 'sftp' }">
             <div>
                 <!-- icon -->
@@ -46,7 +46,9 @@
                 v-model="showSftpModal">
  
                 </SftpModal>
-                <q-btn @click="showSftpModal = true" color="secondary" text-color="black" label="Datei auswählen" />
+                <q-btn
+                flat class="muted-action-btn"
+                 @click="showSftpModal = true" color="secondary" label="Datei auswählen" />
             </div>
         </div>
         
@@ -58,7 +60,9 @@
                 {{ filePath }}
             </div>
             <div class="col-3 text-right">
-                <q-btn @click="selectFile()" color="secondary" text-color="black" label="Datei auswählen" />
+                <q-btn 
+                flat class="muted-action-btn"
+                @click="selectFile()" color="secondary"  label="Datei auswählen" />
             </div>
         </div>
       
@@ -72,13 +76,12 @@
     $bg-grid-item-hover: #f0f0f033;
     $bg-grid-item-active: #f0f0f02c;
 
-    .src_grid {
+   .src_grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
     .src_grid > div {
-        background-color: $bg-grid-item;
         padding: 20px;
         min-height: 200px;
         border-radius: 10px;        
@@ -87,15 +90,8 @@
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        border: 3px solid $bg-grid-item;
-    }
-    .src_grid > div:hover {
-        background-color: $bg-grid-item-hover;
-        cursor: pointer;
-    }
-    .src_grid > div:active, .src_grid > div.active  {
-        background-color: $bg-grid-item-active;
-        border: 3px solid var(--q-secondary);
+        border-width: 1px;
+        border-style: solid;
     }
 </style>
 <script lang="ts">
@@ -118,6 +114,28 @@ export default defineComponent({
         type: Object as PropType<ReceiverSource>,
         required: true,
     },
+    useLocalStorage: {
+        type: Boolean,
+        default: true,
+    },
+    initValue: {
+        type: Object as PropType<ReceiverSource>,
+        required: false,
+    },
+    localStorageKey: {
+        type: String,
+        default: 'bulkSendingReceiverSource',
+    }
+  },
+  watch: {
+    initValue: {
+        handler(newVal) {
+            if(newVal) {
+                this.loadFromInitValue();
+            }
+        },
+        deep: true,
+    }
   },
   methods: {
     selectSource (source: string) {        
@@ -141,22 +159,30 @@ export default defineComponent({
         this.receiverSrc.sftp.connection = this.sftpServerSelected
         this.emitValue();
     },
+    loadFromInitValue() {
+        console.log('Loading from init value', this.initValue);
+        if(this.initValue) {
+            this.loadData(this.initValue);
+        }
+    },
+    loadData(data: ReceiverSource) {
+        this.receiverSrc.type = data.type;
+        this.receiverSrc.file = data.file;
+        this.receiverSrc.sftp = data.sftp;
+        if(this.receiverSrc.file) {
+            this.filePath = this.receiverSrc.file;
+        }
+        if(this.receiverSrc.sftp) {
+            this.sftpFilePath = this.receiverSrc.sftp.filePath ? this.receiverSrc.sftp.filePath : '';
+        }
+    },
     loadFromLocalStorage() {
-        const stored = window.localStorage.getItem('bulkSendingReceiverSource');
-        if(stored) {            
+        const stored = window.localStorage.getItem(this.localStorageKey);
+        if(stored) {                     
             try {
                 const parsed = JSON.parse(stored);
                 if(parsed && typeof parsed === 'object') {
-                    this.receiverSrc.type = parsed.type ? parsed.type : this.receiverSrc.type;
-                    this.receiverSrc.file = parsed.file ? parsed.file : this.receiverSrc.file;
-                    this.receiverSrc.sftp = parsed.sftp ? parsed.sftp : this.receiverSrc.sftp;
-                    if(this.receiverSrc.file) {
-                        this.filePath = this.receiverSrc.file;
-                    }
-                    if(this.receiverSrc.sftp) {
-                        this.sftpFilePath = this.receiverSrc.sftp.filePath ? this.receiverSrc.sftp.filePath : '';
-                    }
-
+                    this.loadData(parsed);
                 }
             } catch (e) {
                 console.error('Error parsing bulkSendingReceiverSource from localStorage', e);
@@ -164,7 +190,10 @@ export default defineComponent({
         }
     },
     emitValue() {
-        window.localStorage.setItem('bulkSendingReceiverSource', JSON.stringify(this.receiverSrc));
+        if(this.useLocalStorage) {
+            window.localStorage.setItem(this.localStorageKey, JSON.stringify(this.receiverSrc));
+        }
+        
         this.$emit('update:modelValue', this.receiverSrc);
     },
     selectFile () {
@@ -203,7 +232,12 @@ export default defineComponent({
         if(accId != null) {
             this.sftpServer = this.encryptedStore.getAccount(accId)?.sftpData ?? [];           
         }
-        this.loadFromLocalStorage();
+        if (this.useLocalStorage) {
+            this.loadFromLocalStorage();
+        }
+        if(this.initValue) {
+            this.loadFromInitValue();
+        }
   },
   setup () {   
     const receiverSrc = ref<ReceiverSource>({

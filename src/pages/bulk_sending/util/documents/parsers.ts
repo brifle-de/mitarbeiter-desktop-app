@@ -5,6 +5,12 @@ export interface DocumentSourceDirParserRules {
     regexOutputReceiverID: (match: RegExpMatchArray) => string | null,
     // callback to get the date from the file name. Return null if no date is set
     regexOutputDate(match: RegExpMatchArray): Date | null,
+    // callback to get document type
+    regexOutputDocumentType(match: RegExpMatchArray): string | null
+
+    // get getID
+    getID(): string;
+
 }
 
 export interface DocumentParserImportRecord {
@@ -15,6 +21,8 @@ export interface DocumentParserImportRecord {
         dateFormat: string,  // i.e. 'YYYY-MM-DD' or 'DD.MM.YYYY'
         datePosition: number, // set to -1 if no date is present
         receiverIdPosition: number,
+        documentTypePosition: number, // set to -1 if no document type is present
+
     }
 }
 
@@ -25,6 +33,8 @@ export interface DocumentSourceDirParserResult {
     receiverId: string,
     // the date from the file name. Return null if no date is set
     date: Date | null,
+    // 
+    docType: string | null
 }
 
 export class DocumentSourceDirParser{
@@ -50,6 +60,7 @@ export class DocumentSourceDirParser{
             const match = fileName.match(regex);
             if (match) {
                 const date = rules.regexOutputDate(match);
+                const docType = rules.regexOutputDocumentType(match);
                 const receiverId = rules.regexOutputReceiverID(match);
                 // if receiverId is null, skip the file
                 if (!receiverId) {
@@ -58,7 +69,8 @@ export class DocumentSourceDirParser{
                 result.push({
                     fileName: fileName,
                     receiverId: receiverId,
-                    date: date
+                    date: date,
+                    docType: docType
                 });
             }
         }

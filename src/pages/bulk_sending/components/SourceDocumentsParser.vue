@@ -28,6 +28,7 @@
             icon="perm_identity"
             label="Zeitstempel Filter"
             caption="Optional"
+            v-if="useDateFilter"
         >      
             <div class="row q-mt-md border q-pa-md rounded-borders">
                 <div class="col-6">
@@ -70,7 +71,7 @@
             :rules="[val => val && val.length > 0 || 'Pfad ist erforderlich']" />
     </div>
     <div class="q-my-lg text-right">        
-        <q-btn color="secondary" text-color="black" label="Einlesen" @click="parse()" />
+        <q-btn color="secondary" flat class="muted-action-btn" label="Einlesen" @click="parse()" />
     </div>
     <div class="q-my-lg">
         <!-- table with results-->
@@ -78,10 +79,42 @@
             v-if="fileReceiverMapping.length > 0 || hasLoaded"
             :rows="fileReceiverMapping"
             :columns="columns()"
-            class="q-pa-md"
-            flat
-            bordered
-        />
+            class="q-pa-md material-card material-card-muted"
+            flat>
+            <template v-slot:body-cell-fileName="props">
+                <q-td :props="props">
+                    <div class="text-caption text-muted">
+                    {{ props.row.fileName }}
+                    </div>
+                </q-td>
+            </template>
+            <template v-slot:body-cell-receiverId="props">
+                <q-td :props="props">
+                    <div class="text-caption q-ml-sm muted-pill" v-if="props.row.receiverId">
+                        {{ props.row.receiverId }}
+                    </div>
+                </q-td>
+            </template>
+                <template v-slot:body-cell-docType="props">
+
+                <q-td :props="props">
+                    <div :class="'text-caption q-ml-sm muted-pill ' + (pillColors[props.row.docType] ?? '')" v-if="props.row.docType">                        
+                        {{ props.row.docType }}
+                    </div>
+                </q-td>
+            </template>
+            <template v-slot:body-cell-date="props">
+                <q-td :props="props">
+                    <div class="text-caption q-ml-sm muted-pill" v-if="props.row.date">
+                        {{ props.row.date.toLocaleDateString('de-DE', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                        }) }}
+                    </div>
+                </q-td>
+            </template>
+        </q-table>
     </div>
     
     <SftpModal v-if="documentSource.sftp?.connection != null"
@@ -116,6 +149,7 @@ import { SftpData } from 'app/src-electron/models/EncryptedStore';
 import AssignmentFile, { AssignmentRules } from '../util/documents/assignmentFile';
 import SampleAssignmentParser from '../util/documents/sampleAssignmentRules';
 import SftpModal from 'src/components/SftpModal.vue';
+import { computePillColors } from '../util/helper';
 
 
 export default defineComponent({
@@ -142,19 +176,28 @@ export default defineComponent({
     },
   },
   methods: {
+    loadParser(parserId: string) {
+        const found = this.availableDirParsers.find((parser) => parser.name === parserId || parser.id === parserId);
+        if(found) {
+            this.value.dirParser = found.rules;
+            this.selectedDirParserName = found.name;
+        }
+    },
     parse() {
         if(this.isDirAnalysis) {
             void this.parseDirectoryFiles();
         } else {
             void this.parseAssignmentFile();
         }
-    },
+        this.pillColors = computePillColors(this.fileReceiverMapping);
+    },  
     
     columns() {
         return [
-            { name: 'fileName', label: 'Datei', field: 'fileName', sortable: true },
-            { name: 'receiverId', label: 'Empfänger',  field: 'receiverId', sortable: true },
-            { name: 'date', label: 'Datum', field: 'date', sortable: true, format: (val: Date|null) => {       
+            { name: 'fileName', label: 'Datei', field: 'fileName', sortable: true, align: 'left' as const },
+            { name: 'receiverId', label: 'Empfänger',  field: 'receiverId', sortable: true, align: 'left' as const  },
+            { name: 'docType', label: 'Dok-Typ', field: 'docType', sortable: true, align: 'left' as const  },
+            { name: 'date', label: 'Datum', field: 'date', sortable: true, align: 'left' as const, format: (val: Date|null) => {       
                     if(val == null) {
                         return '';
                     }      
@@ -279,10 +322,11 @@ export default defineComponent({
                 fileName: await this.getFullPath(this.basePath,element.filePath),
                 receiverId: element.receiverId,
                 date: null,
+                docType: element.docType,
             }
         });
 
-        this.fileReceiverMapping = await Promise.all(m);
+        this.fileReceiverMapping = await Promise.all(m); 
 
         res = await Promise.all(res.map(async (element: DocumentRecord) => {
             element.filePath = await this.getFullPath(this.basePath, element.filePath);
@@ -331,6 +375,7 @@ export default defineComponent({
             return {
                 filePath: await this.getFullPath( dirBasePath, element.fileName),
                 receiverId: element.receiverId,
+                docType: element.docType,
                 type: this.value.type,          
                 ...(sftpConnection !== undefined) && { sftp: sftpConnection },  
             };
@@ -370,16 +415,14 @@ export default defineComponent({
         }
     },
     selectDirParser(parserName: string | null) {        
-        // get selected index of q-select
-       // const selectedIndex = this.availableDirParsers.findIndex((parser) => JSON.stringify(parser.rules) === JSON.stringify(event));
-        console.log(JSON.stringify(parserName));
+       
 
         if(parserName) {
             localStorage.setItem('selectedDocumentDirParser', parserName);
         } else {
             localStorage.removeItem('selectedDocumentDirParser');
         }
-        this.value.dirParser = this.availableDirParsers.find((parser) => parser.name === parserName)!.rules;
+        this.value.dirParser = this.availableDirParsers.find((parser) => parser.name === parserName || parser.id === parserName)!.rules;
 
     },
     selectFileParser(parserName: string | null) {
@@ -393,7 +436,7 @@ export default defineComponent({
     loadState(){
         const cachedDirParser = localStorage.getItem('selectedDocumentDirParser');
         if(cachedDirParser) {
-            const found = this.availableDirParsers.find((rule) => rule.name === cachedDirParser);
+            const found = this.availableDirParsers.find((rule) => rule.name === cachedDirParser || rule.id === cachedDirParser);
             if(found) {
                 this.value.dirParser = found.rules;
                 this.selectedDirParserName = found.name;
@@ -401,7 +444,7 @@ export default defineComponent({
         }
         const cachedFileParser = localStorage.getItem('selectedDocumentFileParser');
         if(cachedFileParser) {
-            const found = this.availableAssignmentParser.find((rule) => rule.name === cachedFileParser);
+            const found = this.availableAssignmentParser.find((rule) => rule.name === cachedFileParser || rule.id === cachedFileParser);
             if(found) {
                 this.value.fileAssignment = found.rules;
                 this.selectedFileParserName = found.name;
@@ -432,13 +475,18 @@ export default defineComponent({
         type: Object as PropType<DocumentSource>,
         required: true,
     },    
+    useDateFilter: {
+        type: Boolean,
+        default: true,
+    }
   }, 
+
   
   setup() {       
     const files = ref<string[]>([]);
     const fileReceiverMapping = ref<DocumentSourceDirParserResult[]>([]);    
-    const availableDirParsers = ref<{name: string, rules: DocumentSourceDirParserRules}[]>([]);
-    const availableAssignmentParser = ref<{name: string, rules: AssignmentRules}[]>(SampleAssignmentParser);
+    const availableDirParsers = ref<{name: string, rules: DocumentSourceDirParserRules, id: string}[]>([]);
+    const availableAssignmentParser = ref<{name: string, rules: AssignmentRules, id: string}[]>(SampleAssignmentParser);
     const documentSource = ref<DocumentSource>({
         type: 'file',
         destType: 'file',
@@ -450,6 +498,7 @@ export default defineComponent({
     
     SampleParser.forEach(element => {
         availableDirParsers.value.push({
+            id: element.id,
             name: element.name,
             rules: element.rules,
         });
@@ -458,6 +507,7 @@ export default defineComponent({
     const dateRange = ref<{from?: string, to?: string}>();
     const selectedDirParserName = ref<string>('');
     const selectedFileParserName = ref<string>('');
+    const pillColors = ref<Record<string, string>>({});
 
     return {
         files,
@@ -472,6 +522,7 @@ export default defineComponent({
         expandedTimeFilter,
         selectedDirParserName,
         selectedFileParserName,
+        pillColors,
 
     };
 

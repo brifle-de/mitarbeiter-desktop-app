@@ -8,4 +8,5 @@ export default interface DocumentRecord extends DocumentRecordBase {
 export interface DocumentRecordBase {
     receiverId: string,
     filePath: string,
+    docType: string | null
 }

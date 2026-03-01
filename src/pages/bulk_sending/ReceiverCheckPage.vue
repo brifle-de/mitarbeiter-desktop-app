@@ -9,9 +9,13 @@
          <q-btn-toggle
         v-model="fileSource"
         push
-        glossy
+        class="border"
+        text-color="white"
+        toggle-color="secondary"
+        toggle-text-color="black"
+        unelevated
+        no-caps
         @update:model-value="clear()"
-        toggle-color="green-7"
         :options="[
           {label: 'Lokal', value: 'local', slot: 'local'},
           {label: 'Sftp', value: 'sftp', slot: 'sftp'},

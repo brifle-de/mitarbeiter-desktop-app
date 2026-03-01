@@ -2,7 +2,7 @@
      <div>
         <h4>Initialisiere Anwendung</h4>
     </div>
-    <div class="bg-accent text-white text-subtitle1 q-pa-md q-mt-md">
+    <div class="muted-container-purple text-subtitle1 q-pa-md q-mt-md">
         Die Anwendung ist versiegelt. Bitte gibt das vergebene Passwort ein, um die Anwendung zu entsperren.
     </div>
     <div class="q-mt-lg">
@@ -22,11 +22,10 @@
     </div>
     <div class="text-right">
         <q-btn
-        class="q-mt-lg q-px-md text-subtitle1"
-        label="Entsiegeln"
-        rounded
-        text-color="black"        
-        color="secondary"
+        class="q-mt-lg q-px-md text-subtitle1 muted-action-btn"
+        label="Entsiegeln"        
+        flat
+        color="green-2"
         @click="unsealApp()"
     />
     </div>
@@ -45,6 +44,12 @@ export default defineComponent({
             this.encryptedStorage.loadData(this.password).then(() => {              
                 void this.$router.push({ path: '/accounts' }); 
             }).catch((err: Error) => {
+                console.error('Error unsealing application:', err);
+                this.$q.notify({
+                    message: 'Das Passwort ist falsch oder es ist ein Fehler beim Laden der Daten aufgetreten. Bitte versuche es erneut.',
+                    color: 'negative',
+                    icon: 'error',
+                });
                 console.error(err);
             });
         },

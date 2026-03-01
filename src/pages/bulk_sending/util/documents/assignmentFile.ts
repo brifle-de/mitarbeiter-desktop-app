@@ -56,7 +56,7 @@ export default class AssignmentFile {
         
         // iterate over all rows and get the values from the csv document
         for (const row of csv.records) {
-            const result: DocumentRecord = {type: 'file', filePath: "", receiverId: ""};
+            const result: DocumentRecord = {type: 'file', filePath: "", receiverId: "", docType: null};
             keys.forEach((key) => {
                 const value = row[rules[key as keyof AssignmentRules] as string] || '';
                 const mapKey = key as keyof DocumentRecordBase;
@@ -125,7 +125,7 @@ class XMLAssignmentParser{
      * @returns the parsed data
      */
     private parseNode(node: Element, rules: AssignmentRules, xmlDoc: Document): DocumentRecord {
-        const result: DocumentRecord = {type: this.type, filePath: "", receiverId: ""};
+        const result: DocumentRecord = {type: this.type, filePath: "", receiverId: "", docType: null};
         if(this.sftp){
             result.sftp = this.sftp;
         }

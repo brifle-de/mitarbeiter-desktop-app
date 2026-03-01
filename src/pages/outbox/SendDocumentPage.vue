@@ -65,6 +65,8 @@
             :data="confirmData"
             v-model="sendConfirmDialogOpen"
             @confirm="onSendConfirm($event)"
+            :include-cover-letter="includeCoverLetter"
+            :selected-cover-letter="selectedCoverLetter"
             :apiId="apiId"
             />
         <div class="row">
@@ -85,8 +87,26 @@
             </div>
         </div>
         
+
+        <div class="q-pb-lg text-right">
+             <q-btn-toggle
+        v-model="editorMode"
+        class="border"
+        text-color="white"
+        toggle-color="secondary"
+        toggle-text-color="black"
+        rounded
+        unelevated
+        no-caps
+        :options="[
+          {label: 'Bearbeiten', value: 'edit'},
+          {label: 'Vorschau', value: 'preview'},          
+        ]"
+      />
+        </div>
+
         <q-separator class="q-mb-xl" />
-        <div class="row">
+        <div class="row" v-show="editorMode === 'edit'">
             <div class="col-12 col-lg-4 q-pr-xl">
                 <!-- Sidebar for selecting document type, recipients, etc. -->
                  <div class="material-card q-pa-md rounded-borders">                 
@@ -146,7 +166,10 @@
                 <div class="material-card q-pa-md rounded-borders q-mt-lg">
                     
                     <div class="float-right q-mt-md">
-                        <q-btn color="secondary" 
+                        <q-btn 
+                        flat
+                        color="secondary"
+                        class="muted-action-btn"
                         @click="showAddReceiverModal = true"
                         outline>
                         <q-icon name="add" />
@@ -307,6 +330,47 @@
                         </div>
                     </div>
                 </div>
+                <!-- paper mail delivery properties -->
+                 <div class="material-card q-pa-md rounded-borders q-mt-lg" v-if="allowPapermail">
+                    <div class="text-h6 q-mt-lg q-mb-md">Eigenschaften für postalischen Versand</div>
+                    <!-- cover letter -->
+                    <div class="row">
+                        <div class="col-12 q-px-md">
+                            <q-toggle 
+                                v-model="includeCoverLetter"
+                                color="secondary"
+                            />
+                            <span class="q-ml-md">Deckblatt beifügen</span>
+                        </div>
+                    </div>
+                    <q-separator class="q-my-md" v-if="includeCoverLetter" />
+                    <div class="row w-100 q-mt-md"  v-if="includeCoverLetter">
+                        <div class="flex-1">
+                            <template v-if="selectedCoverLetter">
+                                <div class="q-px-md">{{ selectedCoverLetter.displayName }}</div>
+                            </template>
+                            <template v-else>
+                                <div class="q-px-md text-muted">Es wurde noch kein Deckblatt ausgewählt.</div>
+                            </template>
+                            
+                        </div>
+                        <div class="">
+                            <q-btn 
+                            @click="showSelectCoverLetter()"
+                            color="secondary"
+                            flat class="muted-action-btn">
+                                Auswählen
+                            </q-btn>
+                        </div>
+                    </div>
+                    <CoverLetterSelectionModal
+                        :api-id="apiId"
+                        :tenant-id="tenantId"
+                        @selected="selectedCoverLetter = $event"
+                        v-model="isCoverLetterModalOpen"
+                    />
+                </div>
+
                 <div class="q-mt-lg" v-if="showInvoiceDataOption"> 
                     <!-- invoice data options -->
                     <div class="material-card q-pa-md rounded-borders">
@@ -527,6 +591,18 @@
 
             </div>
         </div>
+        <div v-show="editorMode === 'preview'">
+            <PreviewComponent
+                :receivers="receivers"
+                :files="files"
+                :has-checked-receivers="hasCheckedReceivers"
+                :allow-papermail="allowPapermail"
+                :includeCoverLetter="includeCoverLetter"
+                :selectedCoverLetter="selectedCoverLetter"
+                :api-id="apiId"
+                :tenant-id="tenantId"
+            />
+        </div>
 
         <AddReceiverModal 
             @save="newRecord($event)"
@@ -554,6 +630,7 @@ import FileDragAndDrop, { FileContent } from 'src/components/ui-elements/FileDra
 import DocumentView from 'src/components/ui-elements/DocumentView.vue';
 import { BirthInformation, ContentBody, CreateSignatureReferenceRequest, ParsedAddressResponse, ReceiverRequest, SendContentResponse } from '@brifle/brifle-sdk';
 import OcrService, { OrcAddressResult } from 'src/services/node/OcrService';
+import PreviewComponent from './components/previewComponent.vue';
 
 
 import * as pdfjsLib from "pdfjs-dist";
@@ -572,14 +649,15 @@ import AddSignatureFieldModal from './modals/AddSignatureFieldModal.vue';
 import { OrcDocumentAnalysisResult } from 'app/src-electron/apis/ocr/ocrApi';
 import { RecommendationRecord } from './components/recommendationItem.vue';
 import RecommendationItemSelection from './components/recommendationItemSelection.vue';
-import { PaymentData, SendConfirmData, SendConfirmEventData, SignatureRecord, TrackableReceiverRecord } from './util/types';
+import { CoverLetterData, PaymentData, SendConfirmData, SendConfirmEventData, SignatureRecord, TrackableReceiverRecord } from './util/types';
 import SendConfirmDialog from './components/sendConfirmDialog.vue';
 import { useAddressStore } from 'src/stores/address-store';
+import CoverLetterSelectionModal from '../../components/modals/coverLetter/CoverLetterSelectionModal.vue';
 
 export default defineComponent({
     name: 'SendDocumentPage', 
     components: {
-      DocumentView, FileDragAndDrop, AddReceiverModal, AddSignatureFieldModal, RecommendationItemSelection, SendConfirmDialog
+      DocumentView, FileDragAndDrop, AddReceiverModal, AddSignatureFieldModal, RecommendationItemSelection, SendConfirmDialog, PreviewComponent, CoverLetterSelectionModal
     },
     props: {
        
@@ -856,6 +934,15 @@ export default defineComponent({
             this.requestBrifleDeliveryCertificate = false;
             this.readonly = false;
             this.hasCheckedReceivers = false;
+            this.recommendations = [];
+            this.selectedRecommendations = [];
+            this.selectedCoverLetter = null;
+            this.recommendationDrawerOpen = false;
+            this.showAddReceiverModal = false;
+            this.showAddSignatureFieldModal = false;
+            this.sendConfirmDialogOpen = false;
+            this.isCoverLetterModalOpen = false;
+            this.includeCoverLetter = false;
         },
         newRecord(receiver: ReceiverRecord) {        
             this.receivers.push(receiver);
@@ -1157,6 +1244,9 @@ export default defineComponent({
                 }
             })
     },
+    showSelectCoverLetter() {
+        this.isCoverLetterModalOpen = true;
+    }
     },
     mounted(){
         const accountId = this.sessionStore.getSelectedAccountId as string;
@@ -1227,6 +1317,10 @@ export default defineComponent({
         const isSending = ref<boolean>(false);
 
         const isProcessingOcr = ref<boolean>(false);
+        const editorMode = ref<'edit' | 'preview'>('edit');
+        const includeCoverLetter = ref<boolean>(false);
+        const isCoverLetterModalOpen = ref<boolean>(false);
+        const selectedCoverLetter = ref<CoverLetterData | null>(null);
 
         return {
             brifleApi,
@@ -1260,7 +1354,11 @@ export default defineComponent({
             hasCheckedReceivers,
             readonly,
             isSending,
-            isProcessingOcr
+            isProcessingOcr,
+            editorMode,
+            includeCoverLetter,
+            isCoverLetterModalOpen,
+            selectedCoverLetter
         };
     }
 });

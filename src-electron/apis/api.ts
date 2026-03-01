@@ -7,6 +7,8 @@ import { ElectronApi } from './electron/electronApi';
 import { LogApi } from './logger/logApi';
 import { ParsersProviderApi } from './parsersProvider/parsersProviderApi';
 import { OcrApi } from './ocr/ocrApi';
+import { ScriptsApi } from './scripts/scriptsApi';
+import { SendTemplateApi } from './sendTemplate/sendTemplateApi';
 
 const encryptedStoreApi = new EncryptedStoreApi();
 const fileApi = new FileApi();
@@ -16,6 +18,8 @@ const electronApi = new ElectronApi();
 const logApi = new LogApi();
 const parsersProvidersApi = new ParsersProviderApi();
 const ocrApi = new OcrApi();
+const scriptsApi = new ScriptsApi();
+const sendTemplateApi = new SendTemplateApi();
 
 
 export function registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRenderer){
@@ -28,6 +32,8 @@ export function registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRender
     logApi.registerApi(contextBridge, ipcRenderer)
     parsersProvidersApi.registerApi(contextBridge, ipcRenderer)
     ocrApi.registerApi(contextBridge, ipcRenderer)
+    scriptsApi.registerApi(contextBridge, ipcRenderer)
+    sendTemplateApi.registerApi(contextBridge, ipcRenderer)
  
     
 }

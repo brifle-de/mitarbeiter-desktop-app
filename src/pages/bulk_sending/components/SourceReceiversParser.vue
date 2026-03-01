@@ -13,7 +13,8 @@
             ></q-select>            
     </div>
     <div class="q-my-lg text-right">        
-        <q-btn color="secondary" text-color="black" label="Einlesen" @click="parseFile()" />
+        <q-btn 
+        flat class="muted-action-btn" color="secondary" label="Einlesen" @click="parseFile()" />
     </div>
     <div class="q-my-lg">
         <!-- table with results-->
@@ -22,9 +23,8 @@
             :rows="receivers"
             :columns="receiverColumns"
             row-key="id"
-            class="q-pa-md"
+            class="q-pa-md material-card material-card-muted"
             flat
-            bordered
             :pagination="{ rowsPerPage: 10 }"
             :loading="isLoading"
         />
@@ -49,10 +49,11 @@ import { ParsersProvider } from 'src/services/node/ParsersProvider';
 
 export default defineComponent({
   name: 'SourceReceiversParser',
+
   components: {
    },
   setup() {   
-    const parser = ref<{rules: ReceiverParserRules, name: string} | null>(null);
+    const parser = ref<{rules: ReceiverParserRules, name: string, id: string} | null>(null);
     const directories : Ref<string[]> = ref([]);
     const files : Ref<string[]> = ref([]);
     const isLoading = ref(false);
@@ -133,15 +134,16 @@ export default defineComponent({
     },
   },
   mounted() {
-    const cachedParser = localStorage.getItem('selectedReceiverParser');
+    
+    const cachedParser = this.useLocalStorage ? localStorage.getItem(this.localStorageKey) : null;
     this.parsersProvider.getReceiversParsers().then((parsers) => {
         const customParsers = Object.values(parsers);
         this.rules = this.rules.concat(customParsers);
         if(cachedParser) {
-            const found = this.rules.find((rule) => rule.name === cachedParser);
-            if(found) {
-                this.parser = found;
-            }
+            this.loadParser(cachedParser);
+        }
+        if(this.initValue && this.initValue.parserId) {
+            this.loadParser(this.initValue?.parserId);
         }
     }).catch((err: Error) => {
         console.error('Error fetching custom parsers:', err);
@@ -154,13 +156,19 @@ export default defineComponent({
     });    
   },
   methods: {
+    loadParser(idOrName: string) {
+        const found = this.rules.find((rule) => rule.name === idOrName || rule.id === idOrName);
+        if(found) {
+            this.parser = found;
+        }
+    },
     emitResults() {
         const receiverRecords : ReceiverRecord[] = [];
         this.receivers.forEach((receiver: ReceiverParserResult) => {
             const record : ReceiverRecord = receiver
             receiverRecords.push(record);
         });
-        this.$emit('parsed', receiverRecords);
+        this.$emit('parsed', {records: receiverRecords, parserId: this.parser?.id?? this.parser?.name?? ''});
     },
     async readFile(encoding: BufferEncoding) : Promise<string> {
         if(this.receiverSource.type){
@@ -199,10 +207,12 @@ export default defineComponent({
         });
     },
     cacheParser(event: {rules: ReceiverParserRules, name: string} | null) {
-        if(event) {
-            localStorage.setItem('selectedReceiverParser', event.name);
-        } else {
-            localStorage.removeItem('selectedReceiverParser');
+        if(this.useLocalStorage) {
+            if(event) {
+                localStorage.setItem(this.localStorageKey, event.name);
+            } else {
+                localStorage.removeItem(this.localStorageKey);
+            }
         }
     }
   },
@@ -211,6 +221,18 @@ export default defineComponent({
     receiverSource: {
         type: Object as PropType<ReceiverSource>,
         required: true,
+    },
+    useLocalStorage: {
+        type: Boolean,
+        default: true,
+    },
+    localStorageKey: {
+        type: String,
+        default: 'selectedReceiverParser',
+    },
+    initValue: {
+        type: Object as PropType<ReceiverSource>,
+        required: false,
     }
     
   }

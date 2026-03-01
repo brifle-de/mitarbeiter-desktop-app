@@ -2,7 +2,7 @@
     <div>
         <h4>Initialisiere Anwendung</h4>
     </div>
-    <div class="bg-accent text-white text-subtitle1 q-pa-md q-mt-md">
+    <div class="muted-container-purple text-subtitle1 q-pa-md q-mt-md">
         Die Anwendung ist noch nicht initialisiert. Bitte vergeben sie ein Passwort. Dieses kann nicht zurückgesetzt werden und wird zur 
         Verschlüsselung ihrer Daten verwendet.
     </div>

@@ -7,7 +7,7 @@
 
       <div class="row q-col-gutter-x-md q-col-gutter-y-lg">
         <div class="">
-          <q-card class="q-pa-md clickable material-card home_item" @click="$router.push('/outbox/send')" >
+          <q-card class="q-pa-md clickable material-card material-card-muted home_item" @click="$router.push('/outbox/send')" >
             <div class="text-h3 text-center">
                <img src="~assets/img/invoice.png" style="width: 150px; aspect-ratio: 1;"/>
             </div>
@@ -18,7 +18,7 @@
         </div>      
         <div>
            
-          <q-card class="q-pa-md clickable material-card home_item" @click="$router.push('/bulk_sending/receiver_check')" >
+          <q-card class="q-pa-md clickable material-card material-card-muted home_item" @click="$router.push('/bulk_sending/receiver_check')" >
             <div class="text-h3 text-center">
                <img src="~assets/img/letter.png" style="width: 150px; aspect-ratio: 1;"/>
             </div>

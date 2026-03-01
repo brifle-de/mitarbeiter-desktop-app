@@ -1,4 +1,4 @@
-import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, DeliveryCertificateResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, DeliveryCertificateResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, PreviewPaperMailRequest, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk";
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 /**
@@ -249,6 +249,18 @@ export class Content {
      */
     public async deleteCoverLetter(apiId: string, tenantId: string, name: string): Promise<ApiResponse<string>> {
         return window.brifleApi.contentCoverLetterDelete(apiId, tenantId, name);
+    }
+
+    /**
+     * get a preview of the paper mail that will be sent from the brifle API
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to get the preview for
+     * @param previewRequest - The preview paper mail request
+     * @return the preview response containing a base64 encoded preview file
+     * 
+     */
+    public async previewPaperMail(apiId: string, tenantId: string, previewRequest: PreviewPaperMailRequest): Promise<ApiResponse<string>> {
+        return window.brifleApi.contentPreviewPaperMail(apiId, tenantId, previewRequest);
     }
 
 

@@ -1,8 +1,8 @@
 <template>
     <q-page class="wrapper">
         <h4 class="text-center">Konto auswählen</h4>
-        <div class="q-mt-xl">
-            <div v-if="isLoading" class="text-center">
+        <div class="q-mt-xl material-card material-card-muted">
+            <div v-if="isLoading" class="text-center q-pa-lg">
                 <q-spinner color="secondary" size="50px" />
                 <div class="q-my-lg">Verbinden mit Server</div>
 
@@ -20,9 +20,9 @@
                 <q-separator v-if="availableAccounts.length>0" inset="item" class="q-my-lg" />
 
                 <div class="text-center q-mt-lg">
-                    <q-btn outline 
+                    <q-btn flat
                     @click="$router.push({ path: '/accounts/create' })"
-                    color="secondary" class="q-mt-lg q-px-md text-subtitle1">
+                    color="secondary" class="q-mt-lg q-px-md text-subtitle1 muted-action-btn">
                         <q-icon name="add" class="q-mr-sm" />
                         <span>Neues Konto erstellen</span>
                     </q-btn>

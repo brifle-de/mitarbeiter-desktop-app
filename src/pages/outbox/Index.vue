@@ -1,15 +1,25 @@
 <template>
   <q-page class="q-px-xl">
     <div class="col">
-      <div class="row">
-        <h3>{{ $t("outbox_page.title", "Postausgang") }}</h3>
+      <div class="row q-mb-xl justify-between items-center">
+        <div class="col-9 text-h3">
+          {{ $t("outbox_page.title", "Postausgang") }}
+        </div>
+        <div class="col-3 text-right">
+          <q-btn flat color="secondary" class="muted-action-btn q-mr-sm" @click="goToBulkSend()">
+            {{ $t("outbox_page.compose_button", "Neuer Massenversand") }}
+          </q-btn>
+          <q-btn flat color="secondary" class="muted-action-btn" @click="goToSingleSend()">
+            {{ $t("outbox_page.compose_button", "Neues Dokument") }}
+          </q-btn>
+        </div>
       </div>
       <div class="row row q-mb-lg">
         <div class="col-12 col-md-8 q-pl-xl text-left">      
           
         </div>
       <div class="col-12 col-md-4">
-        <q-input filled dark dense v-model="subject" color="secondary"
+        <q-input filled dark dense v-model="subject" color="secondary" ref="searchBox"
         v-on:keyup.enter="search()" input-class="text-left" class="q-ml-lg accent-bordered"
         >
         <template v-slot:prepend>
@@ -45,7 +55,7 @@
               <div class="q-pt-lg">
                 <q-pagination
                 v-model="page"
-                class="justify-center accent-bordered accent-bordered-green bg-dark q-pa-sm"
+                class="material-card material-card-muted justify-center accent-bordered accent-bordered-green q-pa-sm"
                 @update:model-value="loadPage();"
                 :max="totalPages"
                 direction-links
@@ -66,7 +76,7 @@
 
             <div v-else>
               <q-list padding class="accent-bordered accent-bordered-green
-              rounded-borders bg-dark q-pa-sm">
+              rounded-borders material-card material-card-muted q-pa-sm">
                 <div v-if="values.length>0">
                   <OutboxItem :key="'element-'+item.id+'-'+index" v-for="(item, index) in values"
                   :subject="item.subject"
@@ -109,6 +119,7 @@ import { useSessionStore } from 'src/stores/session-store';
 import { useBrifleStore } from 'src/stores/brifle-store';
 import { ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
 import LoadingSpinner from 'src/components/LoadingSpinner.vue';
+import hotkeys from 'hotkeys-js';
 
 export default defineComponent({
   name: 'OutboxPage',
@@ -163,7 +174,15 @@ export default defineComponent({
         }
     });
     
- 
+    // register hotkey for search
+    hotkeys('ctrl+f,cmd+f', (event) => {
+      event.preventDefault();
+      const searchInput = this.$refs.searchBox as HTMLInputElement | undefined;
+      // check if search input is already focused
+      searchInput?.focus();
+      
+    });
+   
     
     
   },
@@ -173,7 +192,12 @@ export default defineComponent({
     },
   },
   methods: {
-
+    goToSingleSend() {
+      void this.router.push('/outbox/send');
+    },
+    goToBulkSend() {
+      void this.router.push('/bulk_sending');
+    },
    routeToItem(id: string) {     
       void this.router.push(`/outbox/${id}`);
     },

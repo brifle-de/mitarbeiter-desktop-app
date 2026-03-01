@@ -6,16 +6,20 @@ import FileRoutes from './file/fileRoutes';
 import LogRoutes from './logger/logRoutes';
 import OcrRoutes from './ocr/ocrRoutes';
 import ParsersProviderRoutes from './parsersProvider/parsersProviderRoutes';
+import ScriptsRoutes from './scripts/scriptsRoutes';
+import SendTemplateRoutes from './sendTemplate/sendTemplateRoutes';
 import SftpRoutes from './sftp/sftpRoutes';
 
 const encryptedStoreRoutes = new EncryptedStoreRoutes();
 const fileRoutes = new FileRoutes();
 const sftpRoutes = new SftpRoutes();
-const brifleRoutes = new BrifleRoutes(); // Assuming you have a BrifleRoutes class
-const electronRoutes = new ElectronRoutes(); // Assuming you have a ElectronRoutes class
-const logRoutes = new LogRoutes(); // Assuming you have a LogRoutes class
+const brifleRoutes = new BrifleRoutes(); 
+const electronRoutes = new ElectronRoutes(); 
+const logRoutes = new LogRoutes();
 const parsersProviderRoutes = new ParsersProviderRoutes()
-const ocrRoutes = new OcrRoutes(); // Assuming you have a OcrRoutes class
+const ocrRoutes = new OcrRoutes();
+const scriptsRoutes = new ScriptsRoutes(); 
+const sendTemplateRoutes = new SendTemplateRoutes(); 
 
 export function registerRoutes(){
     encryptedStoreRoutes.registerRoutes()
@@ -23,11 +27,13 @@ export function registerRoutes(){
     sftpRoutes.registerRoutes()
     // Registering Brifle routes
     brifleRoutes.registerRoutes()  
-    electronRoutes.registerRoutes() // Assuming you have a function to register Electron routes
+    electronRoutes.registerRoutes() 
     // Registering Log routes
     logRoutes.registerRoutes()
     parsersProviderRoutes.registerRoutes()
-    ocrRoutes.registerRoutes() // Assuming you have a function to register OCR routes
+    ocrRoutes.registerRoutes() 
+    scriptsRoutes.registerRoutes() 
+    sendTemplateRoutes.registerRoutes() 
 
     
 }

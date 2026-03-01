@@ -16,6 +16,13 @@ const SAMPLE_1 : DocumentSourceDirParserRules= {
     regexOutputDate() {
         // return null if no date is set
         return null;
+    },
+    regexOutputDocumentType() {
+        // return null if no document type is set
+        return null;
+    },
+    getID() {
+        return "brifle_<prefix>_<receiverID>";
     }
 }
 // Dateiname: HP3-378_EN-SB_z2025-08_d2025-08-20_p00123456_i485846.pdf
@@ -28,6 +35,13 @@ const KOMM_ONE_PERSONALAKTE : DocumentSourceDirParserRules= {
         // <receiverID> : 00123456
         // <index> : 485846
         return `^([a-zA-Z0-9-]+)_([a-zA-Z0-9-]+)_z([0-9]{4}-[0-9]{2})_d([0-9]{4}-[0-9]{2}-[0-9]{2})_p([a-zA-Z0-9]+)_i([a-zA-Z0-9]+)[.]pdf$`;
+    },
+        regexOutputDocumentType(match: RegExpMatchArray) {
+        // return the second group of the regex
+        if(!match || match.length <= 2) {
+            return null
+        }
+        return match[2]!;
     },
     regexOutputReceiverID(match: RegExpMatchArray) {
         // return the first group of the regex
@@ -46,7 +60,11 @@ const KOMM_ONE_PERSONALAKTE : DocumentSourceDirParserRules= {
         const dateString = match[4]!;
         const date = new Date(dateString);
         return date;
+    },
+    getID() {
+        return "brifle_km_personalakte";
     }
+
 }
 
 const KOMM_ONE_1 : DocumentSourceDirParserRules= {
@@ -57,6 +75,13 @@ const KOMM_ONE_1 : DocumentSourceDirParserRules= {
     
     regexCatch() {       
         return `^([a-zA-Z0-9]+)_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)_([0-9]{1,2}[.][0-9]{1,2}[.][0-9]{4})_([a-zA-Z0-9]+)[.]pdf$`;
+    },
+    regexOutputDocumentType(match: RegExpMatchArray) {
+        // return the first group of the regex
+        if(!match || match.length <= 3) {
+            return null
+        }
+        return match[3]!;
     },
     regexOutputReceiverID(match: RegExpMatchArray) {
         // return the fourth group of the regex
@@ -79,6 +104,9 @@ const KOMM_ONE_1 : DocumentSourceDirParserRules= {
         // convert the date string to a Date object
         const date = new Date(isoDate);
         return date; 
+    },
+    getID() {
+        return "brifle_komm_one_1";
     }
 }
 
@@ -96,16 +124,19 @@ const ALL = [
         name: '<prefix>_<receiverID>.pdf',
         description: 'Präfix_<receiverID>.pdf',
         rules: SAMPLE_1,
+        id: SAMPLE_1.getID()
     }, 
     {
         name: "KOMM ONE Personalakte - <PerNr>.pdf",
         description: "file is named <PerNr>.pdf",
         rules: KOMM_ONE_PERSONALAKTE,
+        id: KOMM_ONE_PERSONALAKTE.getID()
     },
     {
         name: "KOMM ONE 1 - <Sys>_<Mdt>_<Typ>_<PerNr>_<Datum>_<Nr>.pdf",
         description: "file is named <Sys>_<Mdt>_<Typ>_<PerNr>_<Datum>_<Nr>.pdf",
         rules: KOMM_ONE_1,
+        id: KOMM_ONE_1.getID()
     }
 ]
 

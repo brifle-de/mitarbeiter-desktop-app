@@ -1,5 +1,5 @@
 import { ContextBridge, IpcRenderer } from "electron";
-import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, DeliveryCertificateResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
+import { AccountInfo, CheckMultipleReceiversResponse, CheckReceiverResponse, ContentActionsResponse, ContentResponse, CoverLetterOverviewItem, CoverLetterOverviewResponse, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, DeliveryCertificateResponse, InboxFilter, LoginRequest, LoginResponse, MailboxResponse, OutboxFilter, ParsedAddressResponse, PreviewPaperMailRequest, ReceiverRequest, SendContentRequest, SendContentResponse } from "@brifle/brifle-sdk"
 import { ApiResponse } from "@brifle/brifle-sdk";
 
 export class BrifleApi{
@@ -35,6 +35,9 @@ export class BrifleApi{
             },
             contentGetDeliveryStatus(apiId: string, contentId: string) {
                 return ipcRenderer.invoke('brifle:contentGetDeliveryStatus', apiId, contentId);
+            },
+            contentPreviewPaperMail(apiId: string, tenantId: string, previewRequest: PreviewPaperMailRequest) {
+                return ipcRenderer.invoke('brifle:contentPreviewPaperMail', apiId, tenantId, previewRequest);
             },
             parsePostalAddress(apiId: string, addressString: string) {
                 return ipcRenderer.invoke('brifle:parsePostalAddress', apiId, addressString);
@@ -199,6 +202,15 @@ export class BrifleApi{
      * @param contentId the content id to get the delivery status for
      */
     contentGetDeliveryStatus(apiId: string, contentId: string): Promise<ApiResponse<string>>;
+
+    /**
+     * get a preview of the paper mail that will be sent
+     * @param apiId - The api id returned from newApi
+     * @param tenantId - The tenant id to get the preview for
+     * @param previewRequest - The preview paper mail request
+     * @return the preview response containing a link to the preview file
+     */
+    contentPreviewPaperMail(apiId: string, tenantId: string, previewRequest: PreviewPaperMailRequest): Promise<ApiResponse<string>>;
 
 
  }

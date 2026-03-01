@@ -45,3 +45,9 @@ export interface SendConfirmEventData {
     receivers: TrackableReceiverRecord[]; 
     signatureData ?: SignatureRecord[] | undefined;
 }
+
+export interface CoverLetterData {
+    name: string;
+    type: 'default' | 'custom';
+    displayName: string;
+}

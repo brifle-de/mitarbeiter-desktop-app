@@ -3,9 +3,11 @@
         Im folgenden wird geprüft, welche Empfänger bereits ein Brifle Konto haben. Es werden nur die Empfänger angefragt, für die auch Dokumente vorliegen.
     </div>
     <div>
-        <q-btn @click="checkForExistenceClick()" color="secondary" class="q-mt-md" text-color="black">
-            Empfänger Suchen              
-        </q-btn>
+        <div class="text-right">
+            <q-btn @click="checkForExistenceClick()" color="secondary" class="q-mt-md muted-action-btn" flat >
+                Empfänger Suchen              
+            </q-btn>
+        </div>
         <div class="q-mt-sm" v-if="totalChecking > 0 && totalChecked < totalChecking">
             <div v-if="isLoading" class="q-mb-sm">
                 <q-spinner size="20px" color="secondary" />
@@ -25,9 +27,8 @@
             :columns="getColumns()"            
             selection="multiple"
             :row-key="(row: SendDocReq) => row.doc.filePath"
-            class="q-mt-md search-receiver-table"
+            class="q-mt-md search-receiver-table material-card material-card-muted"
             flat
-            bordered
             v-model:selected="selected"
         >
         <!-- template for 'exists' header -->

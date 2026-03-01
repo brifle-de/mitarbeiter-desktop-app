@@ -5,6 +5,8 @@ import { FileApiType } from "app/src-electron/apis/file/fileApi";
 import { LogApiType } from "app/src-electron/apis/logger/logApi";
 import { OcrApiType } from "app/src-electron/apis/ocr/ocrApi";
 import { ParsersProviderApiType } from "app/src-electron/apis/parsersProvider/parsersProviderApi";
+import { ScriptsApiType } from "app/src-electron/apis/scripts/scriptsApi";
+import { SendTemplateApiType } from "app/src-electron/apis/sendTemplate/sendTemplateApi";
 import { SftpApiType } from "app/src-electron/apis/sftp/sftpApi";
 
  
@@ -19,5 +21,7 @@ declare global {
         logApi: LogApiType;
         parsersProvider: ParsersProviderApiType;
         ocrApi: OcrApiType;
+        scriptsApi: ScriptsApiType;
+        sendTemplateApi: SendTemplateApiType;
     }   
 }

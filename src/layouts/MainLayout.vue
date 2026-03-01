@@ -1,60 +1,75 @@
 <template>
   <q-layout view="hhh LpR lFr">
     <q-header class="unselectable bg-titlebar titlebar">
-        <q-toolbar class="q-ml-sm">          
-          <q-btn 
-                class="titlebar-button"
-                flat
-                dense
-                round
-                color="green-3"
-                @click="$router.push('/')"
-                icon="home" >
-                <q-tooltip :delay="1000">Startseite</q-tooltip>
-            </q-btn>
-            <q-btn 
-                class="titlebar-button q-ml-sm"
-                flat
-                dense
-                round
-                color="green-3"
-                @click="$router.back()"
-                icon="chevron_left" >
-                <q-tooltip :delay="1000">Zurück</q-tooltip>
-            </q-btn>    
+        <q-toolbar class="q-ml-sm">     
+          <div class="row w-100">
+            <div class="col-3">
+            
+              
+                <q-btn 
+                    class="titlebar-button q-ml-sm"
+                    flat
+                    dense
+                    round
+                    color="green-3"
+                    @click="$router.back()"
+                    icon="chevron_left" >
+                    <q-tooltip :delay="1000">Zurück</q-tooltip>
+                </q-btn>    
+               </div>
+              <div class="col row"> 
+                <q-btn 
+                    class="titlebar-button q-mr-sm"
+                    flat
+                    dense
+                    round
+                    color="green-3"
+                    @click="$router.push('/')"
+                    icon="home" >
+                    <q-tooltip :delay="1000">Startseite</q-tooltip>
+                </q-btn>
+                <RoutesSearchbar class="no-drag" />
+              </div>
+              <div class="col-3">
+
+              </div>
+            
+            </div>
         </q-toolbar>
       </q-header>  
     <div class="titlebar-placeholder"></div>
 
     <q-drawer
-       class="non-selectable column justify-between no-wrap"
+       class="non-selectable main-menu-drawer column no-wrap q-pa-md "
+       c
       show-if-above
       :model-value="true"
-      :width="250"
+      :width="300"
       :breakpoint="500"
-      bordered
     >
-    <div class="">
-     
-      <q-list class="q-pa-sm mainMenuList">
-        <EssentialLink
-          v-for="link in essentialLinks"
-          :key="link.title"
-          v-bind="link"
-          :title="$t(link.title)"
-        />
+    <div class="flex-1 column justify-between main-menu-drawer-content">
+      <div>      
+        <q-list class="q-pa-sm mainMenuList">
+          <EssentialLink
+            v-for="link in essentialLinks"
+            :key="link.title"
+            v-bind="link"
+            :title="$t(link.title)"
+          />
 
-      </q-list>
-    </div>
-    <div class="q-pa-sm text-center">
-      <div class="q-my-sm">
-        <q-btn color="grey-8" @click="sealApplication()">
-          <q-icon name="logout" class="q-mr-sm" />
-          Sperren
-        </q-btn>
+        </q-list>
       </div>
-      <div class="app-version-text">Version: {{ appVersion }}</div>
-    </div> 
+      <div class="q-pa-sm text-center">
+        <div class="q-my-sm">
+          <q-btn flat class="muted-action-btn" @click="sealApplication()">
+            <q-icon name="logout" class="q-mr-sm" />
+            Sperren
+          </q-btn>
+        </div>
+        <div class="app-version-text">Version: {{ appVersion }}</div>
+      </div> 
+      </div>
+    
     
     </q-drawer>
 
@@ -67,6 +82,9 @@
 </template>
 
 <style lang="scss">
+
+
+
 .sticky-color-toolbar {
   background-color: #212321;
   transition: background-color 0.35s;
@@ -106,7 +124,9 @@ import { Ref, defineComponent, ref } from 'vue';
 import EssentialLink from 'components/EssentialLink.vue';
 import { useRouter } from 'vue-router';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
+import RoutesSearchbar from 'components/RoutesSearchbar.vue';
 
+import hotkeys from 'hotkeys-js';
 
 
 
@@ -114,16 +134,32 @@ import { useEncryptedStore } from 'src/stores/encrypted-store';
 export default defineComponent({
   name: 'MainLayout',
   components: {
-    EssentialLink,
+    EssentialLink, RoutesSearchbar
   },
   emits: ['seal-app'],
   unmounted() {
    
   },
   mounted() {
-    
+     // register hotkey for new document
+    hotkeys('ctrl+n,cmd+n', (event) => {
+      event.preventDefault();
+      this.goToSingleSend();
+    }); 
+    // register hotkey for new bulk send
+    hotkeys('ctrl+shift+n,cmd+shift+n', (event) => {
+      event.preventDefault();
+      this.goToBulkSend();
+    });
+ 
   },
   methods: {
+    goToSingleSend() {
+      void this.router.push('/outbox/send');
+    },
+    goToBulkSend() {
+      void this.router.push('/bulk_sending');
+    },
     sealApplication() {
       this.$emit('seal-app');
       this.encryptedStore.sealData();
