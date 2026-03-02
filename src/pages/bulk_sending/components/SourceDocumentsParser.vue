@@ -81,10 +81,10 @@
             :columns="columns()"
             class="q-pa-md material-card material-card-muted"
             flat>
-            <template v-slot:body-cell-fileName="props">
+            <template v-slot:body-cell-filePath="props">
                 <q-td :props="props">
                     <div class="text-caption text-muted">
-                    {{ props.row.fileName }}
+                    {{ props.row.filePath }}
                     </div>
                 </q-td>
             </template>
@@ -142,7 +142,7 @@ import Files from 'src/services/node/Files';
 import Sftp from 'src/services/node/Sftp';
 import { SftpLsDirResponse } from 'app/src-electron/service/SftpConnector';
 import { FilesLsDirResponse } from 'app/src-electron/service/Files';
-import { DocumentSourceDirParser, DocumentSourceDirParserResult, DocumentSourceDirParserRules } from '../util/documents/parsers';
+import { DocumentSourceDirParser, DocumentReceiverMappingResult, DocumentSourceDirParserRules } from '../util/documents/parsers';
 import SampleParser from '../util/documents/sampleParsers';
 import DocumentRecord from '../util/documents/documentRecord';
 import { SftpData } from 'app/src-electron/models/EncryptedStore';
@@ -319,7 +319,7 @@ export default defineComponent({
 
         const m = res.map(async (element: DocumentRecord) => {
             return {
-                fileName: await this.getFullPath(this.basePath,element.filePath),
+                filePath: await this.getFullPath(this.basePath,element.filePath),
                 receiverId: element.receiverId,
                 date: null,
                 docType: element.docType,
@@ -344,7 +344,7 @@ export default defineComponent({
         const res = parser.parse(rules);
         this.fileReceiverMapping = res;
         if(this.hasDateFilter()) {
-            this.fileReceiverMapping = this.fileReceiverMapping.filter((element: DocumentSourceDirParserResult) => {
+            this.fileReceiverMapping = this.fileReceiverMapping.filter((element: DocumentReceiverMappingResult) => {
                 const date = new Date(element.date?.toDateString() ?? '');
                 if(date == null) {
                     return false;
@@ -371,9 +371,9 @@ export default defineComponent({
 
         const sftpConnection : SftpData | undefined = this.value.sftp?.connection ?? undefined;
 
-        const res : DocumentRecord[] = await Promise.all(this.fileReceiverMapping.map(async (element: DocumentSourceDirParserResult) => {
+        const res : DocumentRecord[] = await Promise.all(this.fileReceiverMapping.map(async (element: DocumentReceiverMappingResult) => {
             return {
-                filePath: await this.getFullPath( dirBasePath, element.fileName),
+                filePath: await this.getFullPath( dirBasePath, element.filePath),
                 receiverId: element.receiverId,
                 docType: element.docType,
                 type: this.value.type,          
@@ -484,7 +484,7 @@ export default defineComponent({
   
   setup() {       
     const files = ref<string[]>([]);
-    const fileReceiverMapping = ref<DocumentSourceDirParserResult[]>([]);    
+    const fileReceiverMapping = ref<DocumentReceiverMappingResult[]>([]);    
     const availableDirParsers = ref<{name: string, rules: DocumentSourceDirParserRules, id: string}[]>([]);
     const availableAssignmentParser = ref<{name: string, rules: AssignmentRules, id: string}[]>(SampleAssignmentParser);
     const documentSource = ref<DocumentSource>({

@@ -22,11 +22,11 @@
         ]"
       >
         <template v-slot:local>
-          <q-tooltip>Lokale Datei</q-tooltip>
+          <q-tooltip class="muted-tooltip">Lokale Datei</q-tooltip>
         </template>
 
         <template v-slot:sftp>
-          <q-tooltip>Sftp Server</q-tooltip>
+          <q-tooltip class="muted-tooltip">Sftp Server</q-tooltip>
         </template>
 
       </q-btn-toggle>

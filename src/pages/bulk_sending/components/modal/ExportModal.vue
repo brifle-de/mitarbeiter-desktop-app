@@ -1,7 +1,7 @@
 <template>
-    <q-dialog v-model="value" full-width class="unselectable">
+    <q-dialog v-model="value" class="unselectable">
         <q-card class="send-docs-card dialog-window-lg" flat bordered>
-            <div>
+            <div class="w-100">
                 <q-toolbar class="bg-secondary text-black">
                     <q-toolbar-title class="text-h6">
                         Export - Berichte
@@ -9,26 +9,43 @@
                     <q-btn flat round icon="close" @click="$emit('update:modelValue', false)" />
                 </q-toolbar>
             </div>
-            <div class="card-body">
+            <div class="card-body w-100">
                 <div class="q-mx-lg q-my-lg">
                     <h4>Exportieren</h4>
                     <p>Wähle das Format aus, in dem die Berichte exportiert werden sollen.</p>
                 </div>
                 <div class="q-mx-lg q-my-lg">
                     <h5>CSV</h5>
-                    <q-btn v-for="exporter in csvExporters" :key="exporter.name" color="secondary" text-color="black" :label="exporter.name" @click="exportToCSV(exporter.rules)" class="q-mr-sm" />
+                    <q-btn v-for="exporter in csvExporters" :key="exporter.name" flat color="secondary" :label="exporter.name" @click="exportToCSV(exporter.rules)" class="q-mr-sm muted-action-btn">
+                        <q-tooltip anchor="top middle" self="bottom middle" :offset="[0, 10]" class="muted-tooltip">
+                            Exportieren als CSV
+                        </q-tooltip>
+                    </q-btn>
                 </div>
                 <div class="q-mx-lg q-my-lg">
                     <h5>XML</h5>
-                    <q-btn v-for="exporter in xmlExporters" :key="exporter.name" color="secondary" text-color="black" :label="exporter.name" @click="exportToXML(exporter.rules)" class="q-mr-sm" />
+                    <q-btn v-for="exporter in xmlExporters" :key="exporter.name" flat color="secondary" :label="exporter.name" @click="exportToXML(exporter.rules)" class="q-mr-sm muted-action-btn">
+                        <q-tooltip anchor="top middle" self="bottom middle" :offset="[0, 10]" class="muted-tooltip">
+                            Exportieren als XML
+                        </q-tooltip>
+                    </q-btn>
                 </div>
                 <div class="q-mx-lg q-my-lg">
                     <h5>JSON</h5>
-                    <q-btn v-for="exporter in jsonExporters" :key="exporter.name" color="secondary" text-color="black" :label="exporter.name" @click="exportToJSON(exporter.rules)" class="q-mr-sm" />
+                    <q-btn v-for="exporter in jsonExporters" :key="exporter.name" flat color="secondary" :label="exporter.name" @click="exportToJSON(exporter.rules)" class="q-mr-sm muted-action-btn">
+                        <q-tooltip anchor="top middle" self="bottom middle" :offset="[0, 10]" class="muted-tooltip">
+                            Exportieren als CSV
+                        </q-tooltip>
+
+                    </q-btn> 
                 </div>
             </div>
-            <div class="q-mx-lg text-right">
-                <q-btn color="secondary" text-color="black" label="Schließen" @click="$emit('update:modelValue', false)" class="q-my-lg" />
+            <div class="q-px-lg text-right w-100">
+                <q-btn
+                 flat
+                 label="Schließen" 
+                 @click="$emit('update:modelValue', false)" 
+                 class="q-my-lg muted-action-btn" />
             </div>
         </q-card>
     </q-dialog>
@@ -36,7 +53,7 @@
 <script lang="ts">
 
 import { defineComponent } from 'vue';
-import { SendDocReq } from '../../util/receivers/receiverRecord';
+import { SendDocReceiverReq, SendDocReq } from '../../util/receivers/receiverRecord';
 import { Exporters } from '../../util/reports/exampleExports';
 import { ReportsExporter, ReportsExporterRules } from '../../util/reports/exporter';
 
@@ -46,7 +63,7 @@ export default defineComponent({
     
     props: {
         records: {
-            type: Array<SendDocReq>,
+            type: Array as () => SendDocReq[] | SendDocReceiverReq[],
             default: () => [],
         },
         modelValue: {

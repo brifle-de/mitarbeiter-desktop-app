@@ -26,9 +26,9 @@ export interface DocumentParserImportRecord {
     }
 }
 
-export interface DocumentSourceDirParserResult {
-    // the file name without the path
-    fileName: string,
+export interface DocumentReceiverMappingResult {
+    // the file path without the base path
+    filePath: string,
     // the receiver id from the file name
     receiverId: string,
     // the date from the file name. Return null if no date is set
@@ -53,8 +53,8 @@ export class DocumentSourceDirParser{
      * @param rules the rules to parse the data
      * @returns the parsed data
      * */
-    public parse(rules: DocumentSourceDirParserRules): DocumentSourceDirParserResult[] {
-        const result: DocumentSourceDirParserResult[] = [];
+    public parse(rules: DocumentSourceDirParserRules): DocumentReceiverMappingResult[] {
+        const result: DocumentReceiverMappingResult[] = [];
         for (const fileName of this.data) {
             const regex = new RegExp(rules.regexCatch(fileName));
             const match = fileName.match(regex);
@@ -67,7 +67,7 @@ export class DocumentSourceDirParser{
                     continue;
                 }
                 result.push({
-                    fileName: fileName,
+                    filePath: fileName,
                     receiverId: receiverId,
                     date: date,
                     docType: docType

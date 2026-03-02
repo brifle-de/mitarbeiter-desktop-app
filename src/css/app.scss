@@ -22,6 +22,14 @@
     padding: 5px 10px;
     display: inline-block;
 
+    &.clickable{
+        cursor: pointer;
+        &:hover {
+            background-color: #79917222;
+            border-color: #525252b8;
+        }
+    }
+
     &.dense {
         padding: 2px 6px;
     }
@@ -60,7 +68,7 @@
 }
 
 .muted-container-purple {
-    background-color: #45384f;
+    background-color: #372344;
     color: #dbcde4;
 }
 

@@ -22,8 +22,9 @@
                 class="q-mb-md search-input"> 
             </q-input> 
             <div class="q-pa-md search-results">
-            <div v-for="route in filteredRoutes" :key="route.path" @click="goToRoute(route)" class="search-result-item">
-                <div class="text-h6">
+            <div v-for="route in filteredRoutes" :key="route.path + '_'+query" @click="goToRoute(route)" class="search-result-item">
+              
+              <div class="text-h6">
                     {{ route.meta?.title || route.name }}
                 </div>
                 <div class="text-muted">
@@ -123,6 +124,7 @@ export default defineComponent({
     filteredRoutes(): RouteRecordRaw[] {   
       const lowerQuery = this.query.toLowerCase();
       const res = searchRoutes(lowerQuery);
+      console.log('Filtered routes:', res, 'for query:', lowerQuery);
       return res; 
     },
   },

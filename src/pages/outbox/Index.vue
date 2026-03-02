@@ -2,10 +2,10 @@
   <q-page class="q-px-xl">
     <div class="col">
       <div class="row q-mb-xl justify-between items-center">
-        <div class="col-9 text-h3">
+        <div class="col-7 text-h3">
           {{ $t("outbox_page.title", "Postausgang") }}
         </div>
-        <div class="col-3 text-right">
+        <div class="col-5 text-right">
           <q-btn flat color="secondary" class="muted-action-btn q-mr-sm" @click="goToBulkSend()">
             {{ $t("outbox_page.compose_button", "Neuer Massenversand") }}
           </q-btn>

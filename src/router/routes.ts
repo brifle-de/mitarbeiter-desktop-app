@@ -161,7 +161,7 @@ const routes: RouteRecordRaw[] = [
           searchWeight: 2,
           title: 'Individueller Serienversand',
           description: 'Passen Sie Ihren Serienversand mit benutzerdefinierten Einstellungen an',
-          keywords: ['Individueller Versand', 'Individueller Serienversand', 'Massenversand', 'Individuell'],
+          keywords: ['Individueller Versand', 'Individueller Serienversand', 'Massenversand', 'Individuell', 'Serienversand'],
         }
       },
       {
@@ -173,7 +173,7 @@ const routes: RouteRecordRaw[] = [
           searchWeight: 2,
           title: 'Serienversand Vorlagen',
           description: 'Erstellen und verwalten Sie Vorlagen für Ihren Serienversand',
-          keywords: ['Serienversand Vorlagen', 'Vorlagen', 'Brifle', 'Bulk Sending'],
+          keywords: ['Serienversand Vorlagen', 'Vorlagen', 'Brifle', 'Bulk Sending', 'Massenversand'],
         }
       },
       {
@@ -194,6 +194,12 @@ const routes: RouteRecordRaw[] = [
         component: EditBulkTemplatePage,
         props: true,       
       },      
+      {
+        path: '/templates/start/:id',
+        name: 'bulk_sending.start',
+        component: () => import('pages/bulk_sending/pages/UseTemplateSendPage.vue'),
+        props: true,
+      },
       {
         path: 'receiver_check',
         name: 'bulk_sending.receiver_check',
@@ -250,21 +256,26 @@ export function searchRoutes(query: string): RouteRecordRaw[] {
   }
   const uniquePath: Set<string> = new Set();
 
-  return searchableRoutes.filter(route => {
+  const res = searchableRoutes.filter(route => {
+    console.log('Checking route:', route.path, route.meta?.title, query);
     if (uniquePath.has(route.path)) {
       return false; // Skip duplicate paths
-    }else {
-      uniquePath.add(route.path);
     }
     const title = ((route.meta?.title || '') as string).toLowerCase();
     const description = ((route.meta?.description || '') as string).toLowerCase();
     const keywords = (route.meta?.keywords as string[] || []).map((k: string) => k.toLowerCase());
-    return title.includes(lowerCaseQuery) || description.includes(lowerCaseQuery) || keywords.some((k: string) => k.includes(lowerCaseQuery));
+    const includes = title.includes(lowerCaseQuery) || description.includes(lowerCaseQuery) || keywords.some((k: string) => k.includes(lowerCaseQuery));
+    if (includes) {
+      uniquePath.add(route.path);
+    }
+    return includes;
   }).sort((a, b) => {
     const aWeight = (a.meta?.searchWeight as number) || 1;
     const bWeight = (b.meta?.searchWeight as number) || 1;
     return bWeight - aWeight; // Higher weight first
   });
+  console.log('Search results:', res);
+  return res;
 
 }
 

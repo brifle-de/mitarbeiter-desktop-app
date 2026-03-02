@@ -115,7 +115,7 @@ export default defineComponent({
       void this.$router.push(route);
     },
     startProcess(templateId: string) {
-      void this.$router.push({ name: 'bulk_sending.start', params: { templateId } });
+      void this.$router.push({ name: 'bulk_sending.start', params: { id: templateId } });
     },
     newTemplate() {
       void this.$router.push({ name: 'bulk_sending.create_template' });

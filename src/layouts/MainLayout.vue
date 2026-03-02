@@ -14,7 +14,7 @@
                     color="green-3"
                     @click="$router.back()"
                     icon="chevron_left" >
-                    <q-tooltip :delay="1000">Zurück</q-tooltip>
+                    <q-tooltip :delay="1000" class="muted-tooltip">Zurück</q-tooltip>
                 </q-btn>    
                </div>
               <div class="col row"> 
@@ -26,7 +26,7 @@
                     color="green-3"
                     @click="$router.push('/')"
                     icon="home" >
-                    <q-tooltip :delay="1000">Startseite</q-tooltip>
+                    <q-tooltip class="muted-tooltip" :delay="1000">Startseite</q-tooltip>
                 </q-btn>
                 <RoutesSearchbar class="no-drag" />
               </div>

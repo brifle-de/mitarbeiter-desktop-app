@@ -1,9 +1,14 @@
-import { ref } from "vue";
-import { DocumentSourceDirParserRules } from "./documents/parsers";
+import { DocumentSourceDirParser, DocumentReceiverMappingResult, DocumentSourceDirParserRules } from "./documents/parsers";
 import SampleParser from './documents/sampleParsers';
 import { BulkSendTemplate } from "app/src-electron/service/send_templates/templates/template";
 import { SftpData } from "app/src-electron/models/EncryptedStore";
-import { AssignmentRules } from "./documents/assignmentFile";
+import AssignmentFile, { AssignmentRules } from "./documents/assignmentFile";
+import DocumentRecord from "./documents/documentRecord";
+import Sftp from "src/services/node/Sftp";
+import Files from "src/services/node/Files";
+import { FilesLsDirResponse } from "app/src-electron/service/Files";
+import { SftpLsDirResponse } from "app/src-electron/service/SftpConnector";
+import { SendDocReceiverReq } from "./receivers/receiverRecord";
 
 export interface ReceiverSource {
     type: 'file' | 'sftp',
@@ -152,21 +157,23 @@ export function loadDocumentSource(templateData: BulkSendTemplate, availableDirP
         
         documentsSrc.destType = templateData.documentSource.destType ?? 'file';        
         if(templateData.documentSource.fileAssignment && documentsSrc.destType === 'file') {
+                console.log('Using file assignment for document source:', templateData.documentSource.fileAssignment);
               documentsSrc.fileAssignment = templateData.documentSource.fileAssignment;
-        }else if(templateData.documentSource.fileAssignment && documentsSrc.destType === 'directory') {
+        }else if(documentsSrc.destType === 'directory') {
               // if the dest type is directory, file assignment should not be used, but we can use the rules to assign files to receivers
               documentsSrc.dirParser = findDocumentSourceDirParser(templateData.documentSource.dirParser ?? '', availableDirParsers);
+              
         }
         return documentsSrc;
       }
 
 // const availableDirParsers = ref<{name: string, rules: DocumentSourceDirParserRules}[]>([]);
-export function getAllAvailableDirParsers() {
+export function getAllAvailableDirParsers() : {id: string, name: string, rules: DocumentSourceDirParserRules}[] {
 
-    const availableDirParsers = ref<{id: string, name: string, rules: DocumentSourceDirParserRules}[]>([]);
+    const availableDirParsers :{id: string, name: string, rules: DocumentSourceDirParserRules}[] = [];
     // fetch available dir parsers from main process
     SampleParser.forEach(element => {
-        availableDirParsers.value.push({
+        availableDirParsers.push({
             name: element.name,
             rules: element.rules,
             id: element.id
@@ -175,4 +182,181 @@ export function getAllAvailableDirParsers() {
 
     
     return availableDirParsers;
+}
+
+
+async function readLocaleDir(path: string): Promise<string[]> {
+    if(path == null) {
+        return [];
+    }
+    return Files.lsDir(path)
+    .then((res: FilesLsDirResponse | null) => {
+        if(!res) {
+            return [];
+        }
+        return res.files.map((file: { name: string }) => file.name);
+    }).catch((err: Error) => {
+        console.error(err);
+        return [];
+    });
+}
+
+async function readSftpDir(sftp: SftpDocumentSource | null) : Promise<string[]> {
+    if(sftp == null || sftp.connection == null) {
+        return []   ;
+    }
+    return Sftp.lsDir(sftp.filePath, sftp.connection)
+    .then((sftpRes: SftpLsDirResponse | null) => {
+        if(sftpRes == null) {
+            return [];
+        }
+        return sftpRes.files.map((file: { name: string }) => file.name);                
+    }).catch((err: Error) => {
+        console.error(err);
+        return [];
+    });
+}
+
+async function readDirectory(documentsSource: DocumentSource): Promise<string[]> {
+    if(documentsSource.type === 'sftp') {
+        return readSftpDir(documentsSource.sftp ?? null);
+    } else {
+        return readLocaleDir(documentsSource.file ?? '');
+    }
+}
+
+export async function parseDocumentsDirectoryFiles(documentsSource: DocumentSource | null) : Promise<DocumentReceiverMappingResult[] | undefined> {
+        if(!documentsSource){
+            console.error('No documents source provided');
+            return;
+        }
+        const rules = documentsSource.dirParser     
+        if(!rules || !documentsSource.file) {
+            console.error('No rules or file path provided for directory parsing');
+            return;
+        }
+
+        const files = await readDirectory(documentsSource);
+        const parser = new DocumentSourceDirParser(files)
+        const res = parser.parse(rules);
+        // use placeholder to use the OS aware separator when joining the base path with the file path from the mapping result. This allows to keep the correct file paths even if the template is used on a different OS than it was created on, e.g. if it was created on Windows and used on Linux, or vice versa.
+        const placeholderValue = '____PLACEHOLDER____.pdf';
+        const basePath = await getFullPath(documentsSource, documentsSource.file ?? '', placeholderValue);
+        
+        return res.map((element : DocumentReceiverMappingResult) => {
+            const fullPath = basePath.replace(placeholderValue, element.filePath);
+            element.filePath = fullPath;
+            return element;
+        })
+   }
+
+   export async function readReceiversData(receiverSource: ReceiverSource, encoding: BufferEncoding = 'utf-8') : Promise<string | null> {
+    if(receiverSource.type === 'sftp') {
+        if(receiverSource.sftp == null || receiverSource.sftp.connection == null) {
+            console.error('No SFTP connection available.');
+            return Promise.reject(new Error('No SFTP connection available.'));
+        }
+        return Sftp.readFile(receiverSource.sftp.filePath, receiverSource.sftp?.connection, encoding);
+    } else {
+        if(receiverSource?.file == null) {
+            console.error('No file path provided.');
+            return Promise.reject(new Error('No file path provided.'));
+        }
+        return Files.readFile(receiverSource.file, encoding)
+    }
+    }
+
+export async function readDocumentsData(documentsSource: DocumentSource, filePath: string, encoding: BufferEncoding = 'utf-8') : Promise<string | null> {
+    if(documentsSource.type === 'sftp') {
+        if(documentsSource.sftp == null || documentsSource.sftp.connection == null) {
+            console.error('No SFTP connection available.');
+            return Promise.reject(new Error('No SFTP connection available.'));
+        }
+        return Sftp.readFile(filePath, documentsSource.sftp?.connection, encoding);
+    } else {
+        if(documentsSource?.file == null) {
+            console.error('No file path provided.');
+            return Promise.reject(new Error('No file path provided.'));
+        }            
+        return Files.readFile(filePath, encoding)
+    }
+        
+}
+
+ async function getFullPath(documentsSource: DocumentSource, basePath: string, fileName: string) {
+        if(documentsSource.type === 'sftp'){
+            return Sftp.pathJoin(basePath, fileName);
+        }else{
+            return Files.pathJoin(basePath, fileName);
+        }
+    }
+
+/**
+ * 
+ * @returns the placeholders keys
+ */
+export function getSubjectPlaceholderkeys() : string[] {
+    const dummyValue = getSubjectPlaceholders({doc: {docType: 'default'}} as SendDocReceiverReq);
+    return Object.keys(dummyValue);
+}
+
+
+/**
+ * get the subject placeholders for the given record. This can be used to replace the placeholders in the subject with the actual values from the record when sending the document. The placeholders include receiver id, document type, current month, current year, current date, current day, next month and next year. The values are computed based on the current date and the information available in the record.
+ * @param record the record
+ * @returns 
+ */
+export function getSubjectPlaceholders(record: SendDocReceiverReq) : Record<string, string> {
+    const placeholders = {
+        receiverId: record.receiver?.original.receiverId ?? '',
+        docType: record.doc.docType ?? '',
+        currentMonth: new Date().toLocaleString('de-DE', { month: 'long' }),
+        currentYear: new Date().getFullYear().toString(),
+        currentDate: new Date().toLocaleDateString('de-DE'),
+        currentDay: new Date().getDate().toString(),
+        nextMonth: new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('de-DE', { month: 'long' }),
+        nextYear: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).getFullYear().toString(),
+        nextDate: new Date(new Date().setDate(new Date().getDate() + 1)).toLocaleDateString('de-DE'),
+        lastMonth: new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleString('de-DE', { month: 'long' }),
+        lastYear: new Date(new Date().setFullYear(new Date().getFullYear() - 1)).getFullYear().toString(),
+        lastDate: new Date(new Date().setDate(new Date().getDate() - 1)).toLocaleDateString('de-DE'),
+        // mmm.yyyy
+        lastMonthYear: new Date(new Date().setMonth(new Date().getMonth() - 1)).toLocaleString('de-DE', { month: 'long', year: 'numeric' }),
+        currentMonthAndYear: new Date().toLocaleString('de-DE', { month: 'long', year: 'numeric' }),
+        nextMonthYear: new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleString('de-DE', { month: 'long', year: 'numeric' }),
+    };
+    return placeholders;
+}
+
+export async function parseDocumentsAssignmentFile(documentsSource: DocumentSource, basePath: string) : Promise<DocumentReceiverMappingResult[]> {
+        const filePath = documentsSource.type === 'sftp' ? documentsSource.sftp?.filePath : documentsSource.file;
+
+        if(documentsSource?.fileAssignment == null) {
+            return [];
+        }   
+
+        const parser = new AssignmentFile(documentsSource.fileAssignment);
+        if(filePath == null || filePath === '') {
+            console.error('No file path provided for assignment file parsing.');
+            return [];
+        }
+        const data = await readDocumentsData(documentsSource, filePath);
+        if(data == null || data === '') {
+            console.error('No data found in the file for assignment parsing.');
+            return [];
+        }
+        const res : DocumentRecord[] = parser.read(data);
+
+        const m = res.map(async (element: DocumentRecord) => {
+            return {
+                filePath: await getFullPath(documentsSource, basePath, element.filePath),
+                receiverId: element.receiverId,
+                date: null,
+                docType: element.docType,
+            }
+        });
+
+        const fileReceiverMapping = await Promise.all(m); 
+       
+        return fileReceiverMapping;
 }

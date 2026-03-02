@@ -49,7 +49,7 @@
 
               icon="cloud_download"
               @click="download()">
-              <q-tooltip class="bg-secondary text-black">Download</q-tooltip>
+              <q-tooltip class="bg-secondary text-black muted-tooltip">Download</q-tooltip>
             </q-btn>
             
           </q-card-actions>
@@ -73,7 +73,7 @@
           </template>
           <div class="q-px-lg q-mt-md">
             <q-btn icon="download" @click="downloadDeliveryCertificate()" color="secondary" outline>
-              <q-tooltip>{{$t('outbox_page.delivery_cert.download')}}</q-tooltip>
+              <q-tooltip class="muted-tooltip">{{$t('outbox_page.delivery_cert.download')}}</q-tooltip>
             </q-btn>
           </div>
         </div>
