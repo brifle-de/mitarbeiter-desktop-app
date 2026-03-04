@@ -57,153 +57,162 @@
                 </q-btn>
             </div>
             <!-- preview -->
-            <div class="q-mt-lg material-card material-card-muted q-pa-md">
-                <div class="text-h6 q-mb-md">Vorschau der Zuordnung von Dokumenten zu Empfängern</div>
-                
-                <q-table
-                    :columns="previewColumns"
-                    :rows="sendDocsRecords"
-                    row-key="doc.filePath"
-                    color="green-9"
+            <div class="q-mt-lg material-card material-card-muted q-pa-md" v-if="hasStarted">
+                <template v-if="isLoading">
+                    <div class="text-center q-py-xl">
+                        <div class="muted-pill">
+                        <q-spinner color="secondary" size="25px" class="q-mr-sm"/>
+                        Lade Vorschau...
+                    </div>
+                    </div>
+                </template>
+                <template v-else>
+                    <div class="text-h6 q-mb-md">Vorschau der Zuordnung von Dokumenten zu Empfängern</div>
+                    
+                    <q-table
+                        :columns="previewColumns"
+                        :rows="sendDocsRecords"
+                        row-key="doc.filePath"
+                        color="green-9"
 
-                    :selection="!selectAll ? 'multiple' : 'none'"
-                    v-model:selected="selected" 
-                    class="q-mt-md bg-transparent"
-                    flat
-                    :pagination="{ rowsPerPage: 5 }">
-                    <template v-slot:body-cell-receiver="props">
-                        <q-td :props="props">
-                            <div v-if="props.row.receiver">
-                                {{ props.row.receiver.original.receiverId }} - {{ props.row.receiver.original.addressCity }}
-                            </div>
-                            <div v-else class="text-muted">
-                                Kein Empfänger gefunden
-                            </div>
-                        </q-td>
-                    </template>
-                    <template v-slot:body-cell-postalAddress="props">
-                        <q-td :props="props">
-                            <div v-if="props.row.postalAddress">
-                                {{ props.row.postalAddress.street }} {{ props.row.postalAddress.housenumber ?? '' }}, {{ props.row.postalAddress.postcode }} {{ props.row.postalAddress.city }}, {{ props.row.postalAddress.country }}
-                            </div>
-                            <div v-else class="text-muted">
-                                Keine Adresse gefunden
-                            </div>
-                        </q-td>
-                    </template>
-                    <template v-slot:body-cell-exists="props">
-                        <q-td :props="props">
-                            <div v-if="props.row.exists">
-                                <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
-                                    Empfänger hat ein Brifle Konto
-                                </q-tooltip>
-                                <img src="~assets/img/invoice.png" alt="Exists" width="50" height="50" />
-                            </div>
-                            <div v-else>
-                                <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
-                                    Empfänger hat kein Brifle Konto
-                                </q-tooltip>
-                                <img src="~assets/img/letter.png" alt="Not Exists" width="50" height="50" />
-                            </div>
-                        </q-td>
-                    </template>
-                    <template v-slot:body-cell-docType="props">
-                        <q-td :props="props">
-                            <div :class="'muted-pill text-caption ' + (pillColors[props.row.doc.docType ?? 'default'] || '')">
-                                {{ props.row.doc.docType ?? 'Unbekannt' }}
-                            </div>
-                        </q-td>
-
-                    </template>
-                    <template v-slot:body-cell-subject="props">
-                        <q-td :props="props">
-                            <div class="muted-pill text-caption">
-                                {{ getSubject(props.row) ?? 'Kein Betreff' }}
-                            </div>
-                        </q-td>
-                    </template>
-                </q-table>
-
-                <!-- confirm switch -->
-                <div class="row items-center q-mt-md">
-                    <q-toggle v-model="selectAll" color="secondary"/>
-                    <span class="text-muted q-ml-sm">
-                        <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
-                            Deaktiviert die Einzelauswahl
-                        </q-tooltip>
-                            Alle auswählen
-                    </span>
-                </div>
-
-                <!-- prepare Send btn -->
-                    <div class="text-right q-mt-md">
-                        <q-btn
-                        :disable="(selected.length === 0 && !selectAll) || totalItemsCount === 0" 
-                        @click="showConfirmationDialog = true"
+                        :selection="!selectAll ? 'multiple' : 'none'"
+                        v-model:selected="selected" 
+                        class="q-mt-md bg-transparent"
                         flat
-                        color="secondary"                    
-                        class="muted-action-btn"
-                        >
-                            Versand für ausgewählte Einträge starten
-                            <q-icon name="play_arrow" class="q-ml-sm" />
-                        </q-btn>
+                        :pagination="{ rowsPerPage: 5 }">
+                        <template v-slot:body-cell-receiver="props">
+                            <q-td :props="props">
+                                <div v-if="props.row.receiver">
+                                    {{ props.row.receiver.original.receiverId }} - {{ props.row.receiver.original.addressCity }}
+                                </div>
+                                <div v-else class="text-muted">
+                                    Kein Empfänger gefunden
+                                </div>
+                            </q-td>
+                        </template>
+                        <template v-slot:body-cell-postalAddress="props">
+                            <q-td :props="props">
+                                <div v-if="props.row.postalAddress">
+                                    {{ props.row.postalAddress.street }} {{ props.row.postalAddress.housenumber ?? '' }}, {{ props.row.postalAddress.postcode }} {{ props.row.postalAddress.city }}, {{ props.row.postalAddress.country }}
+                                </div>
+                                <div v-else class="text-muted">
+                                    Keine Adresse gefunden
+                                </div>
+                            </q-td>
+                        </template>
+                        <template v-slot:body-cell-exists="props">
+                            <q-td :props="props">
+                                <div v-if="props.row.exists">
+                                    <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
+                                        Empfänger hat ein Brifle Konto
+                                    </q-tooltip>
+                                    <img src="~assets/img/invoice.png" alt="Exists" width="50" height="50" />
+                                </div>
+                                <div v-else>
+                                    <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
+                                        Empfänger hat kein Brifle Konto
+                                    </q-tooltip>
+                                    <img src="~assets/img/letter.png" alt="Not Exists" width="50" height="50" />
+                                </div>
+                            </q-td>
+                        </template>
+                        <template v-slot:body-cell-docType="props">
+                            <q-td :props="props">
+                                <div :class="'muted-pill text-caption ' + (pillColors[props.row.doc.docType ?? 'default'] || '')">
+                                    {{ props.row.doc.docType ?? 'Unbekannt' }}
+                                </div>
+                            </q-td>
 
+                        </template>
+                        <template v-slot:body-cell-subject="props">
+                            <q-td :props="props">
+                                <div class="muted-pill text-caption">
+                                    {{ getSubject(props.row) ?? 'Kein Betreff' }}
+                                </div>
+                            </q-td>
+                        </template>
+                    </q-table>
+
+                    <!-- confirm switch -->
+                    <div class="row items-center q-mt-md">
+                        <q-toggle v-model="selectAll" color="secondary"/>
+                        <span class="text-muted q-ml-sm">
+                            <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
+                                Deaktiviert die Einzelauswahl
+                            </q-tooltip>
+                                Alle auswählen
+                        </span>
                     </div>
 
-                    <q-dialog 
-                    class="confirm-dialog"
-                    v-model="showConfirmationDialog" position="right" 
-                    maximized persistent  no-shake  transition-show="none"
-                    transition-hide="none">
-                        <q-card class="material-card material-card-filled flex-column  padding-top-titlebar unselectable">
-                            <q-card-section class="w-100">
-                                <div class="text-h5">Bestätigung</div>
-                            </q-card-section>
+                    <!-- prepare Send btn -->
+                        <div class="text-right q-mt-md">
+                            <q-btn
+                            :disable="(selected.length === 0 && !selectAll) || totalItemsCount === 0" 
+                            @click="showConfirmationDialog = true"
+                            flat
+                            color="secondary"                    
+                            class="muted-action-btn"
+                            >
+                                Versand für ausgewählte Einträge starten
+                                <q-icon name="play_arrow" class="q-ml-sm" />
+                            </q-btn>
 
-                            <q-card-section class="flex-1">
-                                <div class="q-py-lg text-muted">
-                                    Bist du sicher, dass du den Versand für die {{ selectAll ? totalItemsCount : selected.length }} ausgewählten Einträge starten möchten?
-                                </div>
-                                <div class="row q-my-sm">
-                                    <div class="col-8">
-                                        Anzahl Digitaler Sendungen:
-                                    </div>
-                                    <div class="col-4 text-center text-bold muted-pill">
-                                        {{ itemsToSend.filter(item => item.exists).length }}
-                                    </div>
-                                </div>
-                                <div class="row q-my-sm">
-                                    <div class="col-8">
-                                        Anzahl Sendungen per Post:
-                                    </div>
-                                    <div class="col-4 text-center text-bold muted-pill">
-                                        <template v-if="usePaperMail">
-                                            {{ itemsToSend.filter(item => !item.exists).length }}
-                                        </template>
-                                        <template v-else>
-                                            0
-                                        </template>
-                                    </div>
-                                </div>
+                        </div>
 
-                            </q-card-section>
+                        <q-dialog 
+                        class="confirm-dialog"
+                        v-model="showConfirmationDialog" position="right" 
+                        maximized persistent  no-shake  transition-show="none"
+                        transition-hide="none">
+                            <q-card class="material-card material-card-filled flex-column  padding-top-titlebar unselectable">
+                                <q-card-section class="w-100">
+                                    <div class="text-h5">Bestätigung</div>
+                                </q-card-section>
 
-                            <q-card-actions class="w-100 justify-between">
-                                <q-btn flat icon="cancel" class="muted-action-btn" label="Abbrechen" @click="showConfirmationDialog = false">
-                                    <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
-                                        Abbrechen
-                                    </q-tooltip>
-                                </q-btn>
-                                <q-btn flat icon="check" class="muted-action-btn" label="Bestätigen" color="secondary" @click="sendDocuments()">
-                                    <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
-                                        Versand starten
-                                    </q-tooltip>
-                                </q-btn>
-                            </q-card-actions>
-                        </q-card>
-                    </q-dialog>
-                
+                                <q-card-section class="flex-1">
+                                    <div class="q-py-lg text-muted">
+                                        Bist du sicher, dass du den Versand für die {{ selectAll ? totalItemsCount : selected.length }} ausgewählten Einträge starten möchten?
+                                    </div>
+                                    <div class="row q-my-sm">
+                                        <div class="col-8">
+                                            Anzahl Digitaler Sendungen:
+                                        </div>
+                                        <div class="col-4 text-center text-bold muted-pill">
+                                            {{ itemsToSend.filter(item => item.exists).length }}
+                                        </div>
+                                    </div>
+                                    <div class="row q-my-sm">
+                                        <div class="col-8">
+                                            Anzahl Sendungen per Post:
+                                        </div>
+                                        <div class="col-4 text-center text-bold muted-pill">
+                                            <template v-if="usePaperMail">
+                                                {{ itemsToSend.filter(item => !item.exists).length }}
+                                            </template>
+                                            <template v-else>
+                                                0
+                                            </template>
+                                        </div>
+                                    </div>
 
+                                </q-card-section>
+
+                                <q-card-actions class="w-100 justify-between">
+                                    <q-btn flat icon="cancel" class="muted-action-btn" label="Abbrechen" @click="showConfirmationDialog = false">
+                                        <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
+                                            Abbrechen
+                                        </q-tooltip>
+                                    </q-btn>
+                                    <q-btn flat icon="check" class="muted-action-btn" label="Bestätigen" color="secondary" @click="sendDocuments()">
+                                        <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
+                                            Versand starten
+                                        </q-tooltip>
+                                    </q-btn>
+                                </q-card-actions>
+                            </q-card>
+                        </q-dialog>
+                    
+                </template>
             </div>
          </template>
          <template v-else>
@@ -468,10 +477,14 @@ export default defineComponent({
 
         const failedItems = ref<SendDocReceiverReq[]>([]);
         const successItems = ref<SendDocReceiverReq[]>([]);
+
+        const isLoading = ref<boolean>(false);
+        const hasStarted = ref<boolean>(false);
+
         return { 
             sessionStore, encryptedStore, brifleStore, tenantId, apiId, apiKey, account, userExistenceStatus, totalChecking, totalChecked,
             templateData, templateName, fileReceiverMapping, sendTemplateService, receiverRecords, receiversSource, documentsSource, pillColors, basePath, sendDocsRecords, selected, parsersProvider,
-            receiverParsersRules, selectAll, showConfirmationDialog, failedItems, successItems, isSending, showReport
+            receiverParsersRules, selectAll, showConfirmationDialog, failedItems, successItems, isSending, showReport, isLoading, hasStarted
         };
     },
     methods: {
@@ -611,6 +624,8 @@ export default defineComponent({
             if(!this.canStart || !this.templateData) {
                 return;
             }
+            this.isLoading = true;
+            this.hasStarted = true;
             // parse documents and receivers, check for existence and prepare sendDocsRecords
             this.fileReceiverMapping = await this.parseDocuments() ?? [];
             this.pillColors = computePillColors(this.fileReceiverMapping);
@@ -618,7 +633,8 @@ export default defineComponent({
             await this.parseReceiversFile();
             // check for existence of receivers and prepare sendDocsRecords
             await this.checkForExistence();
-            
+
+            this.isLoading = false;
         },
         getExternalReceiverActionText(action: string) {
             switch (action) {
@@ -632,7 +648,7 @@ export default defineComponent({
             return action;
         },
         async loadTemplate() {
-            try {
+            try {                
                 const template = await this.sendTemplateService.getTemplate(this.id);
                 this.templateName = template.name;
                 this.templateData = template;
@@ -722,13 +738,14 @@ export default defineComponent({
             });
             return;
         }
-        const fileContent = await this.readReceiversFile(parser.rules.encoding);     
+        const fileContent = await this.readReceiversFile(parser.rules.encoding); 
         const buffer = new TextEncoder().encode(fileContent);
         // text encoder users utf-8 therefore override the encoding in rules to utf-8,
         //  use deep copy to avoid modifying original rules and cause conflicts
         const rulesCopy = JSON.parse(JSON.stringify(parser.rules));
         rulesCopy.encoding = 'utf-8';
         this.receiverRecords = ReceiverParser.parse(Buffer.from(buffer), rulesCopy); 
+        console.log('Parsed receiver records: ', this.receiverRecords);
     },
         async checkForExistence() {           
             Logger.debug("Starting to check for receiver existence...");      

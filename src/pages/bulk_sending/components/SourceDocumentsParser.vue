@@ -194,7 +194,7 @@ export default defineComponent({
     
     columns() {
         return [
-            { name: 'fileName', label: 'Datei', field: 'fileName', sortable: true, align: 'left' as const },
+            { name: 'fileName', label: 'Datei', field: 'filePath', sortable: true, align: 'left' as const },
             { name: 'receiverId', label: 'Empfänger',  field: 'receiverId', sortable: true, align: 'left' as const  },
             { name: 'docType', label: 'Dok-Typ', field: 'docType', sortable: true, align: 'left' as const  },
             { name: 'date', label: 'Datum', field: 'date', sortable: true, align: 'left' as const, format: (val: Date|null) => {       
@@ -416,25 +416,35 @@ export default defineComponent({
     },
     selectDirParser(parserName: string | null) {        
        
-
-        if(parserName) {
-            localStorage.setItem('selectedDocumentDirParser', parserName);
-        } else {
-            localStorage.removeItem('selectedDocumentDirParser');
+        if(this.useLocalStorage) {
+            if(parserName) {
+                localStorage.setItem(this.localStorageDirKey, parserName);
+            } else {
+                localStorage.removeItem(this.localStorageDirKey);
+            }
         }
         this.value.dirParser = this.availableDirParsers.find((parser) => parser.name === parserName || parser.id === parserName)!.rules;
 
     },
     selectFileParser(parserName: string | null) {
-        if(parserName) {
-            localStorage.setItem('selectedDocumentFileParser', parserName);
-        } else {
-            localStorage.removeItem('selectedDocumentFileParser');
+        if(this.useLocalStorage) {
+            if(parserName) {
+                localStorage.setItem(this.localStorageFileKey, parserName);
+            } else {
+                localStorage.removeItem(this.localStorageFileKey);
+            }
         }
         this.value.fileAssignment = this.availableAssignmentParser.find((parser) => parser.name === parserName)!.rules;
     },
     loadState(){
-        const cachedDirParser = localStorage.getItem('selectedDocumentDirParser');
+        let cachedDirParser = this.useLocalStorage ? localStorage.getItem(this.localStorageDirKey) : null;
+        if(this.initValue && this.initValue.dirParser) {
+            const found = this.availableDirParsers.find((rule) => rule.rules === this.initValue.dirParser);
+            if(found) {
+                cachedDirParser = found.name;
+            }
+
+        }
         if(cachedDirParser) {
             const found = this.availableDirParsers.find((rule) => rule.name === cachedDirParser || rule.id === cachedDirParser);
             if(found) {
@@ -442,7 +452,14 @@ export default defineComponent({
                 this.selectedDirParserName = found.name;
             }
         }
-        const cachedFileParser = localStorage.getItem('selectedDocumentFileParser');
+        let cachedFileParser = this.useLocalStorage ? localStorage.getItem(this.localStorageFileKey) : null;
+        if(this.initValue && this.initValue.fileAssignment) {
+            const found = this.availableAssignmentParser.find((rule) => rule.rules === this.initValue.fileAssignment);
+            if(found) {
+                cachedFileParser = found.name;
+            }
+
+        }
         if(cachedFileParser) {
             const found = this.availableAssignmentParser.find((rule) => rule.name === cachedFileParser || rule.id === cachedFileParser);
             if(found) {
@@ -478,7 +495,23 @@ export default defineComponent({
     useDateFilter: {
         type: Boolean,
         default: true,
-    }
+    },
+    useLocalStorage: {
+        type: Boolean,
+        default: true,
+    },
+    localStorageDirKey: {
+        type: String,
+        default: 'selectedDocumentDirParser',
+    },
+    localStorageFileKey: {
+        type: String,
+        default: 'selectedDocumentFileParser',  
+    },
+    initValue : {
+        type: Object as PropType<DocumentSource>,
+        default: () => ({}),
+    },
   }, 
 
   

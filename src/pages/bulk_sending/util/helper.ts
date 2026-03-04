@@ -1,6 +1,6 @@
 import { DocumentSourceDirParser, DocumentReceiverMappingResult, DocumentSourceDirParserRules } from "./documents/parsers";
 import SampleParser from './documents/sampleParsers';
-import { BulkSendTemplate } from "app/src-electron/service/send_templates/templates/template";
+import { BulkSendTemplate, SftpSelection } from "app/src-electron/service/send_templates/templates/template";
 import { SftpData } from "app/src-electron/models/EncryptedStore";
 import AssignmentFile, { AssignmentRules } from "./documents/assignmentFile";
 import DocumentRecord from "./documents/documentRecord";
@@ -66,6 +66,7 @@ export function computePillColors(doc: {docType: string | null}[]) {
 }
 
 export function  findDocumentSourceDirParser(id: string, availableDirParsers: {id: string, name: string, rules: DocumentSourceDirParserRules}[]) : DocumentSourceDirParserRules | undefined {        
+    
     const res = availableDirParsers
         .find(parser => parser.id === id);
         if(res) {
@@ -89,9 +90,9 @@ export function loadReceiverSource(templateData: BulkSendTemplate, sftpData: Sft
     if(templateData.receiverSource.type === 'file') {
         receiverSrc.type = 'file';
         receiverSrc.file = templateData.receiverSource.file ?? '';
-    } else if(templateData.receiverSource.type === 'sftp') {
+    } else if(templateData.receiverSource.type === 'sftp' && templateData.receiverSource.sftp) {
         receiverSrc.type = 'sftp';
-        receiverSrc.sftp = getSftpReceiverSource(templateData.receiverSource.sftp?.serverId ?? '', sftpData);
+        receiverSrc.sftp = getSftpReceiverSource(templateData.receiverSource.sftp, sftpData);
     }
     receiverSrc.parserId = templateData.receiverSource.parserId ?? '';
     return receiverSrc;
@@ -99,16 +100,16 @@ export function loadReceiverSource(templateData: BulkSendTemplate, sftpData: Sft
 
 /**
  * gets the sftp connection information for the receiver source based on the id stored in the template and the list of available sftp connections. If no connection is found, it returns an object with null connection and empty file path. This allows the component to handle the case where the template references an sftp connection that is no longer available in the account. The user can then select a new connection for the template without losing the file path information.
- * @param id the id of the sftp connection to find
+ * @param sftp the sftp selection data from the template containing the server id and file path information
  * @param availableSftpConnections the list of available sftp connections
  * @returns the sftp receiver source information or an object with null connection and empty file path if no connection is found
  */
-export function getSftpReceiverSource(id: string, availableSftpConnections: SftpData[]) : SftpReceiverSource {
-    const connection = availableSftpConnections.find(conn => conn.id === id);
+export function getSftpReceiverSource(sftp: SftpSelection, availableSftpConnections: SftpData[]) : SftpReceiverSource {
+    const connection = availableSftpConnections.find(conn => conn.id === sftp.serverId);
     if(connection) {
         return {
             connection: connection,
-            filePath: ''
+            filePath: sftp.filePath ?? ''
         }
     } else {
         return {
@@ -118,12 +119,12 @@ export function getSftpReceiverSource(id: string, availableSftpConnections: Sftp
     }
 }
 
-export function getSftpDocumentSource(id: string, availableSftpConnections: SftpData[]) : SftpDocumentSource {
-    const connection = availableSftpConnections.find(conn => conn.id === id);
+export function getSftpDocumentSource(sftp: SftpSelection, availableSftpConnections: SftpData[]) : SftpDocumentSource {
+    const connection = availableSftpConnections.find(conn => conn.id === sftp.serverId);
     if(connection) {
         return {
             connection: connection,
-            filePath: ''
+            filePath: sftp.filePath ?? ''
         }
     } else {
         return {
@@ -150,9 +151,9 @@ export function loadDocumentSource(templateData: BulkSendTemplate, availableDirP
         if(templateData.documentSource.type === 'file') {
           documentsSrc.type = 'file';
           documentsSrc.file = templateData.documentSource.file ?? '';
-        } else if(templateData.documentSource.type === 'sftp') {
+        } else if(templateData.documentSource.type === 'sftp' && templateData.documentSource.sftp) {
           documentsSrc.type = 'sftp';
-          documentsSrc.sftp = getSftpDocumentSource(templateData.documentSource.sftp?.serverId ?? '', sftpData);           
+          documentsSrc.sftp = getSftpDocumentSource(templateData.documentSource.sftp, sftpData);           
         }
         
         documentsSrc.destType = templateData.documentSource.destType ?? 'file';        
@@ -202,6 +203,7 @@ async function readLocaleDir(path: string): Promise<string[]> {
 }
 
 async function readSftpDir(sftp: SftpDocumentSource | null) : Promise<string[]> {
+    console.log('Reading SFTP directory with source:', sftp);
     if(sftp == null || sftp.connection == null) {
         return []   ;
     }
@@ -231,7 +233,7 @@ export async function parseDocumentsDirectoryFiles(documentsSource: DocumentSour
             return;
         }
         const rules = documentsSource.dirParser     
-        if(!rules || !documentsSource.file) {
+        if(!rules || (!documentsSource.file && documentsSource.type === 'file') || (documentsSource.type === 'sftp' && (!documentsSource.sftp || !documentsSource.sftp.connection))) {
             console.error('No rules or file path provided for directory parsing');
             return;
         }
@@ -256,6 +258,7 @@ export async function parseDocumentsDirectoryFiles(documentsSource: DocumentSour
             console.error('No SFTP connection available.');
             return Promise.reject(new Error('No SFTP connection available.'));
         }
+        console.log('Reading receivers file from SFTP with source:', receiverSource);
         return Sftp.readFile(receiverSource.sftp.filePath, receiverSource.sftp?.connection, encoding);
     } else {
         if(receiverSource?.file == null) {
