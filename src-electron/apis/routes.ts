@@ -1,4 +1,5 @@
 
+import AppUpdateService from '../service/AppUpdateService';
 import BrifleRoutes from './brifle/brifleRoutes';
 import ElectronRoutes from './electron/electronRoutes';
 import EncryptedStoreRoutes from './encryptedStore/encryptedStoreRoutes'
@@ -14,14 +15,17 @@ const encryptedStoreRoutes = new EncryptedStoreRoutes();
 const fileRoutes = new FileRoutes();
 const sftpRoutes = new SftpRoutes();
 const brifleRoutes = new BrifleRoutes(); 
-const electronRoutes = new ElectronRoutes(); 
+
 const logRoutes = new LogRoutes();
 const parsersProviderRoutes = new ParsersProviderRoutes()
 const ocrRoutes = new OcrRoutes();
 const scriptsRoutes = new ScriptsRoutes(); 
 const sendTemplateRoutes = new SendTemplateRoutes(); 
 
-export function registerRoutes(){
+export function registerRoutes(appUpdateService: AppUpdateService){
+
+    const electronRoutes = new ElectronRoutes(appUpdateService);  
+
     encryptedStoreRoutes.registerRoutes()
     fileRoutes.registerRoutes()
     sftpRoutes.registerRoutes()

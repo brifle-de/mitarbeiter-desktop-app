@@ -5,6 +5,7 @@ export interface UpdateInformation {
     version: string;
     releaseDate: string;
     releaseNotes?: string;
+    isUpdateAvailable: boolean;
 }
 
 export default class AppUpdateService {
@@ -24,7 +25,35 @@ export default class AppUpdateService {
     }
 
     /**
-     * 
+     * Initiates the download of the update if update information is available.
+     * If no update information is cached, it logs a warning and does nothing.
+     */
+    downloadUpdate() {
+        if (this.cachedUpdateInfo && this.cachedUpdateInfo.updateInfo) {
+            return autoUpdater.downloadUpdate();
+        } else {
+            console.warn("No update information available. Cannot download update.");
+            return Promise.resolve();
+        }
+    }
+
+    /**
+     * Initiates the download and installation of the update if update information is available.
+     * If no update information is cached, it logs a warning and does nothing.
+     */
+    downloadAndInstallUpdate() {
+        if (this.cachedUpdateInfo && this.cachedUpdateInfo.updateInfo) {
+            return autoUpdater.downloadUpdate().then(() => {
+                autoUpdater.quitAndInstall();
+            });
+        } else {
+            console.warn("No update information available. Cannot download and install update.");
+            return Promise.resolve();
+        }
+    }
+
+    /**
+     * Returns the update information if available.
      * @returns the update information
      */
     getUpdateInfo(): UpdateInformation | null {
@@ -34,6 +63,7 @@ export default class AppUpdateService {
         const info = this.cachedUpdateInfo.updateInfo;
         const releaseNote = typeof info.releaseNotes === "string" ? info.releaseNotes : (info.releaseNotes?.[0]?.note || "");
         return {
+            isUpdateAvailable: this.cachedUpdateInfo.isUpdateAvailable,
             version: info.version,
             releaseDate: info.releaseDate,
             releaseNotes: releaseNote
@@ -47,15 +77,13 @@ export default class AppUpdateService {
             repo: 'mitarbeiter-desktop-app'
         });
         autoUpdater.forceDevUpdateConfig = true;
-        autoUpdater.allowPrerelease = true;
         autoUpdater.fullChangelog= false;
         this.cachedUpdateInfo = await autoUpdater.checkForUpdates().catch(err => {
             console.error("Error checking for updates:", err);
             return null;
         });
-        console.log("Update check result:", this.cachedUpdateInfo);
     }
-
+ 
 }
 
 

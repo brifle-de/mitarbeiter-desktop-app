@@ -208,7 +208,7 @@ function createTray() {
 
 
 void app.whenReady().then(() => {
-  registerRoutes();  
+  registerRoutes(appUpdateService);  
   void createWindow(); 
   void createTray();
 });
