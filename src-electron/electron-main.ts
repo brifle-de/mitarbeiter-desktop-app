@@ -11,14 +11,14 @@ import ParsersService from './service/ParsersService';
 import ScriptsService from './service/ScriptsService';
 import BulkSendTemplateService from './service/BulkSendTemplateService';
 
-import net from 'net';
-
-import { Bonjour } from 'bonjour-service';
+import AppUpdateService from './service/AppUpdateService';
 
 
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform(); 
+
+const appUpdateService = new AppUpdateService();
 
 const currentDir = fileURLToPath(new URL('.', import.meta.url));
 
@@ -42,48 +42,7 @@ if (!gotTheLock) {
       mainWindow.focus();
     }
   });
- // createPrintServer();
   initApp();
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function createPrintServer() {
-  const printerPort = 9100; // Standard port for raw printing
-  // check if is windows and start print server
-  if (platform === 'win32') {
-    const server = net.createServer(socket => {
-    const file = fs.createWriteStream(`job-${Date.now()}.prn`)
-    socket.pipe(file)
-
-    socket.on("data", data => {
-      console.log("received", data.length, "bytes")
-   })
-
-
-    socket.on("end", () => {
-      console.log("print job received")
-    })
-  })
-  server.listen(printerPort, () => {
-    console.log("Print server listening on port " + printerPort)
-    const bonjour = new Bonjour()
-    bonjour.publish({
-      name: "Electron Printer",
-      type: "ipp",
-      protocol: "tcp",
-      port: printerPort,
-      txt: {
-        ty: "Electron Printer",
-        note: "Local Electron printer",
-        pdl: "application/pdf",
-        rp: "ipp/print"
-      }
-    })
-
-    console.log("Printer advertised on network")
-  })
-
-  }
 }
 
 
@@ -107,6 +66,8 @@ function initApp(){
   copyOcrFiles(appDataDir); 
   scriptsService.initScriptsDirectory();
   sendTemplateService.initTemplatesDirectory();
+  appUpdateService.registerUpdateEvents();
+  void appUpdateService.refresh();
 }
 
 
@@ -127,6 +88,10 @@ function getBundledTessdataPath(): string {
   );
 
 }
+
+
+
+
 
 function copyOcrFiles(appDataDir: string){
   const tessdataSourceDir = getBundledTessdataPath();
@@ -198,17 +163,6 @@ async function createWindow() {
 
   
 
-
-  if (process.env.DEBUGGING) {
-    // if on DEV or Production with debug enabled
-    mainWindow.webContents.openDevTools();
-  } else {
-    // we're on production; no access to devtools pls
-    mainWindow.webContents.on('devtools-opened', () => {
-      mainWindow?.webContents.closeDevTools();
-    });
-  }
-
   mainWindow.on('close', (event: { preventDefault: () => void; }) => {
      if (mainWindow && !isQuiting) {
       event.preventDefault()
@@ -254,7 +208,7 @@ function createTray() {
 
 
 void app.whenReady().then(() => {
-  registerRoutes();  
+  registerRoutes(appUpdateService);  
   void createWindow(); 
   void createTray();
 });

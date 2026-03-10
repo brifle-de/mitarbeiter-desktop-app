@@ -179,7 +179,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/templates/create',
         name: 'bulk_sending.create_template',
-        component: () => EditBulkTemplatePage,
+        component: EditBulkTemplatePage,
         meta: {
           searchable: true,
           searchWeight: 1,
