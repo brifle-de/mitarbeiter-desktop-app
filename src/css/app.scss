@@ -13,11 +13,97 @@
     font-display: swap;
 }
 
+
+.muted-pill{
+    background-color: #79917211;
+    border: 1px solid #52525276;
+    color: #dfdfdf;
+    border-radius: 5px;
+    padding: 5px 10px;
+    display: inline-block;
+
+    &.clickable{
+        cursor: pointer;
+        &:hover {
+            background-color: #79917222;
+            border-color: #525252b8;
+        }
+    }
+
+    &.dense {
+        padding: 2px 6px;
+    }
+
+    &.green {
+        background-color: #46755755;
+        border-color: #41814f4d;
+        color: #dfdfdf;
+    }
+    &.purple {
+        background-color: #62467555;
+        border-color: #7641814d;
+        color: #dfdfdf;
+    }
+    &.blue {
+        background-color: #464f7555;
+        border-color: #415c814d;
+        color: #dfdfdf;
+    }
+    &.red {
+        background-color: #75464655;
+        border-color: #8141414d;
+        color: #dfdfdf;
+    }
+    &.yellow {
+        background-color: rgba(148, 145, 96, 0.149);
+        border-color: #7e81414d;
+        color: #dfdfdf;
+    }
+    &.orange {
+        background-color: #75644655;
+        border-color: #8162414d;
+        color: #dfdfdf;
+    }
+
+}
+
+.muted-container-purple {
+    background-color: #372344;
+    color: #dbcde4;
+}
+
 .flex-column{
     display: flex;
     flex-direction: column;
 }
 
+.flex-row{
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-inline-row{
+    display: inline-flex;
+    flex-direction: row;
+}
+
+.flex-inline-column{
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.flex-wrap{
+    display: flex;
+    flex-wrap: wrap;
+}
+
+
+
+
+
+.title-case {
+    text-transform: capitalize;
+}
 
 .q-table th{
     font-size: 18px;
@@ -45,7 +131,7 @@
 .wrapper{
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: calc(100vh - var(--titlebar-height)); 
     width: 100%;
     max-width: 1400px;
     padding-left: 20px;
@@ -57,6 +143,24 @@
     .q-router-link--active {
         color: $secondary;
         background-color: #1d1d1d;
+    }
+}
+
+.main-menu-drawer{
+
+    // background-color: #181b18;  
+    background-color: var(--background);
+    .q-drawer__content{
+        padding-top: 10px;
+    }
+    .main-menu-drawer-content{
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background-color: #171c17ae; 
+        border-radius: 10px;
+        border: 1px solid var(--titlebar-border-color);
     }
 }
 
@@ -201,7 +305,7 @@
     overflow-y: auto;
     padding-top: 0;
     padding-bottom: 0;
-    border-top: 1px solid var(--titlebar-border-color);
+   
 }
 
 .height-100-titlebar {
@@ -218,6 +322,10 @@
 
 .border{
     border: 1px solid #9996;
+}
+
+.no-drag {
+    app-region: no-drag;
 }
 
 .titlebar-button {
@@ -327,10 +435,23 @@
 
 } 
 
+.standout-input{ 
+    background-color: rgb(35, 35, 35) !important;
+    color: #dfdfdf !important;
+
+    .q-field__native, .q-field__control-container, .q-field__append{
+        color: #b8e8bb !important;
+    }
+}
+
 .material-card{
     background-color: #ffffff11;
     border: 1px solid #444;
     box-shadow: none;
+
+    &.material-card-filled {
+        background-color: #151515;
+    }
 
     &.clickable{
         cursor: pointer;
@@ -339,13 +460,45 @@
         }
     }
 
-    &.material-card-filled {
-        background-color: #151515;
+    &.material-card-muted {
+        background-color: #79917211;
+        border-color: #52525276;
+
+        &.clickable {
+            &:hover {
+                background-color: #79917222;
+                border-color: #525252b8;
+            }
+        }
     }
+
+ 
 }
 
 .text-outline, .text-muted {
     color: #dfdfdf;
+}
+
+.muted-action-btn {
+    background-color: #d1d8d018;
+    border: 1px solid #e5ede418;
+    color: #dfdfdf;
+    transition: all 0.3s;
+    &:hover { 
+        background-color: #91de9e17;
+        border-color: #555;
+    }
+}
+
+.muted-tooltip {
+    background-color: #1d1d1d;
+    border: 1px solid #e5ede418;
+    color: #dfdfdf;
+    font-size: 0.75em;
+    &:hover { 
+        background-color: #91de9e17;
+        border-color: #555;
+    }
 }
 
 .selection-item-box {
@@ -358,10 +511,11 @@
     }
     &.active {
         background-color: #343d34;
-        border: 1px solid #617f54;
+        border-color:#a2c2a5;
+        color: #c5d8c6;
         &:hover {
             background-color: #3b4b3b;
-            border: 1px solid #617f54;
+            border-color: #617f54;
         }
     }
 }

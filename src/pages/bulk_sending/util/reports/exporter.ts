@@ -1,4 +1,4 @@
-import { SendDocReq } from "../receivers/receiverRecord"
+import { SendDocReceiverReq, SendDocReq } from "../receivers/receiverRecord"
 
 
 export interface ReportsExporterRules{
@@ -56,9 +56,9 @@ export interface ReportRecord {
 
 
 export class ReportsExporter {
-    private data: SendDocReq[]
-
-    constructor(data: SendDocReq[]) {
+    private data: SendDocReq[] | SendDocReceiverReq[]
+ 
+    constructor(data: SendDocReq[] | SendDocReceiverReq[]) {
         this.data = data
     }
 
@@ -73,7 +73,7 @@ export class ReportsExporter {
         return ''
     }
 
-    private prepareData(data: SendDocReq[]): ReportRecord[] {
+    private prepareData(data: SendDocReq[] | SendDocReceiverReq[]): ReportRecord[] {
         return data.map((item) => {
             return {
                 path: item.doc.filePath,

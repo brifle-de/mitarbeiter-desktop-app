@@ -253,7 +253,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, PropType, ref } from 'vue';
-import { SendConfirmData, SendConfirmEventData, TrackableReceiverRecord } from '../util/types';
+import { CoverLetterData, SendConfirmData, SendConfirmEventData, TrackableReceiverRecord } from '../util/types';
 import ReceiverRecord from 'src/pages/bulk_sending/util/receivers/receiverRecord';
 import { BirthInformation, FallbackOptions, ParsedAddressResponse, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk';
 import { useAddressStore } from 'src/stores/address-store';
@@ -273,6 +273,14 @@ export default defineComponent({
         apiId: {
             type: String,
             required: true,
+        },
+        includeCoverLetter: {
+            type: Boolean,
+            required: true
+        },
+        selectedCoverLetter: {
+            type: Object as () => CoverLetterData | null,
+            required: false
         }
         
     },
@@ -410,7 +418,7 @@ export default defineComponent({
             const receiverReqs = await this.getReceiverRequests();            
             for(const receiverTo of receiverReqs) {
                 const fallback : FallbackOptions = {
-                    enabled_physical_delivery: this.data.allowSendingPapermail ?? false,
+                    enabled_physical_delivery: this.data.allowSendingPapermail ?? false,                
                     paper_mail: {
                         test_mode:{
                             enabled: false,
@@ -431,6 +439,10 @@ export default defineComponent({
                             enabled: false,
                             email: ""
                         },
+                        cover_letter: this.includeCoverLetter && this.selectedCoverLetter ? {
+                            type: this.selectedCoverLetter.type,
+                            name: this.selectedCoverLetter.name
+                        } : undefined,
                         recipient: {
                             city: receiverTo.postal_address.city,
                             country: receiverTo.postal_address.country,
@@ -504,6 +516,7 @@ export default defineComponent({
         },
         close() {
             this.value = false;
+            this.page = 1;
         },
         cancel() {            
             this.$emit('cancel');

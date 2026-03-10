@@ -4,6 +4,8 @@ import { useBrifleStore } from "src/stores/brifle-store";
 import { ApiEndpoints } from "app/src-electron/models/EncryptedStore";
 import Brifle from "src/services/node/Brifle";
 
+import pRetry from 'p-retry';
+
 export default class UnsealGuard {
      
     /*
@@ -30,9 +32,17 @@ export default class UnsealGuard {
         }
         const hasAuthenticated = await brifleStore.hasApiAuthenticated(apiKey, endpoint);
         if (!hasAuthenticated) {
-            const authResponse = await Brifle.authentication().authLogin(api,{
+            const run = async () => Brifle.authentication().authLogin(api,{
                 key: apiKey,
                 secret: apiSecret,
+            });
+            const authResponse = await pRetry(run,{
+                retries: 50,
+                minTimeout: 3500,
+                maxTimeout: 10000,
+                onFailedAttempt: (error) => {
+                    console.warn(`Authentication attempt ${error.attemptNumber} failed. There are ${error.retriesLeft} retries left.`);
+                }
             });
             if (authResponse.error) {
                 console.error('Authentication failed:', authResponse.error);

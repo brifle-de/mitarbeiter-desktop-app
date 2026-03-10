@@ -63,16 +63,19 @@ export {
 const ALL : ReceiversParserDefinition[] = [
     {
         name: 'XML 1',
+        id: 'brifle-xml-1',
         description: 'XML file with employees',
         rules: SAMPLE_XML_1,
     },
     {
         name: 'CSV 1',
+        id: 'brifle-csv-1',
         description: 'CSV file with employees',
         rules: SAMPLE_CSV_1,
     },
     {
         name: 'SAP Export',
+        id: 'brifle-sap-german-csv-1',
         description: 'German CSV file exported from SAP',
         rules: GERMAN_SAMPLE_CSV_1,
     }

@@ -23,6 +23,12 @@
                 </q-item-section>
                 <q-item-section class="text-h6">Deckblatt Vorlagen</q-item-section>
             </q-item>
+            <q-item clickable @click="goTo('/settings/scripts')">
+                <q-item-section avatar>
+                    <q-icon name="code" size="2.5rem" color="secondary" />
+                </q-item-section>
+                <q-item-section class="text-h6">Skripte</q-item-section>
+            </q-item>
            
         </q-list>
     </p-page>

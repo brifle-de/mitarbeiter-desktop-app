@@ -91,6 +91,7 @@ export interface ReceiversParserDefinition {
     name: string,
     description: string,
     rules: ReceiverParserRules,
+    id: string
 }
 
 class XMLReceiverParser{

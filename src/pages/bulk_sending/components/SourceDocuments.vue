@@ -1,7 +1,7 @@
 <template>
     <h5>Zuweisungsart</h5>
     <div class="src_grid q-my-lg">
-        <div class="text-bold" 
+        <div class="text-bold selection-item-box clickable"
             @click="selectTargetSource('file')" :class="{ active: documentSource.destType === 'file' }">
             <div>
                 <!-- icon -->
@@ -12,7 +12,7 @@
             </div>
             
         </div>
-        <div class="text-bold" 
+        <div class="text-bold selection-item-box clickable" 
             @click="selectTargetSource('directory')" :class="{ active: documentSource.destType === 'directory' }">
             <div>
                 <!-- icon -->
@@ -25,7 +25,7 @@
     </div>
     <h5>Ursprung</h5>
     <div class="src_grid q-my-lg">
-        <div class="text-bold" 
+        <div class="text-bold selection-item-box clickable" 
             @click="selectSource('file')" :class="{ active: documentSource.type === 'file' }">
             <div>
                 <!-- icon -->
@@ -37,7 +37,7 @@
                 <template v-else>Lokale Datei</template>
             </div>
         </div>
-        <div class="text-bold" 
+        <div class="text-bold selection-item-box clickable" 
             @click="selectSource('sftp')" :class="{ active: documentSource.type === 'sftp' }">
             <div>
                 <!-- icon -->
@@ -72,7 +72,9 @@
                 v-model="showSftpModal">
  
                 </SftpModal>
-                <q-btn @click="showSftpModal = true" color="secondary" text-color="black" label="Datei auswählen" />
+                <q-btn @click="showSftpModal = true" color="secondary" flat class="muted-action-btn" 
+                :label="documentSource.destType === 'directory' ? 'Verzeichnis auswählen' : 'Datei auswählen'" 
+                />
             </div>
         </div>
         
@@ -88,7 +90,8 @@
                     :label="documentSource.destType === 'directory' ? 'Verzeichnis auswählen' : 'Datei auswählen'"
                     @click="selectLocal()" 
                     color="secondary" 
-                    text-color="black" />
+                    flat class="muted-action-btn"
+                     />
             </div>
         </div>
       
@@ -106,7 +109,6 @@
         gap: 10px;
     }
     .src_grid > div {
-        background-color: $bg-grid-item;
         padding: 20px;
         min-height: 200px;
         border-radius: 10px;        
@@ -115,15 +117,8 @@
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        border: 3px solid $bg-grid-item;
-    }
-    .src_grid > div:hover {
-        background-color: $bg-grid-item-hover;
-        cursor: pointer;
-    }
-    .src_grid > div:active, .src_grid > div.active  {
-        background-color: $bg-grid-item-active;
-        border: 3px solid var(--q-secondary);
+        border-width: 1px;
+        border-style: solid;
     }
 </style>
 <script lang="ts">
@@ -164,18 +159,17 @@ export default defineComponent({
     };
   },
   mounted(){
-    this.documentSource = this.modelValue;
-    const stored = window.localStorage.getItem('bulkSendingDocumentSource');
-    if(stored) {
-        const parsed = JSON.parse(stored);
-        this.documentSource.destType = parsed.destType ? parsed.destType : this.documentSource.destType;
-        this.documentSource.type = parsed.type ? parsed.type : this.documentSource.type;
-        this.documentSource.file = parsed.file ? parsed.file : this.documentSource.file;
-        this.documentSource.sftp = parsed.sftp ? parsed.sftp : this.documentSource.sftp;
-        if(this.documentSource.file) {
-            this.filePath = this.documentSource.file;
-        }
+    
+    const stored = this.useLocalStorage ? window.localStorage.getItem(this.localStorageKey) : null;
+    if(this.initValue) {
+        this.loadData(this.initValue);
+        this.emitValue();
+    }else if(stored) {
+        const parsed : DocumentSource = JSON.parse(stored);        
+        this.loadData(parsed);
+        this.emitValue();
     }
+    
     const accId = this.sessionStore.selectedAccountId;
     if(accId != null) {
         this.sftpServer = this.encryptedStore.getAccount(accId)?.sftpData ?? [];           
@@ -193,6 +187,18 @@ export default defineComponent({
         type: Object as PropType<DocumentSource>,
         required: true,
     },
+    useLocalStorage: {
+        type: Boolean,
+        default: true,
+    },
+    localStorageKey: {
+        type: String,
+        default: 'bulkSendingDocumentSource',
+    },
+    initValue: {
+        type: Object as PropType<DocumentSource>,
+        required: false,
+    }
   },
   methods: {
     selectSource (source: string) {        
@@ -203,6 +209,26 @@ export default defineComponent({
         } else if(source === 'sftp') {
             this.documentSource.type = 'sftp';
             this.emitValue();
+        }
+    },
+    loadData(data: DocumentSource) {
+        this.documentSource.destType = data.destType ? data.destType : this.documentSource.destType;
+        this.documentSource.type = data.type ? data.type : this.documentSource.type;
+        this.documentSource.file = data.file ? data.file : this.documentSource.file;
+        this.documentSource.sftp = data.sftp ? data.sftp : this.documentSource.sftp;
+        if(this.documentSource.file) {
+            this.filePath = this.documentSource.file;
+        }
+        if(this.documentSource.sftp) {
+            this.sftpFilePath = this.documentSource.sftp.filePath ?? '';
+            const accId = this.sessionStore.selectedAccountId;
+            if(accId != null) {
+                const sftpData = this.encryptedStore.getAccount(accId)?.sftpData ?? [];
+                const selectedSftp = sftpData.find(s => s.id === this.documentSource.sftp?.connection?.id);
+                if(selectedSftp) {
+                    this.sftpServerSelected = selectedSftp;
+                }
+            }
         }
     },
     selectSftpFile (filePath: string) {
@@ -217,7 +243,9 @@ export default defineComponent({
         this.emitValue();
     },
     emitValue() {
-        window.localStorage.setItem('bulkSendingDocumentSource', JSON.stringify(this.documentSource));
+        if(this.useLocalStorage) {
+            window.localStorage.setItem(this.localStorageKey, JSON.stringify(this.documentSource));
+        }
         this.$emit('update:modelValue', this.documentSource);
     },
     selectTargetSource (source: string) {        

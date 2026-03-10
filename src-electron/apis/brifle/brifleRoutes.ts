@@ -1,6 +1,6 @@
 
 import {  ipcMain } from 'electron'
-import { ApiV1, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, ErrorResponse, InboxFilter, LoginRequest, OutboxFilter, ParsedAddressResponse, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
+import { ApiV1, CreateSignatureReferenceRequest, CreateSignatureReferenceResponse, ErrorResponse, InboxFilter, LoginRequest, OutboxFilter, ParsedAddressResponse, PreviewPaperMailRequest, ReceiverRequest, SendContentRequest } from '@brifle/brifle-sdk'
 import { ApiResponse } from '@brifle/brifle-sdk'
 import LogService from 'app/src-electron/service/LogService'
 import { LogLevel } from 'app/src-electron/log/types'
@@ -140,6 +140,25 @@ export default class BrifleRoutes{
             const response = api.content().getDeliveryStatus(contentId)
             .then(res => {
                 return ApiResponse.success(res.data as unknown as string);
+            })
+            return await this.castToResponse(response)
+        })
+
+        ipcMain.handle('brifle:contentPreviewPaperMail', async (event, apiId: string, tenantId: string, previewRequest: PreviewPaperMailRequest) => {
+            const api = this.apiMap.get(apiId)
+            if (!api) throw new Error('API not found')
+            const response = api.content().getPaperMailPreview(tenantId, previewRequest)
+            .then(res => {
+                const buffer : ArrayBuffer = res.data as unknown as ArrayBuffer;           
+                    // blob to base64 conversion
+                
+                const base64String = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+                return ApiResponse.success(base64String);
+               
+            })
+            .catch(err => {
+                console.error('Error previewing paper mail:', err);
+                return ApiResponse.error(err.data as unknown as ErrorResponse);
             })
             return await this.castToResponse(response)
         })

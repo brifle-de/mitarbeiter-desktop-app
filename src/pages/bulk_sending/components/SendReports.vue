@@ -41,7 +41,7 @@
               :columns="getColumns()"
               row-key="path"
               :pagination="{ rowsPerPage: 10 }"
-              class="q-pa-md"
+              class="q-pa-md material-card material-card-muted"
               flat
             >
               <template v-slot:top-right>
@@ -64,7 +64,7 @@
               :columns="getColumns()"
               row-key="path"
               :pagination="{ rowsPerPage: 10 }"
-              class="q-pa-md"
+              class="q-pa-md material-card material-card-muted"
               flat
             >
               <template v-slot:top-right>
@@ -87,7 +87,7 @@
               :columns="getColumns()"
               row-key="path"
               :pagination="{ rowsPerPage: 10 }"
-              class="q-pa-md"
+              class="q-pa-md material-card material-card-muted"
               flat
             >
               <template v-slot:top-right>

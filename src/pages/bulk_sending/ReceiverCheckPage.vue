@@ -9,20 +9,24 @@
          <q-btn-toggle
         v-model="fileSource"
         push
-        glossy
+        class="border"
+        text-color="white"
+        toggle-color="secondary"
+        toggle-text-color="black"
+        unelevated
+        no-caps
         @update:model-value="clear()"
-        toggle-color="green-7"
         :options="[
           {label: 'Lokal', value: 'local', slot: 'local'},
           {label: 'Sftp', value: 'sftp', slot: 'sftp'},
         ]"
       >
         <template v-slot:local>
-          <q-tooltip>Lokale Datei</q-tooltip>
+          <q-tooltip class="muted-tooltip">Lokale Datei</q-tooltip>
         </template>
 
         <template v-slot:sftp>
-          <q-tooltip>Sftp Server</q-tooltip>
+          <q-tooltip class="muted-tooltip">Sftp Server</q-tooltip>
         </template>
 
       </q-btn-toggle>

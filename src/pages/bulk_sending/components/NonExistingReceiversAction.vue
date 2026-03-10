@@ -3,13 +3,20 @@
         Welche Aktion soll für Empfänger, die kein Brifle nutzen, ausgeführt werden?
     </div>
     <div class="src_grid q-my-lg">
-        <div class="text-bold" 
+        <div class="text-bold selection-item-box q-pa-md rounded-borders cursor-pointer" 
             @click="selectAction('ignore')" :class="{ active: action === 'ignore' }">
-            Ignorieren 
+            <div>
+                <!-- icon -->
+                <q-icon name="block" size="32px" class="q-mb-sm" />
+            </div>
+            <div>Ignorieren</div>
         </div>     
-         <div class="text-bold" 
+         <div class="text-bold selection-item-box q-pa-md rounded-borders cursor-pointer" 
             @click="selectAction('papermail')" :class="{ active: action === 'papermail' }">
-            Papierpost 
+            <q-icon name="local_post_office" size="32px" class="q-mb-sm" />
+             
+            <div>Papierpost</div>
+        
         </div>     
     </div>
     <div v-if="action === 'papermail'">
@@ -35,7 +42,8 @@
             />
             <q-btn 
                 color="secondary" 
-                outline 
+                flat
+                class="muted-action-btn"
                 @click="showCoverLetterSelectionModal = true">
                 <q-icon name="folder_open" class="q-mr-sm" />
                 {{ selectedCoverLetter ? selectedCoverLetter.displayName : 'Deckblatt auswählen' }}
@@ -71,14 +79,12 @@
     $bg-grid-item: #f0f0f022;
     $bg-grid-item-hover: #f0f0f033;
     $bg-grid-item-active: #f0f0f02c;
-
     .src_grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
     .src_grid > div {
-        background-color: $bg-grid-item;
         padding: 20px;
         min-height: 200px;
         border-radius: 10px;        
@@ -87,15 +93,8 @@
         justify-content: center;
         align-items: center;
         flex-direction: column;
-        border: 3px solid $bg-grid-item;
-    }
-    .src_grid > div:hover {
-        background-color: $bg-grid-item-hover;
-        cursor: pointer;
-    }
-    .src_grid > div:active, .src_grid > div.active  {
-        background-color: $bg-grid-item-active;
-        border: 3px solid var(--q-secondary);
+        border-width: 1px;
+        border-style: solid;
     }
 </style>
 
@@ -114,6 +113,18 @@ export default defineComponent({
     tenantId: {
         type: String,
         required: true,
+    },
+    useLocalStorage: {
+        type: Boolean,
+        default: true,
+    },
+     localStorageKey: {
+        type: String,
+        default: 'nonExistingReceiverAction',
+     },
+    initValue: {
+        type: Object as () => NonExistingReceiverAction,
+        default: null,
     }
     
   },
@@ -122,16 +133,21 @@ export default defineComponent({
 CoverLetterSelectionModal
   },
   mounted() {
-    const storedData = this.loadFromLocalStorage();
-    if(storedData) {
-        this.action = storedData.action;
-        this.testModePaperMail = storedData.testModePaperMail;
-        this.paperMailTestEmailRecipient = storedData.paperMailTestEmailRecipient;
-        this.useCoverLetter = storedData.useCoverLetter;
-        this.selectedCoverLetter = storedData.selectedCoverLetter;
+    const storedData = this.useLocalStorage? this.loadFromLocalStorage() : null;
+    if(this.initValue) {
+        this.loadData(this.initValue);
+    } else if(storedData) {
+        this.loadData(storedData);
     }
   },
   methods: {
+    loadData(data: NonExistingReceiverAction) {
+        this.action = data.action;
+        this.testModePaperMail = data.testModePaperMail;
+        this.paperMailTestEmailRecipient = data.paperMailTestEmailRecipient;
+        this.useCoverLetter = data.useCoverLetter;
+        this.selectedCoverLetter = data.selectedCoverLetter;
+    },
     selectAction(action: 'ignore' | 'papermail') {
       this.action = action;
     },
@@ -146,14 +162,19 @@ CoverLetterSelectionModal
         this.$emit('update', data);
     },
     loadFromLocalStorage(): NonExistingReceiverAction | null {
-        const dataString = localStorage.getItem('nonExistingReceiverAction');
+        if(!this.useLocalStorage) {
+            return null;
+        }
+        const dataString = localStorage.getItem(this.localStorageKey);
         if(dataString) {
             return JSON.parse(dataString) as NonExistingReceiverAction;
         }
         return null;
     },
     storeToLocalStorage(data: NonExistingReceiverAction){
-        localStorage.setItem('nonExistingReceiverAction', JSON.stringify(data));
+        if (this.useLocalStorage) {
+            localStorage.setItem(this.localStorageKey, JSON.stringify(data));
+        }
     }
   },
   computed: {
