@@ -231,6 +231,13 @@ export default defineConfig((ctx) => {
             filter: ['**/*']
           }
         ],
+        publish: [
+            {
+                provider: "github",
+                owner: "brifle-de",
+                repo: "mitarbeiter-desktop-app"
+            }
+        ],
         appId: 'de.brifle.mitarbeiter',
         win:{
           target: 'nsis',          
