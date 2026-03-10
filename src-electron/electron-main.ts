@@ -11,6 +11,11 @@ import ParsersService from './service/ParsersService';
 import ScriptsService from './service/ScriptsService';
 import BulkSendTemplateService from './service/BulkSendTemplateService';
 
+import net from 'net';
+
+import { Bonjour } from 'bonjour-service';
+
+
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform(); 
@@ -37,7 +42,48 @@ if (!gotTheLock) {
       mainWindow.focus();
     }
   });
+ // createPrintServer();
   initApp();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function createPrintServer() {
+  const printerPort = 9100; // Standard port for raw printing
+  // check if is windows and start print server
+  if (platform === 'win32') {
+    const server = net.createServer(socket => {
+    const file = fs.createWriteStream(`job-${Date.now()}.prn`)
+    socket.pipe(file)
+
+    socket.on("data", data => {
+      console.log("received", data.length, "bytes")
+   })
+
+
+    socket.on("end", () => {
+      console.log("print job received")
+    })
+  })
+  server.listen(printerPort, () => {
+    console.log("Print server listening on port " + printerPort)
+    const bonjour = new Bonjour()
+    bonjour.publish({
+      name: "Electron Printer",
+      type: "ipp",
+      protocol: "tcp",
+      port: printerPort,
+      txt: {
+        ty: "Electron Printer",
+        note: "Local Electron printer",
+        pdl: "application/pdf",
+        rp: "ipp/print"
+      }
+    })
+
+    console.log("Printer advertised on network")
+  })
+
+  }
 }
 
 
