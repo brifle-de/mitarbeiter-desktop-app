@@ -418,7 +418,7 @@ export default defineComponent({
             const receiverReqs = await this.getReceiverRequests();            
             for(const receiverTo of receiverReqs) {
                 const fallback : FallbackOptions = {
-                    enabled_physical_delivery: this.data.allowSendingPapermail ?? false,                
+                    enabled_physical_delivery: this.data.allowSendingPapermail ?? false,                                    
                     paper_mail: {
                         test_mode:{
                             enabled: false,
