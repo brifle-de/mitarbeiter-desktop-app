@@ -13,6 +13,9 @@ import BulkSendTemplateService from './service/BulkSendTemplateService';
 
 import AppUpdateService from './service/AppUpdateService';
 
+import ipp from 'ipp';
+import bonjour from 'bonjour';
+import http from 'http';
 
 
 // needed in case process is undefined under Linux
@@ -45,6 +48,116 @@ if (!gotTheLock) {
   initApp();
 }
 
+function createPrinter(){
+  const outputDir = "./ipp_output";
+  fs.mkdirSync(outputDir, { recursive: true });
+  const server = http.createServer((req, res) => {
+
+  if (req.method !== "POST") {
+    res.writeHead(405);
+    return res.end();
+  }
+
+  const buffers : Buffer[] = [];
+
+  req.on("data", chunk => buffers.push(chunk));
+
+  req.on("end", () => {
+
+    const body = Buffer.concat(buffers);
+
+    // decode IPP message
+    const msg = ipp.parse(body);
+
+    const operation = msg.operation;
+
+    console.log("IPP operation:", operation);
+
+    if (operation === "Print-Job") {
+
+      const pdf = msg.data; // print data
+
+      const file = path.join(outputDir, `job-${Date.now()}.pdf`);
+      fs.writeFileSync(file, pdf);
+
+      console.log("Saved job:", file);
+    }else if(operation === "Get-Printer-Attributes") {
+      console.log("Received Get-Printer-Attributes request");
+      const printerUrl = "ipp://localhost:9631/ipp/print"
+      // Handle Get-Printer-Attributes operation
+
+      const response = ipp.serialize({
+        version: "2.0",
+        statusCode: "successful-ok",
+        requestId: msg.id,
+        printerAttributes: {
+          "printer-name": "Electron Printer",
+          "printer-uri-supported": printerUrl,
+          "printer-state": 3,
+          "printer-state-reasons": "none",
+          "ipp-versions-supported": ["2.0"],
+          "operations-supported": [
+            "Print-Job",
+            "Validate-Job",
+            "Get-Printer-Attributes"
+          ],
+          "document-format-supported": [
+            "application/pdf",
+            "application/postscript"
+          ]
+        }
+      });
+     
+
+    res.writeHead(200, {
+      "Content-Type": "application/ipp"
+    });
+
+    res.end(response);
+    return;
+
+    }
+
+    const response = ipp.serialize({
+      statusCode: "successful-ok"
+    });
+
+    res.writeHead(200, {
+      "Content-Type": "application/ipp"
+    });
+
+    res.end(response);
+});
+
+});
+
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    console.warn('IPP printer port 9631 already in use; skipping printer startup.');
+  } else {
+    console.error('IPP printer server error:', err);
+  }
+});
+
+server.listen(9631, () => {
+  console.log("IPP printer running on port 631");
+  const mdns = bonjour();
+  const service = mdns.publish({
+  name: "Brifle Virtual Printer",
+  type: "ipp",
+  protocol: "tcp",
+  port: 9631,
+  txt: {
+    ty: "My Virtual Printer",
+    note: "Local Electron printer",
+    pdl: "application/pdf",
+    rp: "ipp/print"
+  }
+});
+service.start();
+ console.log("IPP printer running on port 631");
+});
+}
 
 function initApp(){
   // init home directory for the app
@@ -68,6 +181,8 @@ function initApp(){
   sendTemplateService.initTemplatesDirectory();
   appUpdateService.registerUpdateEvents();
   void appUpdateService.refresh();
+  // start the IPP printer only in the instance that holds the single-instance lock
+  createPrinter();
 }
 
 
