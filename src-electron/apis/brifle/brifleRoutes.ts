@@ -18,6 +18,20 @@ export default class BrifleRoutes{
             return randomId            
         })
 
+        // Lock ("Sperren"): revoke the tokens of all sessions (SDK >= 0.4 has
+        // logout; older versions only drop the session) and forget them.
+        ipcMain.handle('brifle:closeAllSessions', async () => {
+            const apis = [...this.apiMap.values()]
+            this.apiMap.clear()
+            await Promise.all(apis.map(async (api) => {
+                const auth = api.authentication() as { logout?: () => Promise<unknown> }
+                if (typeof auth.logout === 'function') {
+                    await auth.logout().catch(() => undefined)
+                }
+            }))
+            return apis.length
+        })
+
         ipcMain.handle('brifle:authLogin', async (event, apiId: string, request: LoginRequest) => {
             const api = this.apiMap.get(apiId)
             if (!api) throw new Error('API not found')

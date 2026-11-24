@@ -32,7 +32,8 @@ const section = computed(() => route.matched.find((r) => typeof r.meta.section =
 
 /** Lock: forget the decrypted accounts and the API sessions, back to the unlock screen. */
 function seal() {
-  brifleStore.$reset?.();
+  void window.brifleApi.closeAllSessions();
+  brifleStore.$reset();
   encryptedStore.sealData();
   void router.push('/unseal');
 }
