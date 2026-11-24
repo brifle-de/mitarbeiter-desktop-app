@@ -1,126 +1,80 @@
 <template>
-    <h5>Zuweisungsart</h5>
-    <div class="src_grid q-my-lg">
-        <div class="text-bold selection-item-box clickable"
-            @click="selectTargetSource('file')" :class="{ active: documentSource.destType === 'file' }">
-            <div>
-                <!-- icon -->
-                <q-icon name="text_snippet" size="32px" class="q-mb-sm" />
-            </div>
-            <div>
-                Zuweisungsdatei 
-            </div>
-            
-        </div>
-        <div class="text-bold selection-item-box clickable" 
-            @click="selectTargetSource('directory')" :class="{ active: documentSource.destType === 'directory' }">
-            <div>
-                <!-- icon -->
-                <q-icon name="folder_open" size="32px" class="q-mb-sm" />
-            </div>
-            <div>
-                Verzeichnis Analyse
-            </div>
-        </div>
-    </div>
-    <h5>Ursprung</h5>
-    <div class="src_grid q-my-lg">
-        <div class="text-bold selection-item-box clickable" 
-            @click="selectSource('file')" :class="{ active: documentSource.type === 'file' }">
-            <div>
-                <!-- icon -->
-                <q-icon name="computer" size="32px" class="q-mb-sm" />              
-                
-            </div>
-            <div>
-                <template v-if="documentSource.destType === 'directory'">Lokales Verzeichnis</template>
-                <template v-else>Lokale Datei</template>
-            </div>
-        </div>
-        <div class="text-bold selection-item-box clickable" 
-            @click="selectSource('sftp')" :class="{ active: documentSource.type === 'sftp' }">
-            <div>
-                <!-- icon -->
-                <q-icon name="storage" size="32px" class="q-mb-sm" />
-            </div>
-            <div>
-                SFTP-Server
-            </div>
-        </div>
-    </div>
-    <div v-if="value.type === 'sftp'">
-        <q-select
-            filled
-            v-model="sftpServerSelected"
-            :options="sftpServer"
-            option-label="displayName"
-            label="SFTP-Server auswählen"
-            color="secondary"
-            map-options
-        />
-
-        <div class="row q-my-md" v-if="sftpServerSelected != null">   
-            <div class="col-9">
-                {{ sftpFilePath }}
-            </div>
-            <div class="col-3 text-right">
-                <SftpModal 
-                :sftpConnection="sftpServerSelected"
-                @select-file="selectSftpFile"
-                :showFiles="documentSource.destType === 'file'"
-
-                v-model="showSftpModal">
- 
-                </SftpModal>
-                <q-btn @click="showSftpModal = true" color="secondary" flat class="muted-action-btn" 
-                :label="documentSource.destType === 'directory' ? 'Verzeichnis auswählen' : 'Datei auswählen'" 
+    <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-3">
+            <h3 class="ma-title-m">{{ t('ui.bulk.documentSource.assignmentType') }}</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <SourceTile
+                    :icon="FileSpreadsheet"
+                    :title="t('ui.bulk.documentSource.assignmentFile')"
+                    :text="t('ui.bulk.documentSource.assignmentFileText')"
+                    :active="documentSource.destType === 'file'"
+                    @select="selectTargetSource('file')"
+                />
+                <SourceTile
+                    :icon="FolderSearch"
+                    :title="t('ui.bulk.documentSource.directory')"
+                    :text="t('ui.bulk.documentSource.directoryText')"
+                    :active="documentSource.destType === 'directory'"
+                    @select="selectTargetSource('directory')"
                 />
             </div>
         </div>
-        
-
-    </div>
-    <div v-if="value.type === 'file'">
-        <div class="row">
-            <div class="col-9">
-                {{ filePath }}
-            </div>
-            <div class="col-3 text-right">
-                <q-btn 
-                    :label="documentSource.destType === 'directory' ? 'Verzeichnis auswählen' : 'Datei auswählen'"
-                    @click="selectLocal()" 
-                    color="secondary" 
-                    flat class="muted-action-btn"
-                     />
+        <div class="flex flex-col gap-3">
+            <h3 class="ma-title-m">{{ t('ui.bulk.documentSource.origin') }}</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <SourceTile
+                    :icon="Monitor"
+                    :title="documentSource.destType === 'directory' ? t('ui.bulk.common.localDirectory') : t('ui.bulk.common.localFile')"
+                    :text="t('ui.bulk.documentSource.localText')"
+                    :active="documentSource.type === 'file'"
+                    @select="selectSource('file')"
+                />
+                <SourceTile
+                    :icon="Server"
+                    :title="t('ui.bulk.common.sftpServer')"
+                    :text="t('ui.bulk.documentSource.sftpText')"
+                    :active="documentSource.type === 'sftp'"
+                    @select="selectSource('sftp')"
+                />
             </div>
         </div>
-      
+        <div v-if="value.type === 'sftp'" class="flex flex-col gap-4">
+            <FormField :label="t('ui.bulk.common.sftpServer')">
+                <Select
+                    v-model="sftpServerSelected"
+                    :options="sftpServer"
+                    option-label="displayName"
+                    data-key="id"
+                    :placeholder="t('ui.bulk.common.selectSftpServer')"
+                />
+            </FormField>
+            <template v-if="sftpServerSelected != null">
+                <SelectedPath
+                    :icon="documentSource.destType === 'directory' ? Folder : FileText"
+                    :path="sftpFilePath"
+                    :placeholder="documentSource.destType === 'directory' ? t('ui.bulk.common.noDirectorySelected') : t('ui.bulk.common.noFileSelected')"
+                    :button-label="documentSource.destType === 'directory' ? t('ui.bulk.common.chooseDirectory') : t('ui.bulk.common.chooseFile')"
+                    @pick="showSftpModal = true"
+                />
+                <SftpModal
+                    v-model="showSftpModal"
+                    :sftp-connection="sftpServerSelected"
+                    :show-files="documentSource.destType === 'file'"
+                    :select-text="documentSource.destType === 'directory' ? t('ui.bulk.common.chooseDirectory') : t('ui.bulk.common.chooseFile')"
+                    @select-file="selectSftpFile"
+                />
+            </template>
+        </div>
+        <SelectedPath
+            v-if="value.type === 'file'"
+            :icon="documentSource.destType === 'directory' ? Folder : FileText"
+            :path="filePath"
+            :placeholder="documentSource.destType === 'directory' ? t('ui.bulk.common.noDirectorySelected') : t('ui.bulk.common.noFileSelected')"
+            :button-label="documentSource.destType === 'directory' ? t('ui.bulk.common.chooseDirectory') : t('ui.bulk.common.chooseFile')"
+            @pick="selectLocal()"
+        />
     </div>
 </template>
-<style lang="scss" scoped>
-
-    $bg-grid-item: #f0f0f022;
-    $bg-grid-item-hover: #f0f0f033;
-    $bg-grid-item-active: #f0f0f02c;
-
-    .src_grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    .src_grid > div {
-        padding: 20px;
-        min-height: 200px;
-        border-radius: 10px;        
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        border-width: 1px;
-        border-style: solid;
-    }
-</style>
 <script lang="ts">
 import { SftpData } from 'app/src-electron/models/EncryptedStore';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
@@ -129,11 +83,18 @@ import { defineComponent, PropType, ref } from 'vue';
 import { DocumentSource } from '../util/helper';
 import Files from 'src/services/node/Files';
 import SftpModal from 'src/components/SftpModal.vue';
+import { useI18n } from 'vue-i18n';
+import Select from 'openvue/select';
+import { FileSpreadsheet, FileText, Folder, FolderSearch, Monitor, Server } from 'lucide-vue-next';
+import FormField from 'components/ui/FormField.vue';
+import SourceTile from './ui/SourceTile.vue';
+import SelectedPath from './ui/SelectedPath.vue';
 
 export default defineComponent({
   name: 'SourceDocuments',
   components: {
-    SftpModal
+     
+    SftpModal, Select, FormField, SourceTile, SelectedPath,
   },
   setup() {   
     const documentSource = ref<DocumentSource>({
@@ -147,7 +108,10 @@ export default defineComponent({
     const sftpServerSelected = ref<SftpData|null>(null);
     const showSftpModal = ref<boolean>(false);
     const sftpFilePath = ref<string>('');
-    return {      
+    const { t } = useI18n();
+    return {
+        t,
+        FileSpreadsheet, FileText, Folder, FolderSearch, Monitor, Server,
         filePath,
         sessionStore,
         encryptedStore,

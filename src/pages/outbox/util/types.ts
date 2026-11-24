@@ -1,5 +1,5 @@
 import { SendContentRequest } from "@brifle/brifle-sdk";
-import { FileContent } from "src/components/ui-elements/FileDragAndDrop.vue";
+import type { FileContent } from "src/components/ui-elements/FileDragAndDrop.vue";
 import ReceiverRecord from "src/pages/bulk_sending/util/receivers/receiverRecord";
 
 export interface PaymentData {
@@ -37,7 +37,11 @@ export interface SendConfirmData {
     allowSendingPapermail?: boolean;
     requireDeliveryConfirmation?: boolean;
     content: FileContent[];
-    
+    includeCoverLetter?: boolean;
+    selectedCoverLetter?: CoverLetterData | null;
+    /** paper mail test mode: the letter is not printed but sent to `testModeEmail` */
+    testMode?: boolean;
+    testModeEmail?: string;
 }
 
 export interface SendConfirmEventData {
@@ -50,4 +54,9 @@ export interface CoverLetterData {
     name: string;
     type: 'default' | 'custom';
     displayName: string;
+}
+/** a suggestion of the text recognition (OCR) the user can take over */
+export interface RecommendationRecord {
+    data: string | ReceiverRecord;
+    type: 'receiver_record' | 'subject' | 'document_type' | 'invoice_iban' | 'invoice_amount' | 'invoice_due_date' | 'signature_field' | 'invoice_reference';
 }

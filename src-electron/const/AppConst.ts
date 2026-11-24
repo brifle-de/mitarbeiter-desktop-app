@@ -3,7 +3,8 @@ const AppPipeName : string = 'brifle-business-pipe';
 
 
 function isDevelopmentMode(): boolean {
-    return process.env.NODE_ENV === 'development';
+    // electron-vite: true for `npm run dev`, false in packaged builds
+    return import.meta.env.DEV;
 }
 
 function getAppDirectoryName(): string {

@@ -1,3 +1,34 @@
 {
-  "extends": "./.quasar/tsconfig.json"
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "esnext",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "strict": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "types": ["node", "vite/client"],
+    "paths": {
+      "src/*": ["./src/*"],
+      "@src/*": ["./src/*"],
+      "app/*": ["./*"],
+      "components/*": ["./src/components/*"],
+      "layouts/*": ["./src/layouts/*"],
+      "pages/*": ["./src/pages/*"],
+      "assets/*": ["./src/assets/*"],
+      "stores/*": ["./src/stores/*"]
+    }
+  },
+  "include": ["src/**/*", "src-electron/**/*", "test/**/*", "*.d.ts"],
+  "exclude": ["node_modules", "out", "dist"]
 }

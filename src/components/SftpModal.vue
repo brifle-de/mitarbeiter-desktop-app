@@ -1,121 +1,51 @@
 <template>
-
-    <q-dialog v-model="value" @show="onShow">
-
-        <q-card class="searchSftpCard">
-            <q-card-section class="row items-center q-pb-none">
-                        <div class="text-h6 q-mr-md">Sftp Durchsuchen</div>
-
-                        <q-space />
-                        <q-btn icon="close" flat round dense v-close-popup />
-                        </q-card-section>
-           <div class="q-ma-lg q-px-sm">
-            <div class="row">
-              <div class="col">
-                <q-btn @click="backToRoot">
-                  <q-icon name="home" />
-                </q-btn>
-                <q-btn @click="navBack"  class="q-mx-md">
-                  <q-icon name="arrow_back" />
-                </q-btn>
-                
-              </div>
-              <div class="col-9">
-                  <q-input outlined color="secondary"
-                readonly
-                dense v-model="path" label="Pfad" />
-              </div>
-
-            </div>
-            <template v-if="isLoading">
-              <div class="text-center q-my-lg">
-                <LoadingSpinner />
-              </div>
-            </template>
-            <template v-else>
-              <template v-if="errorMsg.length > 0">
-                <q-banner class="bg-red-5 text-white q-mt-md">
-                  {{ errorMsg }}
-                </q-banner>
-              </template>
-
-              <q-list padding class="rounded-borders">
-              <!-- list all directories -->
-              <template v-if="directories.length > 0 && showDirectories">
-                <q-item-label header>Ordner</q-item-label>
-
-                <q-item clickable v-ripple
-                :key="'directory' + directory + index"
-                @click="appendPath(directory)"
-                v-for="(directory, index) in directories">
-                  <q-item-section avatar top>
-                    <q-avatar icon="folder" color="primary" text-color="white" />
-                  </q-item-section>
-
-                  <q-item-section>
-                    <q-item-label lines="1">{{ directory }}</q-item-label>
-                  </q-item-section>
-
-                </q-item>
-                </template>
-
-              <!-- list all files -->
-              <template v-if="files.length > 0 && showFiles">
-                  <q-item-label header>Dateien</q-item-label>
-
-                  <q-item clickable v-ripple
-                  @click="selectFile(file)"
-                  :key="'file' + file + index"
-                  v-for="(file, index) in files">
-                    <q-item-section avatar top>
-                      <q-avatar icon="insert_drive_file" color="secondary" text-color="green-7" />
-                    </q-item-section>
-
-                    <q-item-section>
-                      <q-item-label lines="1">{{ file }}</q-item-label>
-                    </q-item-section>
-
-                  </q-item>
-                </template>
-
-            </q-list>
+  <Dialog v-model:visible="value" modal header="SFTP durchsuchen" :style="{ width: '800px', maxWidth: '80vw' }" @show="onShow">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <Button severity="secondary" outlined aria-label="Zum Stammverzeichnis" @click="backToRoot"><template #icon><House :size="18" /></template></Button>
+        <Button severity="secondary" outlined aria-label="Eine Ebene zurück" @click="navBack"><template #icon><ArrowLeft :size="18" /></template></Button>
+        <InputText v-if="showPath" v-model="path" readonly class="flex-1" aria-label="Pfad" />
+      </div>
+      <div v-if="isLoading" class="flex justify-center py-8"><LoadingSpinner /></div>
+      <template v-else>
+        <Message v-if="errorMsg.length > 0" severity="error">{{ errorMsg }}</Message>
+        <div class="max-h-[50vh] overflow-auto">
+          <template v-if="directories.length > 0 && showDirectories">
+            <div class="ma-label px-2 pb-1 pt-2 text-ink-muted">Ordner</div>
+            <button
+              v-for="(directory, index) in directories"
+              :key="'directory' + directory + index"
+              class="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-dezent"
+              @click="appendPath(directory)"
+            >
+              <Folder :size="18" class="text-icon-brand" />
+              <span class="truncate">{{ directory }}</span>
+            </button>
           </template>
-           </div>
-
-           <div class="q-ma-lg">
-            <q-card-actions class="q-table-actions justify-between">
-                <q-btn label="Abbrechen" outline @click="value = false" />
-                <q-btn :label="selectText" outline @click="selectDirectory()"
-                color="secondary" ></q-btn>
-            </q-card-actions>
-           </div>
-        </q-card>
-        </q-dialog>
+          <template v-if="files.length > 0 && showFiles">
+            <div class="ma-label px-2 pb-1 pt-3 text-ink-muted">Dateien</div>
+            <button
+              v-for="(file, index) in files"
+              :key="'file' + file + index"
+              class="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-dezent"
+              @click="selectFile(file)"
+            >
+              <FileText :size="18" class="text-ink-muted" />
+              <span class="truncate">{{ file }}</span>
+            </button>
+          </template>
+        </div>
+      </template>
+    </div>
+    <template #footer>
+      <Button severity="secondary" outlined label="Abbrechen" @click="value = false" />
+      <Button :label="selectText" @click="selectDirectory()" />
     </template>
+  </Dialog>
+</template>
 
-    <style lang="scss" scoped>
 
-    .q-table-actions{
-      text-align: right;
-    }
-    .searchSftpCard{
-      width: 800px;
-      max-width: 80vw;
-      min-height: 300px;
-      max-height: 80vh;
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      .item-section{
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        .q-table__container{
-          flex: 1;
-        }
-      }
-    }
-    </style>
+    
 
 <script lang="ts">
 
@@ -123,12 +53,17 @@ import { defineComponent, PropType, Ref, ref } from 'vue';
 import Sftp from 'src/services/node/Sftp';
 import { SftpConnection } from 'app/src-electron/service/SftpConnector';
 import LoadingSpinner from 'src/components/LoadingSpinner.vue';
+import Dialog from 'openvue/dialog';
+import Button from 'openvue/button';
+import InputText from 'openvue/inputtext';
+import Message from 'openvue/message';
+import { ArrowLeft, FileText, Folder, House } from 'lucide-vue-next';
 
 export default defineComponent({
   name: 'SftpModal',
   components: {
-    LoadingSpinner
-   },
+    LoadingSpinner, Dialog, Button, InputText, Message, ArrowLeft, FileText, Folder, House,
+  },
   setup() {   
     const path = ref('/');
     const directories : Ref<string[]> = ref([]);

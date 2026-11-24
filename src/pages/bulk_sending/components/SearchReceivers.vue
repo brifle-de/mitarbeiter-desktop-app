@@ -1,88 +1,59 @@
 <template>
-    <div>
-        Im folgenden wird geprüft, welche Empfänger bereits ein Brifle Konto haben. Es werden nur die Empfänger angefragt, für die auch Dokumente vorliegen.
-    </div>
-    <div>
-        <div class="text-right">
-            <q-btn @click="checkForExistenceClick()" color="secondary" class="q-mt-md muted-action-btn" flat >
-                Empfänger Suchen              
-            </q-btn>
+    <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-4">
+            <p class="flex-1 text-ink-muted">{{ t('ui.bulk.search.intro') }}</p>
+            <Button severity="secondary" outlined :label="t('ui.bulk.search.start')" :loading="isLoading" @click="checkForExistenceClick()">
+                <template #icon><Search :size="18" /></template>
+            </Button>
         </div>
-        <div class="q-mt-sm" v-if="totalChecking > 0 && totalChecked < totalChecking">
-            <div v-if="isLoading" class="q-mb-sm">
-                <q-spinner size="20px" color="secondary" />
+        <div v-if="totalChecking > 0 && totalChecked < totalChecking" class="flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+                <span class="ma-text-strong">{{ t('ui.bulk.search.progress', { done: totalChecked, total: totalChecking }) }}</span>
+                <ProgressSpinner v-if="isLoading" style="width: 20px; height: 20px" stroke-width="5" />
             </div>
-            <span v-if="totalChecking > 0">
-                {{ totalChecked }} / {{ totalChecking }}
-            </span>
-            <span>
-                Empfänger geprüft
-            </span>
+            <ProgressBar :value="Math.round((totalChecked / totalChecking) * 100)" :show-value="false" style="height: 8px" />
         </div>
-        
-    </div>
-    <div v-if="sendDocsRecords.length > 0">
-        <q-table            
-            :rows="sendDocsRecords"
-            :columns="getColumns()"            
-            selection="multiple"
-            :row-key="(row: SendDocReq) => row.doc.filePath"
-            class="q-mt-md search-receiver-table material-card material-card-muted"
-            flat
-            v-model:selected="selected"
-        >
-        <!-- template for 'exists' header -->
-         <template v-slot:header-cell-exists="props">
-            <q-th :props="props" class="q-mx-xl">                                                
-                <q-img width="40px" src="/src/assets/electron-web-logo.png" />
-                <span class="q-ml-md">Hat Brifle</span>                
-            </q-th>
-        </template>
-        <!-- template for 'exists' cell -->
-        <template v-slot:body-cell-exists="props">
-            <q-td :props="props" class="text-center">
-                <q-icon v-if="props.row.exists" name="check" color="green" size="xs" />
-                <q-icon v-else name="close" color="red" size="xs" />
-            </q-td>
-        </template>
-        
-        </q-table>
-        <div class="q-mt-md">
-            <div class="row">
-                <div class="col-6">
-                    <div class="q-mb-md">
-                        <q-btn outline color="primary" class="q-mr-sm" @click="selectAll()">
-                        Alle Empfänger auswählen
-                        </q-btn>
-                    </div>
-                    <div>
-                        <q-btn color="primary" class="q-mr-sm" text-color="black" @click="selectBrifleOnly()">
-                            Nur Brifle Empfänger auswählen
-                        </q-btn>
-                    </div>
-                </div>
-                <div class="col-6 text-right">
-                    <q-btn outline color="grey-4" @click="selected = []">
-                        Auswahl zurücksetzen
-                    </q-btn>
-                </div>
+        <template v-if="sendDocsRecords.length > 0">
+            <div class="grid grid-cols-3 gap-4">
+                <KpiCard :label="t('ui.bulk.search.withBrifle')" :value="brifleCount" />
+                <KpiCard :label="t('ui.bulk.search.withoutBrifle')" :value="sendDocsRecords.length - brifleCount" />
+                <KpiCard :label="t('ui.bulk.search.selected')" :value="selected.length" :hint="t('ui.bulk.search.ofDocuments', { n: sendDocsRecords.length })" />
             </div>
-            
-        </div>
-        <div class="q-mt-lg">
-            <q-btn color="secondary" text-color="black"
-            :disable="selected.length === 0"
-             class="q-mr-sm" @click="emitSelectedRecords()">
-                Auswahl bestätigen
-            </q-btn>
-        </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <Button severity="secondary" outlined size="small" :label="t('ui.bulk.search.selectAll')" @click="selectAll()">
+                    <template #icon><ListChecks :size="16" /></template>
+                </Button>
+                <Button severity="secondary" outlined size="small" :label="t('ui.bulk.search.selectBrifleOnly')" @click="selectBrifleOnly()">
+                    <template #icon><UserCheck :size="16" /></template>
+                </Button>
+                <div class="flex-1" />
+                <Button text size="small" :label="t('ui.bulk.search.resetSelection')" @click="selected = []" />
+            </div>
+            <TableCard>
+                <DataTable v-model:selection="selected" :value="sendDocsRecords" data-key="doc.filePath" paginator :rows="10">
+                    <Column selection-mode="multiple" header-style="width: 3rem" />
+                    <Column field="exists" :header="t('ui.bulk.columns.brifle')" sortable>
+                        <template #body="{ data }">
+                            <StatusTag :type="data.exists ? 'delivered' : 'test'" :label="data.exists ? t('ui.bulk.status.hasBrifle') : t('ui.bulk.status.noBrifle')" />
+                        </template>
+                    </Column>
+                    <Column field="receiver.original.receiverId" :header="t('ui.bulk.columns.receiverId')" sortable>
+                        <template #body="{ data }">{{ data.receiver?.original.receiverId ?? t('ui.bulk.common.notAvailable') }}</template>
+                    </Column>
+                    <Column field="receiver.req.birth_information.last_name" :header="t('ui.bulk.columns.lastName')" sortable />
+                    <Column field="receiver.req.birth_information.given_names" :header="t('ui.bulk.columns.firstName')" sortable />
+                    <Column field="receiver.req.birth_information.date_of_birth" :header="t('ui.bulk.columns.dateOfBirth')" sortable>
+                        <template #body="{ data }">{{ formatBirthday(data.receiver?.req.birth_information?.date_of_birth) }}</template>
+                    </Column>
+                    <Column :field="addressField" :header="t('ui.bulk.columns.address')" sortable />
+                    <Column field="doc.filePath" :header="t('ui.bulk.columns.filePath')" sortable>
+                        <template #body="{ data }"><span class="ma-small break-all text-ink-muted">{{ data.doc.filePath }}</span></template>
+                    </Column>
+                </DataTable>
+            </TableCard>
+        </template>
     </div>
 </template>
-
-<style lang="scss">
- 
-</style>
-
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 
@@ -97,10 +68,35 @@ import { ReceiverRequest } from '@brifle/brifle-sdk';
 import Logger from 'src/services/node/Log';
 import BirthdayParser from 'src/utils/birthdayParser';
 import { CountryCodeUtil } from 'src/utils/countryCodes';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import DataTable from 'openvue/datatable';
+import Column from 'openvue/column';
+import ProgressBar from 'openvue/progressbar';
+import ProgressSpinner from 'openvue/progressspinner';
+import { ListChecks, Search, UserCheck } from 'lucide-vue-next';
+import KpiCard from 'components/ui/KpiCard.vue';
+import StatusTag from 'components/ui/StatusTag.vue';
+import TableCard from './ui/TableCard.vue';
+import { useNotify } from 'src/composables/useNotify';
 
 export default defineComponent({
   name: 'SearchReceivers',
-  emits: ['confirmed'],
+  components: {
+     
+    Button, DataTable, Column, ProgressBar, ProgressSpinner, ListChecks, Search, UserCheck, KpiCard, StatusTag, TableCard,
+  },
+  emits: ['confirmed', 'selection'],
+  computed: {
+    brifleCount(): number {
+        return this.sendDocsRecords.filter(record => record.exists).length;
+    },
+  },
+  watch: {
+    selected(value: SendDocReq[]) {
+        this.$emit('selection', value);
+    },
+  },
     props: {
         receiverRecords: {
             type: Array as () => ReceiverRecord[],
@@ -115,61 +111,17 @@ export default defineComponent({
         emitSelectedRecords() {
             this.$emit('confirmed', this.selected);
         },
-        getColumns(){
-            // default for birth_info
-            const defaultCol = [                  
-                {
-                    name: 'exists',
-                    label: 'Hat Brifle Konto',
-                    field: (row: SendDocReq) => row.exists,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverID',
-                    label: 'Empfänger ID',
-                    field: (row: SendDocReq) => row.receiver?.original.receiverId ?? 'Nicht vorhanden',
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Nachname',
-                    field: (row: SendDocReq) => row.receiver?.req.birth_information?.last_name,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Vorname',
-                    field: (row: SendDocReq) => row.receiver?.req.birth_information?.given_names,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Geburtsdatum',
-                    field: (row: SendDocReq) => row.receiver?.req.birth_information?.date_of_birth,                    
-                    sortable: true,
-                    format: (val: string) => {
-                        if(val) {
-                            return BirthdayParser.parseBirthday(val)?.toLocaleDateString('de-DE');
-                        }
-                        return '';
-                    },
-                },
-                {
-                    name: 'postalAddress',
-                    label: 'Adresse',
-                    field: (row: SendDocReq) => row.postalAddress,
-                    format: (val: PostalAddress) => val ? `${val.street}, ${val.postcode} ${val.city}, ${val.country}` : '',
-                    sortable: true,
-                },
-                 {
-                    name: 'path',
-                    label: 'Dateipfad',
-                    field: (row: SendDocReq) => row.doc.filePath,
-                    sortable: true,
-                },
-            ];
-
-            return defaultCol;
+        formatBirthday(val: string | undefined) {
+            if(val) {
+                return BirthdayParser.parseBirthday(val)?.toLocaleDateString('de-DE') ?? '';
+            }
+            return '';
+        },
+        addressField(row: SendDocReq) {
+            return this.formatAddress(row.postalAddress);
+        },
+        formatAddress(val: PostalAddress | null | undefined) {
+            return val ? `${val.street}, ${val.postcode} ${val.city}, ${val.country}` : '';
         },
         computeCountryCode(row: ReceiverRecord) {
             const val = row.addressCountry ?? null;
@@ -213,22 +165,14 @@ export default defineComponent({
                     } else {
                         Logger.debug("No record found for ID: " + preparedId);
                         // notification
-                        this.$q.notify({
-                            color: 'negative',
-                            message: 'Fehler beim Überprüfen des Empfängers mit ID: ' + preparedId,
-                            icon: 'error'
-                        });
+                        this.notify.error(this.t('ui.bulk.errors.checkReceiverId', { id: preparedId }));
                         this.userExistenceStatus.set(preparedId, false);
                         this.totalChecked++;                       
                     }
                 } else {
                     Logger.debug("No receiver found for ID: " + preparedId);
                     // notification
-                    this.$q.notify({
-                        color: 'negative',
-                        message: 'Kein Empfänger gefunden für ID: ' + preparedId,
-                        icon: 'error'
-                    });
+                    this.notify.error(this.t('ui.bulk.errors.noReceiverForId', { id: preparedId }));
                     this.userExistenceStatus.set(preparedId, false);
                     this.totalChecked++;                      
                 }
@@ -336,11 +280,7 @@ export default defineComponent({
                     return false;
                 }
             }).catch((e) => {
-                this.$q.notify({
-                    color: 'negative',
-                    message: e.message || 'Fehler beim Überprüfen des Empfängers',
-                    icon: 'error'
-                });
+                this.notify.error(e.message || this.t('ui.bulk.errors.checkReceiver'));
                 return false;
             });
 
@@ -392,8 +332,11 @@ export default defineComponent({
 
     const sendDocsRecords = ref<SendDocReq[]>([]);
     const selected = ref<SendDocReq[]>([])
+    const { t } = useI18n();
+    const notify = useNotify();
 
     return {
+      t, notify,
       isLoading, userExistenceStatus,
       totalChecked, totalChecking, apiKey, apiId, brifleStore,
       encryptedStore, account, session, receiverType, sendDocsRecords, selected

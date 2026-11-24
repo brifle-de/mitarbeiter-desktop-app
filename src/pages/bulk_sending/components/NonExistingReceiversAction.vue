@@ -1,107 +1,70 @@
 <template>
-    <div>
-        Welche Aktion soll für Empfänger, die kein Brifle nutzen, ausgeführt werden?
-    </div>
-    <div class="src_grid q-my-lg">
-        <div class="text-bold selection-item-box q-pa-md rounded-borders cursor-pointer" 
-            @click="selectAction('ignore')" :class="{ active: action === 'ignore' }">
-            <div>
-                <!-- icon -->
-                <q-icon name="block" size="32px" class="q-mb-sm" />
-            </div>
-            <div>Ignorieren</div>
-        </div>     
-         <div class="text-bold selection-item-box q-pa-md rounded-borders cursor-pointer" 
-            @click="selectAction('papermail')" :class="{ active: action === 'papermail' }">
-            <q-icon name="local_post_office" size="32px" class="q-mb-sm" />
-             
-            <div>Papierpost</div>
-        
-        </div>     
-    </div>
-    <div v-if="action === 'papermail'">
-        <div class="text-h6">Optionen</div>
-        <div class="q-my-lg">
-            Damit ein Dokument per Papierpost versendet werden kann, muss das erste Blatt die Standards der deutschen Post erfüllen. Sollte dies nicht der Fall sein, sollte ein vorgefertigtes Deckblatt verwendet werden.
-            
-        </div>
-        <div>
-            <q-toggle
-            v-model="useCoverLetter"
-            color="secondary">
-        </q-toggle>            
-    
-        <span>Deckblatt verwenden</span>
-        </div>
-        <div v-if="useCoverLetter" class="q-my-md">
-            <CoverLetterSelectionModal
-                :api-id="apiId"
-                :tenant-id="tenantId"
-                v-model="showCoverLetterSelectionModal"
-                @selected="selectedCoverLetter = $event"
+    <div class="flex flex-col gap-4">
+        <p class="text-ink-muted">{{ t('ui.bulk.nonBrifle.intro') }}</p>
+        <div class="grid grid-cols-2 gap-4">
+            <SourceTile
+                :icon="Ban"
+                :title="t('ui.bulk.nonBrifle.ignore')"
+                :text="t('ui.bulk.nonBrifle.ignoreText')"
+                :active="action === 'ignore'"
+                @select="selectAction('ignore')"
             />
-            <q-btn 
-                color="secondary" 
-                flat
-                class="muted-action-btn"
-                @click="showCoverLetterSelectionModal = true">
-                <q-icon name="folder_open" class="q-mr-sm" />
-                {{ selectedCoverLetter ? selectedCoverLetter.displayName : 'Deckblatt auswählen' }}
-            </q-btn>
+            <SourceTile
+                :icon="Mailbox"
+                :title="t('ui.bulk.nonBrifle.paperMail')"
+                :text="t('ui.bulk.nonBrifle.paperMailText')"
+                :active="action === 'papermail'"
+                @select="selectAction('papermail')"
+            />
         </div>
-        <div class="q-my-md row items-center">
-            <q-toggle 
-            v-model="testModePaperMail" 
-            color="secondary">
-
-            </q-toggle>
-            <span>
-                Testmodus für Papierpost
-            </span>            
-        </div>
-        <div v-if="testModePaperMail">
-            <q-input 
-            color="secondary"
-            v-model="paperMailTestEmailRecipient" 
-            label="Empfänger für Testmodus" />
-        </div>
-    </div>
-    <div class="q-mt-md">
-         <q-btn 
-        :disable="!valid"
-         @click="update()" 
-         color="secondary" text-color="black" label="Weiter" />
+        <section v-if="action === 'papermail'" class="ma-card">
+            <h3 class="ma-title-m">{{ t('ui.bulk.nonBrifle.optionsTitle') }}</h3>
+            <Message severity="info">{{ t('ui.bulk.nonBrifle.coverLetterInfo') }}</Message>
+            <label class="flex items-center gap-2.5">
+                <ToggleSwitch v-model="useCoverLetter" />
+                {{ t('ui.bulk.nonBrifle.useCoverLetter') }}
+            </label>
+            <div v-if="useCoverLetter" class="flex items-center gap-3 pl-12">
+                <Button severity="secondary" outlined :label="selectedCoverLetter ? selectedCoverLetter.displayName : t('ui.bulk.nonBrifle.chooseCoverLetter')" @click="showCoverLetterSelectionModal = true">
+                    <template #icon><FileText :size="18" /></template>
+                </Button>
+                <span v-if="!selectedCoverLetter" class="ma-small text-danger">{{ t('ui.bulk.nonBrifle.coverLetterRequired') }}</span>
+                <CoverLetterSelectionModal
+                    v-model="showCoverLetterSelectionModal"
+                    :api-id="apiId"
+                    :tenant-id="tenantId"
+                    @selected="selectedCoverLetter = $event"
+                />
+            </div>
+            <label class="flex items-center gap-2.5">
+                <ToggleSwitch v-model="testModePaperMail" />
+                {{ t('ui.bulk.nonBrifle.testMode') }}
+            </label>
+            <FormField
+                v-if="testModePaperMail"
+                class="pl-12"
+                for-id="paper-mail-test-recipient"
+                :label="t('ui.bulk.nonBrifle.testRecipient')"
+                :hint="t('ui.bulk.nonBrifle.testRecipientHint')"
+                :error="paperMailTestEmailRecipient ? '' : t('ui.bulk.nonBrifle.testRecipientRequired')"
+            >
+                <InputText id="paper-mail-test-recipient" v-model="paperMailTestEmailRecipient" type="email" :invalid="!paperMailTestEmailRecipient" />
+            </FormField>
+        </section>
     </div>
 </template>
-
-<style lang="scss" scoped>
-
-    $bg-grid-item: #f0f0f022;
-    $bg-grid-item-hover: #f0f0f033;
-    $bg-grid-item-active: #f0f0f02c;
-    .src_grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    .src_grid > div {
-        padding: 20px;
-        min-height: 200px;
-        border-radius: 10px;        
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        border-width: 1px;
-        border-style: solid;
-    }
-</style>
-
 <script lang="ts">
 
 import { defineComponent, ref } from 'vue';
 import CoverLetterSelectionModal from 'src/components/modals/coverLetter/CoverLetterSelectionModal.vue';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import InputText from 'openvue/inputtext';
+import Message from 'openvue/message';
+import ToggleSwitch from 'openvue/toggleswitch';
+import { Ban, FileText, Mailbox } from 'lucide-vue-next';
+import FormField from 'components/ui/FormField.vue';
+import SourceTile from './ui/SourceTile.vue';
 
 export default defineComponent({
   name: 'NonExistingReceiversAction',
@@ -128,9 +91,19 @@ export default defineComponent({
     }
     
   },
-  emits: ['update'],
+  // 'update' carries the chosen action (the flow's "next" calls update()), 'valid' reports whether it can be used
+  emits: ['update', 'valid'],
   components: {
-CoverLetterSelectionModal
+     
+    CoverLetterSelectionModal, Button, InputText, Message, ToggleSwitch, FileText, FormField, SourceTile,
+  },
+  watch: {
+    valid: {
+        handler(value: boolean) {
+            this.$emit('valid', value);
+        },
+        immediate: true,
+    },
   },
   mounted() {
     const storedData = this.useLocalStorage? this.loadFromLocalStorage() : null;
@@ -197,7 +170,11 @@ CoverLetterSelectionModal
     const useCoverLetter = ref<boolean>(false);
     const showCoverLetterSelectionModal = ref<boolean>(false);
     const selectedCoverLetter = ref<{ name: string; type: 'default' | 'custom'; displayName: string } | null>(null);
+    const { t } = useI18n();
     return {
+        t,
+        Ban,
+        Mailbox,
         action,
         testModePaperMail,
         paperMailTestEmailRecipient,

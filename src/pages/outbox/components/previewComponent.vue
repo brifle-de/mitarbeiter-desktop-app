@@ -1,271 +1,129 @@
 <template>
-    <div class="row q-mb-lg">
-        <div class="col-6">
-            
-        </div>
-        <div class="col-6 text-right">
-            <div class="text-h5">
-               <q-btn 
-                    color="secondary" 
-                    class="muted-action-btn"
-                    flat
-                    v-if="previewLoaded"
-                    @click="loadPreview()">
-                    <q-tooltip anchor="top middle" self="bottom middle" class="muted-tooltip">
-                        Vorschau aktualisieren
-                    </q-tooltip>
-                    <span class="q-mr-sm">Aktualisieren</span>
-                    <q-icon name="refresh" />
-                </q-btn>
-            </div>
-        </div>
+  <!-- preview per receiver: original PDF for Brifle, rendered paper letter (with cover letter) for postal delivery -->
+  <div class="flex flex-col gap-4">
+    <div class="flex items-end gap-3">
+      <FormField :label="t('ui.send.preview.receiver')" for-id="preview-receiver" class="flex-1" :hint="!hasCheckedReceivers && receivers.length > 0 ? t('ui.send.preview.checkFirst') : ''">
+        <Select
+          v-model="selectedReceiver"
+          input-id="preview-receiver"
+          :options="availableReceivers"
+          :option-label="(r: TrackableReceiverRecord) => receiverLabel(r)"
+          :disabled="!hasCheckedReceivers"
+          :placeholder="receivers.length === 0 ? t('ui.send.preview.noReceivers') : t('ui.send.preview.choose')"
+          @update:model-value="previewLoaded = false; paperMailPreview = null"
+        />
+      </FormField>
+      <Button severity="secondary" outlined :label="previewLoaded ? t('ui.send.preview.refresh') : t('ui.send.preview.generate')" :disabled="!hasCheckedReceivers || !selectedReceiver" :loading="loading" @click="loadPreview()">
+        <template #icon><RefreshCw v-if="previewLoaded" :size="18" /><Eye v-else :size="18" /></template>
+      </Button>
     </div>
-    <div class="row">
-        <div class="col-4 q-pr-xl">
-                    <div class="material-card q-pa-md rounded-borders">
-                        <div class="text-h6">
-                            Empfängerauswahl
-                        </div>                        
-                        <div v-if="receivers.length > 0">
-                            <q-select
-                            v-model="selectedReceiver"
-                            :options="filterAvailableReceivers(receivers)"
-                            :option-label="(receiver) => getReceiverDataSelection(receiver)"
-                            option-value="id"
-                            color="secondary"
-                            map-options
-                            :disable="!hasCheckedReceivers"
-                            class="q-mt-md" />                                    
-                            <div v-if="!hasCheckedReceivers" class="q-mt-md text-caption">
-                                Es müssen erst alle Empfänger überprüft werden, bevor eine Vorschau angezeigt werden kann.
-                            </div>                           
-                        </div>
-                        <div v-else class="q-mt-md">
-                            Es wurden noch keine Empfänger hinzugefügt.
-                        </div>
-                    </div>
-                    <!-- Details about receiver -->
-                     <div v-if="selectedReceiver" class="material-card q-pa-md rounded-borders q-mt-md">
-                        <div class="text-h6">
-                            Empfängerdetails
-                        </div>
-                        <div class="q-mt-md">
-                            <div><strong>Name:</strong> {{ getReceiverDataSelection(selectedReceiver) }}</div>
-                            <div><strong>Brifle Account:</strong> {{ selectedReceiver.existsBrifle ? "Ja" : "Nein" }}</div>
-                            <div><strong>Gültige Postadresse:</strong> {{ selectedReceiver.validPostalAddress ? "Ja" : "Nein" }}</div>
-                            <div><strong>Zustellung per:</strong> {{ getDeliveryMethod(selectedReceiver) }}</div> 
-                        </div>
-                    </div>
-                </div>
-            <div class="col-8">
-                <template v-if="previewLoaded">
-                    <div
-                        v-for="(file, index) in getPreviewContent()" 
-                            :key="index+'preview_element'" class="rounded-borders"
-                        >
-                                
-                                <template v-if="requiresPapermail() && paperMailPreview">
-                                    <DocumentView   
-                                    base-key="preview-papermail" 
-                                    :content="[paperMailPreview]" />
 
-                                </template>
-                                <template v-else-if="requiresBrifle()">
-                                    <DocumentView   
-                                    base-key="preview-raw" 
-                                    :content="[file]" />
-                                </template>
-                                <template v-else-if="requiresNoDelivery()">
-                                    <div class="row items-center justify-center" style="height: 100%;">
-                                        <div class="col-auto text-center">
-                                            <div class="text-muted q-my-xl text-h5">Keine Zustellung möglich</div>
-                                        </div>
-                                    </div>
-                                </template>
-                            
-                            
-                        
-                        </div>   
-                </template>
-                <template v-else>
-                    <div class="row items-center justify-center" style="height: 100%;">
-                        <div class="col-auto text-center">
-                            <div class="text-muted q-my-xl text-h5">Noch keine Vorschau generiert</div>
-                            <div class="q-mt-md">
-                                <q-btn 
-                                    :disable="!hasCheckedReceivers || !selectedReceiver" 
-                                    color="secondary" 
-                                    class="muted-action-btn"
-                                    flat
-                                    @click="loadPreview()">
-                                    Vorschau generieren
-                                </q-btn>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-                
-            </div>
+    <dl v-if="selectedReceiver" class="grid grid-cols-[150px_minmax(0,1fr)] gap-x-3 gap-y-1.5">
+      <dt class="ma-small text-ink-muted">{{ t('ui.send.preview.brifleAccount') }}</dt>
+      <dd>{{ selectedReceiver.existsBrifle ? t('ui.send.yes') : t('ui.send.no') }}</dd>
+      <dt class="ma-small text-ink-muted">{{ t('ui.send.preview.validAddress') }}</dt>
+      <dd>{{ selectedReceiver.validPostalAddress ? t('ui.send.yes') : t('ui.send.no') }}</dd>
+      <dt class="ma-small text-ink-muted">{{ t('ui.send.preview.deliveryBy') }}</dt>
+      <dd>{{ deliveryMethod(selectedReceiver) }}</dd>
+    </dl>
+
+    <div class="min-h-[320px] rounded-[12px] border border-line bg-dezent p-4">
+      <template v-if="previewLoaded && selectedReceiver">
+        <div v-if="loading" class="flex justify-center py-16"><ProgressSpinner style="width: 32px; height: 32px" /></div>
+        <DocumentView v-else-if="requiresPapermail && paperMailPreview" base-key="preview-papermail" :content="[paperMailPreview]" />
+        <DocumentView v-else-if="selectedReceiver.existsBrifle" base-key="preview-raw" :content="previewContent" />
+        <Message v-else-if="requiresPapermail" severity="error">{{ t('ui.send.preview.failed') }}</Message>
+        <EmptyState v-else :icon="CircleSlash" :title="t('ui.send.preview.noDelivery')" />
+      </template>
+      <EmptyState v-else :icon="FileSearch" :title="t('ui.send.preview.emptyTitle')" :text="t('ui.send.preview.emptyText')" />
     </div>
+  </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { CoverLetterData, TrackableReceiverRecord } from '../util/types';
-import { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
-import { ContentBody, PreviewCoverLetterRequest, PreviewPaperMailRequest } from '@brifle/brifle-sdk';
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { CircleSlash, Eye, FileSearch, RefreshCw } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import Message from 'openvue/message';
+import ProgressSpinner from 'openvue/progressspinner';
+import Select from 'openvue/select';
+import type { ContentBody, PreviewCoverLetterRequest, PreviewPaperMailRequest } from '@brifle/brifle-sdk';
+import FormField from 'components/ui/FormField.vue';
+import EmptyState from 'components/ui/EmptyState.vue';
 import DocumentView from 'src/components/ui-elements/DocumentView.vue';
+import type { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
 import BrifleApi from 'src/services/node/Brifle';
+import type { CoverLetterData, TrackableReceiverRecord } from '../util/types';
+import { toContentBodies } from '../send/pdf';
 
-export default defineComponent({
-    name: 'PreviewComponent',
-    props: {
-        apiId: {
-            type: String,
-            required: true
-        },
-         tenantId: {
-            type: String,
-            required: true
-        },
-        receivers: {
-            type: Array as () => TrackableReceiverRecord[],
-            required: true
-        },
-        hasCheckedReceivers: {
-            type: Boolean,
-            required: true
-        },
-        allowPapermail: {
-            type: Boolean,
-            required: true
-        },
-        files: {
-            type: Array as () => FileContent[],
-            required: true
-        },
-        includeCoverLetter: {
-            type: Boolean,
-            required: true
-        },
-        selectedCoverLetter: {
-            type: Object as () => CoverLetterData | null,
-            required: false
-        }
+const props = defineProps<{
+  apiId: string;
+  tenantId: string;
+  receivers: TrackableReceiverRecord[];
+  hasCheckedReceivers: boolean;
+  allowPapermail: boolean;
+  files: FileContent[];
+  includeCoverLetter: boolean;
+  selectedCoverLetter?: CoverLetterData | null;
+}>();
+const { t } = useI18n();
+
+const selectedReceiver = ref<TrackableReceiverRecord | null>(null);
+const previewLoaded = ref(false);
+const loading = ref(false);
+const paperMailPreview = ref<ContentBody | null>(null);
+
+const previewContent = computed(() => toContentBodies(props.files));
+const availableReceivers = computed(() => props.receivers.filter((r) => r.existsBrifle || (props.allowPapermail && r.validPostalAddress)));
+const requiresPapermail = computed(() => !!selectedReceiver.value && !selectedReceiver.value.existsBrifle && !!selectedReceiver.value.validPostalAddress);
+
+function receiverLabel(receiver: TrackableReceiverRecord | null) {
+  return receiver ? [receiver.firstName ?? '', receiver.lastName ?? ''].join(' ').trim() : 'n/a';
+}
+function deliveryMethod(receiver: TrackableReceiverRecord) {
+  if (receiver.existsBrifle) return t('ui.send.delivery.brifle');
+  if (receiver.validPostalAddress) return t('ui.send.delivery.papermail');
+  return t('ui.send.delivery.none');
+}
+
+async function loadPreview() {
+  const receiver = selectedReceiver.value;
+  previewLoaded.value = true;
+  if (!receiver || !requiresPapermail.value) return;
+
+  const coverLetter: PreviewCoverLetterRequest = {
+    type: props.selectedCoverLetter?.type || 'default',
+    enable: props.includeCoverLetter && !!props.selectedCoverLetter,
+    data: undefined,
+    name: props.selectedCoverLetter?.name || 'cover_letter',
+  };
+  if (!coverLetter.enable) coverLetter.name = undefined;
+
+  const previewReq: PreviewPaperMailRequest = {
+    to: {
+      address_line1: receiverLabel(receiver),
+      address_line2: receiver.addressStreet || '',
+      postal_code: receiver.addressPostcode || '',
+      city: receiver.addressCity || '',
+      country: receiver.addressCountry || '',
     },
-    components: {
-      DocumentView
-    },
-    methods: {
-        requiresPapermail(){
-            return this.selectedReceiver && !this.selectedReceiver.existsBrifle && this.selectedReceiver.validPostalAddress;
-        },
-         requiresBrifle(){
-            return this.selectedReceiver && this.selectedReceiver.existsBrifle;
-        },
-         requiresNoDelivery(){
-            return this.selectedReceiver && !this.selectedReceiver.existsBrifle && !this.selectedReceiver.validPostalAddress;
-        },
-        loadPreview() {
-            if(this.requiresPapermail()){
-                const firstLine = [this.selectedReceiver?.firstName, this.selectedReceiver?.lastName].filter(Boolean).join(" ");
-                const coverLetter : PreviewCoverLetterRequest = {
-                    type: this.selectedCoverLetter?.type || "default",
-                    enable: this.includeCoverLetter && !!this.selectedCoverLetter,
-                    data: undefined,
-                    name: this.selectedCoverLetter?.name || "cover_letter"
-                }
-                if(!coverLetter.enable){
-                    coverLetter.data = undefined;
-                    coverLetter.name = undefined;
-                }
-                const previewReq : PreviewPaperMailRequest = {
-                    to: {
-                        address_line1: firstLine,
-                        address_line2: this.selectedReceiver?.addressStreet || "",
-                        postal_code: this.selectedReceiver?.addressPostcode || "",
-                        city: this.selectedReceiver?.addressCity || "",
-                        country: this.selectedReceiver?.addressCountry || "",
-                    },
-                    body: this.getPreviewContent(),
-                    cover_letter: coverLetter
-                }
-
-
-                BrifleApi.content().previewPaperMail(this.apiId, this.tenantId, previewReq).then((res)=>{
-                    console.log("Preview response:", res);
-                    if(res.isSuccess && res.data){
-                        const data = res.data as unknown as string;
-                        this.paperMailPreview = {
-                            type: 'application/pdf',
-                            content: data
-                        };
-                    } else {
-                        console.error("Fehler beim Laden der Vorschau:", res.error);
-                    }
-                }).catch((err)=>{
-                    console.error("Fehler beim Laden der Vorschau:", err);
-                });
-            }
-            this.previewLoaded = true;
-        },
-        getDeliveryMethod(receiver: TrackableReceiverRecord): string { 
-            if(receiver.existsBrifle){
-                return "Brifle";
-            } else if(receiver.validPostalAddress){
-                return "Papierpost";
-            }
-            return "Keine Zustellung möglich";
-        },
-        filterAvailableReceivers(receivers: TrackableReceiverRecord[]) {
-            if(!this.allowPapermail){
-                return receivers.filter(receiver => receiver.existsBrifle);
-            }
-            return receivers.filter(receiver => receiver.existsBrifle || receiver.validPostalAddress);
-        },
-        getReceiverDataSelection(receiver: TrackableReceiverRecord) {
-            if(receiver){
-                const firstName = receiver.firstName || "";
-                const lastName = receiver.lastName || "";
-                                
-
-                return [
-                    firstName, lastName
-                ].join(" ").trim();
-            }
-            return "n/a";
-
-        },
-        getPreviewContent() : ContentBody[] {   
-            return this.files.map((file)=>{         
-                const b64encoded = this.uint8ToBase64(file.content);           
-                return {
-                    type: 'application/pdf', 
-                    content: b64encoded
-                }
-            })
-    },
-    uint8ToBase64(bytes: Uint8Array): string {
-            let binary = "";
-            const chunkSize = 0x8000; // 32 KB chunks
-            for (let i = 0; i < bytes.length; i += chunkSize) {
-                binary += String.fromCharCode(
-                ...bytes.subarray(i, i + chunkSize)
-                );
-            }
-            return btoa(binary);
-        },
-    },
-    setup() {
-        const selectedReceiver = ref<TrackableReceiverRecord | null>(null);
-        const previewLoaded = ref(false);
-        const paperMailPreview = ref<ContentBody|null>(null);
-        return {
-            selectedReceiver,
-            previewLoaded,
-            paperMailPreview
-        };
+    body: previewContent.value,
+    cover_letter: coverLetter,
+  };
+  loading.value = true;
+  paperMailPreview.value = null;
+  try {
+    const res = await BrifleApi.content().previewPaperMail(props.apiId, props.tenantId, previewReq);
+    if (res.isSuccess && res.data) {
+      paperMailPreview.value = { type: 'application/pdf', content: res.data as unknown as string };
+    } else {
+      console.error('Fehler beim Laden der Vorschau:', res.error);
     }
-    
-});
+  } catch (err) {
+    console.error('Fehler beim Laden der Vorschau:', err);
+  } finally {
+    loading.value = false;
+  }
+}
 </script>

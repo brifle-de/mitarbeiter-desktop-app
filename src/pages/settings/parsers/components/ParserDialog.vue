@@ -1,103 +1,47 @@
 <template>
-    <q-dialog
-        v-model="value"
-        persistent
-        class="q-dialog--fullscreen q-dialog--border-radius-none"
-        transition-show="slide-up">
-        <q-card class="send-docs-card dialog-window-lg" flat bordered>
-            <div class="w-100">
-                <q-toolbar class="bg-secondary text-black">
-                    <q-toolbar-title class="text-h6">
-                        {{ parser.name }}
-                    </q-toolbar-title>
-                    <q-btn flat round icon="close" @click="$emit('update:modelValue', false)" />
-                </q-toolbar>
-            </div>
-            <q-card-section class="q-pt-none w-100">
-                <div class="text-h6 q-my-md">Beschreibung</div>
-                <div class="text-subtitle2 q-mb-md">{{ parser.description }}</div>
-                <span class="float-right">
-                    <!-- copy to clipboard btn -->
-                    <q-btn
-                        color="secondary"
-                        text-color="black"
-                        icon="content_copy"
-                        @click="cpToClipBoard(jsonValue)"
-                        class="q-mr-sm"
-                    />
-                </span>
-                <div class="text-h6 q-my-md">Regeln</div>
-                <code style="white-space: pre-wrap; overflow: auto; ">
-                    {{ jsonValue }}
-                </code>
-            </q-card-section>
-            <q-card-actions vertical class="q-mt-none">
-                <q-btn color="secondary" text-color="black" @click="value = false" label="Schließen" />
-            </q-card-actions>
-        </q-card>
-    </q-dialog>
-    
+  <Dialog v-model:visible="value" modal :header="parser.name" :style="{ width: '760px', maxWidth: '90vw' }">
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1">
+        <h3 class="ma-label text-ink-muted">{{ t('ui.settings.parsers.dialog.description') }}</h3>
+        <p>{{ parser.description }}</p>
+      </div>
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-2">
+          <h3 class="ma-label flex-1 text-ink-muted">{{ t('ui.settings.parsers.dialog.rules') }}</h3>
+          <Button size="small" text :label="t('ui.settings.parsers.dialog.copy')" @click="cpToClipBoard(jsonValue)">
+            <template #icon><Copy :size="16" /></template>
+          </Button>
+        </div>
+        <pre class="max-h-[50vh] overflow-auto rounded-[10px] bg-dezent p-4 font-mono text-[12px] leading-[18px]">{{ jsonValue }}</pre>
+      </div>
+    </div>
+    <template #footer>
+      <Button :label="t('ui.settings.close')" @click="value = false" />
+    </template>
+  </Dialog>
 </template>
-<script lang="ts">
 
-import { copyToClipboard } from 'quasar';
-import { defineComponent, PropType } from 'vue';
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Copy } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import Dialog from 'openvue/dialog';
+import { copyToClipboard } from 'src/composables/useClipboard';
+import { useNotify } from 'src/composables/useNotify';
 
-export default defineComponent({
-    name: 'ParserDialog',
-    emits: ['update:modelValue'],
-    components: {},
-    computed: {
-        value: {
-            get() {
-                return this.modelValue;
-            },
-            set(value: boolean) {
-                this.$emit('update:modelValue', value);
-            },
-        },
-        jsonValue(){
-            return JSON.stringify(this.parser.rules, null, 2);
-        }
-    },
-    props: {
-        parser: {
-            type: Object as PropType<{
-                rules: unknown; // Replace with the actual type of rules
-                name: string;
-                description: string;
-            }>,
-            required: true,
-        },
-        modelValue: {
-            type: Boolean,
-            default: false,
-        },
-    },
-    methods: {
-        cpToClipBoard(value: string) {
-            copyToClipboard(value).then(() => {
-           
-                this.$q.notify({
-                    message: 'In Zwischenablage kopiert',
-                    color: 'positive',
-                    icon: 'check',
-                    timeout: 2000,
-                });
-            }).catch(() => {
-                this.$q.notify({
-                    message: 'Fehler beim Kopieren',
-                    color: 'negative',
-                    icon: 'error',
-                    timeout: 2000,
-                });
-            });
-        },
-    },
-    setup() {      
-        return {  };
-    },
-});
+const props = defineProps<{ parser: { rules: unknown; name: string; description: string } }>();
+const value = defineModel<boolean>({ default: false });
+const { t } = useI18n();
+const notify = useNotify();
 
+const jsonValue = computed(() => JSON.stringify(props.parser.rules, null, 2));
 
+function cpToClipBoard(text: string) {
+  copyToClipboard(text).then(() => {
+    notify.success(t('ui.settings.parsers.dialog.copied'), { life: 2000 });
+  }).catch(() => {
+    notify.error(t('ui.settings.parsers.dialog.copyError'), { life: 2000 });
+  });
+}
 </script>

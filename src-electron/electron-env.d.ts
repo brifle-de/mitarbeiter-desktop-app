@@ -1,8 +1,6 @@
 declare namespace NodeJS {
   interface ProcessEnv {
-    QUASAR_PUBLIC_FOLDER: string;
-    QUASAR_ELECTRON_PRELOAD_FOLDER: string;
-    QUASAR_ELECTRON_PRELOAD_EXTENSION: string;
-    APP_URL: string;
+    /** set by electron-vite in development: URL of the renderer dev server */
+    ELECTRON_RENDERER_URL?: string;
   }
 }

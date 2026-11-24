@@ -1,228 +1,111 @@
 <template>
-
-        <q-dialog v-model="value" class="signature-modal" >
-          <q-card class="no-shadow"  style="height: 90%; width: 100%;">
-            <q-card-section class="row items-center q-pb-none">
-              <div class="text-h6">{{$t("signature_details_modal.title")}}</div>
-              <div class="q-mx-lg">
-              <q-btn color="purple-4" outline @click="downloadSignature()">
-                <q-icon name="download" />
-              </q-btn>
-              </div>
-              <q-space />
-              <q-btn icon="close" flat round dense v-close-popup @click="close()" />
-            </q-card-section>
-
-            <q-card-section>
-              <q-tabs
-                  v-model="tab"
-                  inline-label
-                  class="text-white"
-                  active-color="secondary"
-                  indicator-color="secondary"
-                  align="justify"
-                  narrow-indicator
-                >
-                  <q-tab name="visual" icon="visibility"
-                  :label="$t('signature_details_modal.visual')" />
-                  <q-tab name="tech" icon="code"
-                  :label="$t('signature_details_modal.technical')" />
-                </q-tabs>
-                <q-tab-panels v-model="tab" animated>
-                  <q-tab-panel name="visual" class="visual-tab">
-                    <div class="text-h6">{{$t("signature_details_modal.metadata")}}</div>
-                    <div class="row">
-                      <div class="col">{{$t("signature_details_modal.version")}}</div>
-                      <div class="col">{{ xmlDoc?.meta.version  }}</div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                      <div class="col">{{$t("signature_details_modal.base_url")}}</div>
-                      <div class="col">{{ xmlDoc?.meta.baseUrl  }}</div>
-                    </div>
-                    <div class="text-h6">{{$t("signature_details_modal.info")}}</div>
-                    <div class="row">
-                      <div class="col">{{$t("signature_details_modal.canonicalization")}}</div>
-                      <div class="col">
-                        {{ xmlDoc?.signature.signedInfo.canonicalizationMethod  }}
-                      </div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                      <div class="col">{{$t("signature_details_modal.signature_method")}}</div>
-                      <div class="col">
-                        {{ xmlDoc?.signature.signedInfo.signatureMethod  }}
-                      </div>
-                    </div>
-                    <hr>
-                    <div v-for="(reference, index) in xmlDoc?.signature.signedInfo.reference"
-                        :key="reference.id+'-ref'">
-                          <div class="text-h6">Reference {{ index+1 }}</div>
-                          <div class="row">
-                            <div class="col">{{$t("signature_details_modal.uri")}}</div>
-                            <div class="col">{{ reference.uri }}</div>
-                          </div>
-                          <hr>
-                          <div class="row">
-                            <div class="col">{{$t("signature_details_modal.transformations")}}</div>
-                            <div class="col">{{ reference.transforms }}</div>
-                          </div>
-                          <hr>
-                          <div class="row">
-                            <div class="col">{{$t("signature_details_modal.digest_method")}}</div>
-                            <div class="col">{{ reference.digestMethod }}</div>
-                          </div>
-                          <hr>
-                          <div class="row">
-                            <div class="col">{{$t("signature_details_modal.digest_value")}}</div>
-                            <div class="col">{{ reference.digestValue }}</div>
-                          </div>
-                        </div>
-                        <div class="text-h6">{{$t("signature_details_modal.properties")}}</div>
-                        <div class="row">
-                          <div class="col">{{$t("signature_details_modal.timestamp")}}</div>
-                          <div class="col">
-                            {{ getSignatureProperties()?.signedSignatureProperties.signingTime }}
-                          </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                          <div class="col">{{$t("signature_details_modal.claimed_roles")}}</div>
-                          <div class="col">
-                            {{ getSignatureProperties()?.signedSignatureProperties
-                            .signerRole.claimedRoles.map((role) => role.claimedRole).join(', ') }}
-                          </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                          <div class="col">{{$t("signature_details_modal.certified_roles")}}</div>
-                          <div class="col">
-                            {{ getSignatureProperties()?.signedSignatureProperties
-                            .signerRole.certifiedRoles.map((r) => r.certifiedRole).join(', ') }}
-                          </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                          <div class="col">
-                            {{$t("signature_details_modal.certificate_issuer")}}
-                          </div>
-                          <div class="col">
-                            {{ getSignatureProperties()?.signedSignatureProperties
-                            .signingCertificate.cert.issuerSerial.x509IssuerName }}
-                          </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                          <div class="col">
-                            {{$t("signature_details_modal.location")}}
-                          </div>
-                          <div class="col">
-                            {{ getSignatureProperties()?.signedSignatureProperties
-                            .signatureProductionPlace.city }}
-                            (
-                              {{ getSignatureProperties()?.signedSignatureProperties
-                                  .signatureProductionPlace.countryName }}
-                            )
-                          </div>
-                        </div>
-                        <div class="text-h6">{{$t("signature_details_modal.signature")}}</div>
-                        <div class="row">
-                          <div class="col">
-                            {{$t("signature_details_modal.signauture_value")}}
-                          </div>
-                          <div class="col">{{ xmlDoc?.signature.signatureValue }}</div>
-                        </div>
-                  </q-tab-panel>
-
-                  <q-tab-panel name="tech">
-                    {{signatureValue}}
-                  </q-tab-panel>
-                </q-tab-panels>
-
-            </q-card-section>
-          </q-card>
-        </q-dialog>
-
+  <Dialog v-model:visible="value" modal :style="{ width: '960px', maxWidth: '92vw' }" @hide="emit('close')">
+    <template #header>
+      <div class="flex flex-1 items-center gap-3">
+        <span class="ma-title-l">{{ t('signature_details_modal.title') }}</span>
+        <Button v-tooltip.bottom="t('ui.outbox.details.signatures.exportXml')" severity="secondary" outlined size="small" :label="t('ui.outbox.details.signatures.exportXml')" @click="emit('exportXml', signatureId)">
+          <template #icon><Download :size="16" /></template>
+        </Button>
+      </div>
     </template>
 
-<style lang="scss" scoped>
-.visual-tab .col{
-  text-wrap: auto;
-  line-break: anywhere;
-}
-.signature-modal{
-  .q-card {
-    max-width: 1200px;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-}
-</style>
-<script lang="ts">
+    <Tabs v-model:value="tab">
+      <TabList>
+        <Tab value="visual"><span class="flex items-center gap-2"><Eye :size="16" />{{ t('signature_details_modal.visual') }}</span></Tab>
+        <Tab value="tech"><span class="flex items-center gap-2"><Code :size="16" />{{ t('signature_details_modal.technical') }}</span></Tab>
+      </TabList>
+      <TabPanels class="max-h-[65vh] overflow-auto">
+        <TabPanel value="visual">
+          <div class="flex flex-col gap-5">
+            <section v-for="group in groups" :key="group.title" class="flex flex-col gap-2">
+              <h3 class="ma-title-m">{{ group.title }}</h3>
+              <dl class="grid grid-cols-[220px_minmax(0,1fr)] gap-x-4 gap-y-2">
+                <template v-for="row in group.rows" :key="row.label">
+                  <dt class="ma-small text-ink-muted">{{ row.label }}</dt>
+                  <dd class="break-all">{{ row.value || '—' }}</dd>
+                </template>
+              </dl>
+            </section>
+          </div>
+        </TabPanel>
+        <TabPanel value="tech">
+          <pre class="ma-small whitespace-pre-wrap break-all rounded-[10px] bg-dezent p-4">{{ signatureValue }}</pre>
+        </TabPanel>
+      </TabPanels>
+    </Tabs>
+  </Dialog>
+</template>
 
-import {
-  defineComponent, Ref, ref, watch,
-} from 'vue';
-import { ParsedXmlSignature, XmlSignatureParser } from 'src/services/helper/xmlSignature';
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Code, Download, Eye } from 'lucide-vue-next';
+import Dialog from 'openvue/dialog';
+import Button from 'openvue/button';
+import Tabs from 'openvue/tabs';
+import TabList from 'openvue/tablist';
+import Tab from 'openvue/tab';
+import TabPanels from 'openvue/tabpanels';
+import TabPanel from 'openvue/tabpanel';
+import { type ParsedXmlSignature, XmlSignatureParser } from 'src/services/helper/xmlSignature';
 
-export default defineComponent({
-  name: 'SignatureModal',
-  emits: ['update:modelValue', 'close', 'exportXml'],
-  computed: {
-    value: {
-      get() {
-        return this.modelValue;
-      },
-      set(value : boolean) {
-        this.$emit('update:modelValue', value);
-      },
+const props = defineProps<{ modelValue: boolean; signatureValue: string; signatureId: string; accountId?: string }>();
+const emit = defineEmits<{ 'update:modelValue': [value: boolean]; close: []; exportXml: [signatureId: string] }>();
+const { t } = useI18n();
 
-    },
-  },
-  props: {
-    modelValue: {
-      type: Boolean,
-      required: true,
-    },
-    signatureValue: {
-      type: String,
-      required: true,
-    },
-    signatureId: {
-      type: String,
-      required: true,
-    },
-    accountId: {
-      type: String,
-    },
-  },
+const value = computed({
+  get: () => props.modelValue,
+  set: (v: boolean) => emit('update:modelValue', v),
+});
+const tab = ref<string | number>('visual');
+const xmlDoc = ref<ParsedXmlSignature | null>(null);
 
-  setup(props) {
-    const tab = ref('visual');
-    const xmlDoc: Ref<ParsedXmlSignature |null> = ref(null);
+watch(() => props.signatureValue, (newValue) => {
+  xmlDoc.value = newValue ? XmlSignatureParser.parseXmlSignature(newValue) : null;
+}, { immediate: true });
 
-    // watch the signatureValue prop
-    watch(
-      () => props.signatureValue,
-      (newValue) => {
-        xmlDoc.value = XmlSignatureParser.parseXmlSignature(newValue);
-      },
-    );
-
-    return { tab, xmlDoc };
-  },
-  methods: {
-    downloadSignature() {
-      this.$emit('exportXml', this.signatureId);
+const groups = computed(() => {
+  const doc = xmlDoc.value;
+  const sp = doc?.signature.object.qualifyingProperties.signedProperties.signedSignatureProperties;
+  const place = sp?.signatureProductionPlace;
+  return [
+    {
+      title: t('signature_details_modal.metadata'),
+      rows: [
+        { label: t('signature_details_modal.version'), value: doc?.meta.version },
+        { label: t('signature_details_modal.base_url'), value: doc?.meta.baseUrl },
+      ],
     },
-    getSignatureProperties() {
-      return this.xmlDoc?.signature.object.qualifyingProperties.signedProperties;
+    {
+      title: t('signature_details_modal.info'),
+      rows: [
+        { label: t('signature_details_modal.canonicalization'), value: doc?.signature.signedInfo.canonicalizationMethod },
+        { label: t('signature_details_modal.signature_method'), value: doc?.signature.signedInfo.signatureMethod },
+      ],
     },
-    close() {
-      this.value = false;
-      this.$emit('close');
+    ...(doc?.signature.signedInfo.reference ?? []).map((reference, index) => ({
+      title: `Reference ${index + 1}`,
+      rows: [
+        { label: t('signature_details_modal.uri'), value: reference.uri },
+        { label: t('signature_details_modal.transformations'), value: (reference.transforms ?? []).map((tr) => tr.transform).join(', ') },
+        { label: t('signature_details_modal.digest_method'), value: reference.digestMethod },
+        { label: t('signature_details_modal.digest_value'), value: reference.digestValue },
+      ],
+    })),
+    {
+      title: t('signature_details_modal.properties'),
+      rows: [
+        { label: t('signature_details_modal.timestamp'), value: sp?.signingTime },
+        { label: t('signature_details_modal.claimed_roles'), value: sp?.signerRole.claimedRoles.map((role) => role.claimedRole).join(', ') },
+        { label: t('signature_details_modal.certified_roles'), value: sp?.signerRole.certifiedRoles.map((role) => role.certifiedRole).join(', ') },
+        { label: t('signature_details_modal.certificate_issuer'), value: sp?.signingCertificate.cert.issuerSerial.x509IssuerName },
+        { label: t('signature_details_modal.location'), value: place ? `${place.city} (${place.countryName})` : '' },
+      ],
     },
-  },
-
+    {
+      title: t('signature_details_modal.signature'),
+      rows: [{ label: t('signature_details_modal.signauture_value'), value: doc?.signature.signatureValue }],
+    },
+  ];
 });
 </script>

@@ -1,39 +1,28 @@
-import { defineConfig } from 'vitest/config';
-import vue from '@vitejs/plugin-vue';
-import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import path from 'path';
+import { resolve } from 'node:path'
+import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
 
-  
+const root = __dirname
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  test: {
-    environment: 'happy-dom',
-    setupFiles: 'test/vitest/setup-file.ts',
-    root: path.resolve(__dirname, './'),
-    include: [
-      // Matches vitest tests in any subfolder of 'src' or into 'test/vitest/__tests__'
-      // Matches all files with extension 'js', 'jsx', 'ts' and 'tsx'
-      'src/**/*.vitest.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-      'test/vitest/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
-    ],
-  },
+  plugins: [vue()],
   resolve: {
     alias: {
-      src: path.resolve(__dirname, './src'),
+      app: root,
+      src: resolve(root, 'src'),
+      '@src': resolve(root, 'src'),
+      components: resolve(root, 'src/components'),
+  layouts: resolve(root, 'src/layouts'),
+  pages: resolve(root, 'src/pages'),
+  assets: resolve(root, 'src/assets'),
+  stores: resolve(root, 'src/stores'),
     },
   },
-  plugins: [    
-    // @ts-expect-error otherwise will throw error
-    vue({
-      template: { transformAssetUrls },
-    }),
-     // @ts-expect-error otherwise will throw error
-    quasar({
-      sassVariables: 'src/quasar-variables.scss',
-    }),
-     // @ts-expect-error otherwise will throw error
-    tsconfigPaths(),
-  ],
-});
+  test: {
+    environment: 'happy-dom',
+    include: [
+      'src/**/*.vitest.{test,spec}.ts',
+      'test/vitest/__tests__/**/*.{test,spec}.ts',
+    ],
+  },
+})

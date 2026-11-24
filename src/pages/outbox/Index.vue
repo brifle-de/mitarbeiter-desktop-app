@@ -1,282 +1,222 @@
 <template>
-  <q-page class="q-px-xl">
-    <div class="col">
-      <div class="row q-mb-xl justify-between items-center">
-        <div class="col-7 text-h3">
-          {{ $t("outbox_page.title", "Postausgang") }}
-        </div>
-        <div class="col-5 text-right">
-          <q-btn flat color="secondary" class="muted-action-btn q-mr-sm" @click="goToBulkSend()">
-            {{ $t("outbox_page.compose_button", "Neuer Massenversand") }}
-          </q-btn>
-          <q-btn flat color="secondary" class="muted-action-btn" @click="goToSingleSend()">
-            {{ $t("outbox_page.compose_button", "Neues Dokument") }}
-          </q-btn>
-        </div>
-      </div>
-      <div class="row row q-mb-lg">
-        <div class="col-12 col-md-8 q-pl-xl text-left">      
-          
-        </div>
-      <div class="col-12 col-md-4">
-        <q-input filled dark dense v-model="subject" color="secondary" ref="searchBox"
-        v-on:keyup.enter="search()" input-class="text-left" class="q-ml-lg accent-bordered"
-        >
-        <template v-slot:prepend>
-            <q-icon name="search" />
-          </template>
-          <template v-slot:append>
-            <q-icon v-if="subject !== ''" name="clear" @click="subject = ''; search();"/>
-          </template>
-        </q-input>
-      </div>
+  <div class="flex flex-col gap-6 overflow-auto px-8 py-7">
+    <PageHeader :title="t('ui.outbox.title')" :subtitle="t('ui.outbox.subtitle')">
+      <template #actions>
+        <Button severity="secondary" outlined :label="t('ui.outbox.refresh')" :disabled="!apiId" @click="loadPage()">
+          <template #icon><RefreshCw :size="18" /></template>
+        </Button>
+        <Button severity="secondary" outlined :label="t('ui.outbox.newBulk')" @click="router.push('/bulk_sending')">
+          <template #icon><Layers :size="18" /></template>
+        </Button>
+        <Button :label="t('ui.outbox.newSingle')" @click="router.push('/outbox/send')">
+          <template #icon><Send :size="18" /></template>
+        </Button>
+      </template>
+    </PageHeader>
 
+    <!-- filters the outbox endpoint supports: subject and document type -->
+    <div class="flex items-end gap-4">
+      <FormField :label="t('ui.outbox.filters.search')" for-id="outbox-search" class="w-full max-w-[360px]">
+        <IconField>
+          <InputIcon><Search :size="16" /></InputIcon>
+          <InputText id="outbox-search" ref="searchBox" v-model="subject" class="w-full" :placeholder="t('ui.outbox.filters.searchPlaceholder')" @keyup.enter="search()" />
+          <InputIcon v-if="subject !== ''" class="cursor-pointer" :aria-label="t('ui.outbox.filters.clear')" @click="subject = ''; search();"><X :size="16" /></InputIcon>
+        </IconField>
+      </FormField>
+      <FormField :label="t('ui.outbox.filters.type')" for-id="outbox-type" class="w-[200px]">
+        <Select input-id="outbox-type" :model-value="documentType" :options="typeOptions" option-label="label" option-value="value" @update:model-value="changeType" />
+      </FormField>
+      <Button v-if="subject !== '' || documentType !== 'all'" text :label="t('ui.outbox.filters.reset')" @click="resetFilters()">
+        <template #icon><X :size="18" /></template>
+      </Button>
     </div>
-    <q-separator />
-      <div class="q-pt-xl">
-        <div class="row q-col-gutter-lg">
-          <div class="col-3">
-            <div class="sticky-pagination">
-              <div class="q-pb-lg">
-               
-              </div>
 
-              <q-list padding class="rounded-borders">
-                <q-item-label header>{{ $t('mail_type') }}</q-item-label>
-                <q-item :active="documentType==='all'"
-                @click="changeType('all')" clickable>{{ $t('mail_type_all') }}</q-item>
-                <q-item :active="documentType==='letter'"
-                @click="changeType('letter')" clickable>{{ $t('mail_type_letter') }}</q-item>
-                <q-item :active="documentType==='invoice'"
-                @click="changeType('invoice')" clickable>{{ $t('mail_type_invoice') }}</q-item>
-                <q-item :active="documentType==='contract'"
-                @click="changeType('contract')" clickable>{{ $t('mail_type_contract') }}</q-item>
-              </q-list>
-              <div class="q-pt-lg">
-                <q-pagination
-                v-model="page"
-                class="material-card material-card-muted justify-center accent-bordered accent-bordered-green q-pa-sm"
-                @update:model-value="loadPage();"
-                :max="totalPages"
-                direction-links
-                color="primary"
-                active-design="unelevated"
-                active-text-color="black"
-                active-color="secondary"
-              />
-              </div>
-            </div>
+    <DataTable
+      :value="values"
+      lazy
+      paginator
+      :rows="pageSize"
+      :total-records="total"
+      :first="(page - 1) * pageSize"
+      :loading="isLoading"
+      data-key="id"
+      row-hover
+      class="cursor-pointer"
+      @page="onPage"
+      @row-click="(e: { data: Meta }) => routeToItem(e.data.id)"
+    >
+      <template #empty>
+        <EmptyState v-if="!isLoading" :icon="Inbox" :title="t('ui.outbox.emptyTitle')" :text="t('ui.outbox.emptyText')" />
+      </template>
+      <Column :header="t('ui.outbox.columns.subject')">
+        <template #body="{ data }: { data: Meta }">
+          <div class="flex min-w-0 flex-col">
+            <span class="ma-text-strong">{{ data.subject }}</span>
+            <span class="ma-small text-ink-muted">{{ caption(data) }}</span>
           </div>
-          <div class="col-9">
-            <div v-if="isLoading">
-                <div align="center">
-                  <LoadingSpinner :spinnerValue="isLoading" />
-                </div>
-            </div>
-
-            <div v-else>
-              <q-list padding class="accent-bordered accent-bordered-green
-              rounded-borders material-card material-card-muted q-pa-sm">
-                <div v-if="values.length>0">
-                  <OutboxItem :key="'element-'+item.id+'-'+index" v-for="(item, index) in values"
-                  :subject="item.subject"
-                  :receiver="getReceiverName(receivers.get(item.receiver))"
-                  :mail-id="item.id"
-                  :is-read="item.read"
-                  @openMail="routeToItem"
-                  :created-date="new Date(item.sent_date)"></OutboxItem>
-                </div>
-                <div v-else>
-                  <div class="text-center">
-                    <img src="~assets/no-results.png" height="300"/>
-                  </div>
-                  <q-item-label class="text-h6 text-center">Keine Dokumente gefunden</q-item-label>
-                </div>
-
-              </q-list>
-            </div>
-
+        </template>
+      </Column>
+      <Column :header="t('ui.outbox.columns.receiver')">
+        <template #body="{ data }: { data: Meta }">{{ receiverName(receivers.get(data.receiver)) ?? t('ui.outbox.unknownReceiver') }}</template>
+      </Column>
+      <Column :header="t('ui.outbox.columns.sent')">
+        <template #body="{ data }: { data: Meta }"><span class="whitespace-nowrap">{{ formatDateTime(data.sent_date) }}</span></template>
+      </Column>
+      <Column :header="t('ui.outbox.columns.status')">
+        <template #body="{ data }: { data: Meta }">
+          <StatusTag :type="STATE_TAG[outboxState(data)]" :label="t(`ui.outbox.state.${outboxState(data)}`)" />
+        </template>
+      </Column>
+      <Column header-class="w-0" body-class="w-0">
+        <template #body="{ data }: { data: Meta }">
+          <div class="flex items-center gap-1">
+            <Button v-tooltip.top="t('ui.outbox.open')" text rounded size="small" severity="secondary" :aria-label="t('ui.outbox.open')" @click.stop="routeToItem(data.id)">
+              <template #icon><Eye :size="18" /></template>
+            </Button>
+            <Button v-tooltip.top="t('ui.outbox.download')" text rounded size="small" severity="secondary" :aria-label="t('ui.outbox.download')" :loading="downloading === data.id" @click.stop="download(data)">
+              <template #icon><Download :size="18" /></template>
+            </Button>
           </div>
-        </div>
-      </div>
-    </div>
-  </q-page>
+        </template>
+      </Column>
+    </DataTable>
+  </div>
 </template>
-<style lang="scss" scoped>
-  .sticky-pagination{
-    position: sticky;
-    top: 75px;
-  }
-</style>
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { AccountInfo, Meta, OutboxFilter } from '@brifle/brifle-sdk'
-import Brifle from 'src/services/node/Brifle';
+
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import OutboxItem from 'src/components/OutboxItem.vue';
+import { useI18n } from 'vue-i18n';
+import hotkeys from 'hotkeys-js';
+import { Download, Eye, Inbox, Layers, RefreshCw, Search, Send, X } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import Column from 'openvue/column';
+import DataTable, { type DataTablePageEvent } from 'openvue/datatable';
+import IconField from 'openvue/iconfield';
+import InputIcon from 'openvue/inputicon';
+import InputText from 'openvue/inputtext';
+import Select from 'openvue/select';
+import type { AccountInfo, Meta } from '@brifle/brifle-sdk';
+import PageHeader from 'components/shell/PageHeader.vue';
+import FormField from 'components/ui/FormField.vue';
+import StatusTag from 'components/ui/StatusTag.vue';
+import EmptyState from 'components/ui/EmptyState.vue';
+import Brifle from 'src/services/node/Brifle';
+import Downloader from 'src/utils/downloader';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { useSessionStore } from 'src/stores/session-store';
 import { useBrifleStore } from 'src/stores/brifle-store';
+import { useNotify } from 'src/composables/useNotify';
 import { ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
-import LoadingSpinner from 'src/components/LoadingSpinner.vue';
-import hotkeys from 'hotkeys-js';
+import {
+  DOCUMENT_TYPES, type DocumentType, formatDateTime, formatSize, isDocumentType, loadOutboxPage,
+  OUTBOX_PAGE_SIZE, outboxState, receiverName, STATE_TAG,
+} from './util/outbox';
 
-export default defineComponent({
-  name: 'OutboxPage',
-  components: {
-    OutboxItem, LoadingSpinner
-  },
-  setup() {
-    const encryptedStore = useEncryptedStore();
-    const sessionStore = useSessionStore();
-    const accountId =  ref<string | null>(null);
-    const apiKey = ref<string>('');
-    const documentType = ref<string>('all');
-    const currentTenant = ref<string>('default');
-    const page = ref<number>(1);
-    const values = ref<Meta[]>([]);
-    const pageSize = ref<number>(25);
-    const receivers = ref<Map<string, AccountInfo>>(new Map());
-    const brifleStore = useBrifleStore();
-    const total = ref<number>(0);
-    const router = useRouter();
-    return {
-      subject: ref(''),
-      viewType: ref('documents'),
-      isLoading: ref(false),
-      encryptedStore,
-      sessionStore, 
-        receivers,
-      accountId,
-      brifleStore,
-        total,
-      apiKey,
-    documentType,currentTenant, page, values, pageSize,
-    apiId: ref<string>(''),
-    router,
+const { t } = useI18n();
+const router = useRouter();
+const notify = useNotify();
+const encryptedStore = useEncryptedStore();
+const sessionStore = useSessionStore();
+const brifleStore = useBrifleStore();
 
-    };
-  },  
+const apiId = ref('');
+const currentTenant = ref('');
+const subject = ref('');
+const documentType = ref<DocumentType | 'all'>('all');
+const page = ref(1);
+const pageSize = OUTBOX_PAGE_SIZE;
+const values = ref<Meta[]>([]);
+const total = ref(0);
+const receivers = ref(new Map<string, AccountInfo>());
+const isLoading = ref(true);
+const downloading = ref<string | null>(null);
+const searchBox = ref<{ $el: HTMLInputElement } | null>(null);
 
-  mounted() {
-    this.isLoading = true;
-    this.accountId = this.sessionStore.getSelectedAccountId
-    const account = this.encryptedStore.getAccount(this.accountId!)!;
-    this.apiKey = this.encryptedStore.getAccount(this.accountId!)?.apiKey ?? '';
-    this.currentTenant = this.encryptedStore.getAccount(this.accountId!)?.tenantId ?? '';
+const typeOptions = computed(() => [
+  { label: t('ui.outbox.types.all'), value: 'all' },
+  ...DOCUMENT_TYPES.map((value) => ({ label: t(`ui.outbox.types.${value}`), value })),
+]);
 
-    void this.brifleStore.getApi(account.apiKey ?? '', ApiEndpoints.getEndpoint(account.apiEnv)).then(api => {
-        if(api) {
-            this.apiId = api;            
-            void this.loadPage();        
-        } else {
-            this.apiKey = '';
-        }
-    });
-    
-    // register hotkey for search
-    hotkeys('ctrl+f,cmd+f', (event) => {
-      event.preventDefault();
-      const searchInput = this.$refs.searchBox as HTMLInputElement | undefined;
-      // check if search input is already focused
-      searchInput?.focus();
-      
-    });
-   
-    
-    
-  },
-  computed: {
-    totalPages(): number {
-      return Math.ceil(this.total / this.pageSize);
-    },
-  },
-  methods: {
-    goToSingleSend() {
-      void this.router.push('/outbox/send');
-    },
-    goToBulkSend() {
-      void this.router.push('/bulk_sending');
-    },
-   routeToItem(id: string) {     
-      void this.router.push(`/outbox/${id}`);
-    },
-
- async loadPage() {
-      this.isLoading = true;
-    
-      const req : Filter = {
-        state: ['active'],
-        subject: this.subject,
-       };
-       
-      if (this.documentType !== 'all') {
-        req.type = (this.documentType as 'letter' | 'invoice' | 'contract');
-      }
-      
-      if (this.currentTenant != null) {
-        void Brifle.mailbox().getOutbox(this.apiId, this.currentTenant, req, this.page)
-          .then((res) => {            
-            this.values = res.isSuccess ? res.data!.results : [];
-            this.total = res.isSuccess ? res.data!.total : 0;
-            const receiverIds: Set<string> = new Set(this.values.map((item) => item.receiver));
-            let waitingFor = receiverIds.size;
-            if (waitingFor === 0) {
-              this.isLoading = false;
-            }
-            const receivers : Map<string, AccountInfo> = new Map();
-            receiverIds.forEach((id) => {
-              void Brifle.accounts().getById(this.apiId, id).then((receiver) => {
-                if (receiver != null && receiver.isSuccess && receiver.data != null) {
-                  receivers.set(id, receiver.data);
-                }
-                waitingFor -= 1;
-                if (waitingFor === 0) {
-                  this.isLoading = false;
-                  receiverIds.forEach((receiverId) => {
-                    if (receivers.has(receiverId) && receivers.get(receiverId) != null) {
-                      this.receivers.set(receiverId, receivers.get(receiverId) as AccountInfo);
-                    }
-                  });
-                }
-              });
-            });
-          });
-      } else {
-        this.values = [];
-        this.isLoading = false;
-      }
-    },
-
-    search() {
-        void this.loadPage();
-    },   
-   
-    getReceiverName(receiver: AccountInfo | undefined) {
-      if (receiver == null) {
-        return 'Unbekannt';
-      }
-      if (receiver.type === 'private') {
-        return `${receiver.first_name} ${receiver.last_name}`;
-      }
-      return `${receiver.company_name}`;
-    },
-    changeType(type: string) {
-      this.documentType = type;
-      this.page = 1;
-      this.search();
-    },
-    changeTenant(id: string) {
-      this.currentTenant = id;
-      this.page = 1;
-      this.search();
-    },
-  },
-});
-
-
-interface Filter extends OutboxFilter {
-  subject?: string;
+function caption(item: Meta) {
+  const type = isDocumentType(item.type) ? t(`ui.outbox.types.${item.type}`) : item.type;
+  return [type, formatSize(item.size)].filter(Boolean).join(' · ');
 }
 
+async function loadPage() {
+  if (!apiId.value) return;
+  isLoading.value = true;
+  try {
+    const res = await loadOutboxPage(apiId.value, currentTenant.value, { subject: subject.value, type: documentType.value }, page.value);
+    values.value = res.values;
+    total.value = res.total;
+    res.receivers.forEach((receiver, id) => receivers.value.set(id, receiver));
+  } catch (e) {
+    console.error('Could not load the outbox', e);
+    values.value = [];
+    total.value = 0;
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+function search() {
+  page.value = 1;
+  void loadPage();
+}
+function changeType(type: DocumentType | 'all') {
+  documentType.value = type;
+  search();
+}
+function resetFilters() {
+  subject.value = '';
+  documentType.value = 'all';
+  search();
+}
+function onPage(e: DataTablePageEvent) {
+  page.value = e.page + 1;
+  void loadPage();
+}
+function routeToItem(id: string) {
+  void router.push(`/outbox/${id}`);
+}
+
+/** saves every PDF of the document, like "PDF speichern" on the details page */
+async function download(item: Meta) {
+  downloading.value = item.id;
+  try {
+    const res = await Brifle.content().contentGetContent(apiId.value, item.id);
+    if (!res.isSuccess || res.data == null) {
+      notify.error(t('ui.outbox.downloadFailed'), { detail: res.error?.code != null ? String(res.error.code) : '' });
+      return;
+    }
+    const pdfs = res.data.content.filter((c) => c.type === 'application/pdf');
+    pdfs.forEach((c, index) => Downloader.downloadPdf(c.content, pdfs.length > 1 ? `${item.subject}_${index}` : item.subject));
+  } catch (e) {
+    console.error(e);
+    notify.error(t('ui.outbox.downloadFailed'));
+  } finally {
+    downloading.value = null;
+  }
+}
+
+onMounted(async () => {
+  // Ctrl+F focuses the search
+  hotkeys('ctrl+f,cmd+f', (event) => {
+    event.preventDefault();
+    searchBox.value?.$el?.focus();
+  });
+
+  const account = sessionStore.getSelectedAccountId ? encryptedStore.getAccount(sessionStore.getSelectedAccountId) : undefined;
+  currentTenant.value = account?.tenantId ?? '';
+  if (account) {
+    const id = await brifleStore.getApi(account.apiKey ?? '', ApiEndpoints.getEndpoint(account.apiEnv));
+    if (id) {
+      apiId.value = id;
+      await loadPage();
+    }
+  }
+  isLoading.value = false;
+});
+onBeforeUnmount(() => hotkeys.unbind('ctrl+f,cmd+f'));
 </script>

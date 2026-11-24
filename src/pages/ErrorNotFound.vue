@@ -1,31 +1,18 @@
 <template>
-  <div class="fullscreen bg-blue text-white text-center q-pa-md flex flex-center">
-    <div>
-      <div style="font-size: 30vh">
-        404
-      </div>
-
-      <div class="text-h2" style="opacity:.4">
-        Oops. Nothing here...
-      </div>
-
-      <q-btn
-        class="q-mt-xl"
-        color="white"
-        text-color="blue"
-        unelevated
-        to="/"
-        label="Go Home"
-        no-caps
-      />
-    </div>
+  <div class="flex h-full items-center justify-center">
+    <EmptyState :icon="SearchX" :title="t('ui.shell.notFound.title')" :text="t('ui.shell.notFound.text')">
+      <Button :label="t('ui.shell.notFound.home')" @click="router.push('/')" />
+    </EmptyState>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { SearchX } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import EmptyState from 'components/ui/EmptyState.vue';
 
-export default defineComponent({
-  name: 'ErrorNotFound'
-});
+const { t } = useI18n();
+const router = useRouter();
 </script>

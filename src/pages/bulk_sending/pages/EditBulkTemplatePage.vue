@@ -1,195 +1,85 @@
 <template>
-    <p-page class="wrapper">
-        <div class="q-py-lg">
-            <div class="text-h4">{{ title }}</div>
-            <div class="text-muted" v-if="id">
-                {{ id }}
+    <div class="flex min-h-0 flex-1 flex-col">
+        <div class="flex flex-1 flex-col gap-6 overflow-auto px-8 py-7">
+            <PageHeader :path="t('ui.bulk.edit.path')" :title="title" :subtitle="subtitle" />
+            <StepsHeader :steps="phases" :active="phaseOfStep[step] ?? 0" />
+
+            <SourceReceivers
+                v-if="step === 1"
+                v-model="receiverSrc"
+                :use-local-storage="false"
+                :init-value="receiverSrc"
+            />
+
+            <SourceReceiversParser
+                v-if="step === 2"
+                :use-local-storage="false"
+                :init-value="receiverSrc"
+                :receiver-source="receiverSrc"
+                @parsed="onParsedReceivers($event)"
+            />
+
+            <SourceDocuments
+                v-if="step === 3"
+                v-model="documentsSrc"
+                :use-local-storage="false"
+                :init-value="documentsSrc"
+            />
+
+            <SourceDocumentsParser
+                v-if="step === 4"
+                v-model="documentsSrc"
+                :use-local-storage="false"
+                :init-value="documentsSrc"
+                :use-date-filter="false"
+                @parsed="onParsedDocuments($event)"
+            />
+
+            <NonExistingReceiversAction
+                v-if="step === 5"
+                ref="nonBrifle"
+                :api-id="apiId"
+                :tenant-id="tenantId"
+                :use-local-storage="false"
+                :init-value="actionNotBrifle"
+                @valid="nonBrifleValid = $event"
+                @update="goToPage6($event)"
+            />
+
+            <SubjectSetter v-if="step === 6" v-model="subjectData" :docs="documentRecords" />
+
+            <div v-if="step === 7" class="grid grid-cols-2 gap-6">
+                <section class="ma-card">
+                    <h2 class="ma-title-m">{{ t('ui.bulk.edit.details') }}</h2>
+                    <FormField :label="t('ui.bulk.edit.name')" for-id="bulk-template-name">
+                        <InputText id="bulk-template-name" v-model="templateName" />
+                    </FormField>
+                    <FormField :label="t('ui.bulk.edit.description')" for-id="bulk-template-description">
+                        <Textarea id="bulk-template-description" v-model="templateDescription" rows="4" auto-resize />
+                    </FormField>
+                </section>
+                <section class="ma-card">
+                    <h2 class="ma-title-m">{{ t('ui.bulk.edit.summary') }}</h2>
+                    <dl class="grid grid-cols-[minmax(140px,auto)_1fr] gap-x-4 gap-y-2.5">
+                        <template v-for="row in overviewRows" :key="row.property">
+                            <dt class="ma-small text-ink-muted">{{ row.property }}</dt>
+                            <dd class="break-words">{{ row.value || '–' }}</dd>
+                        </template>
+                    </dl>
+                </section>
             </div>
         </div>
-        <q-separator />
-        <div class="q-py-lg">
-             <q-stepper
-      v-model="step"
-      vertical
-      flat
-      color="secondary" 
-      class="material-card material-card-muted"
-      animated
-    >
-      <q-step
-        :name="1"
-        title="Quelle - Empfänger"
-        color="secondary"
-        icon="settings"
-        :done="step > 1"
-      >
-        
-            <SourceReceivers 
-            :use-local-storage="false"
-            :init-value="receiverSrc"
-            v-model="receiverSrc" />
-
-
-        <q-stepper-navigation class="text-center">
-          <q-btn :disable="!validSourceReceiver" @click="step = 2" color="secondary" text-color="black" label="Weiter" />
-        </q-stepper-navigation>
-      </q-step>
-
-      <q-step
-        :name="2"
-        title="Empfänger"        
-        color="secondary"
-        icon="create_new_folder"
-        :disable="step < 2"
-        :done="step > 2"
-      >
-        <SourceReceiversParser
-          :use-local-storage="false"
-          :init-value="receiverSrc"
-          :receiverSource="receiverSrc"          
-          @parsed="onParsedReceivers($event)"
+        <WizardFooter
+            :cancel-label="t('ui.bulk.common.cancel')"
+            :back-label="step > 1 ? t('ui.bulk.common.back') : ''"
+            :next-label="step === 7 ? t('ui.bulk.edit.save') : t('ui.bulk.common.next')"
+            :next-icon="step === 7 ? Save : ChevronRight"
+            :next-disabled="!canProceed"
+            @cancel="cancelTemplate()"
+            @back="step--"
+            @next="next()"
         />
-
-
-        <q-stepper-navigation>
-          <q-btn @click="step = 3" color="secondary"  
-          :disable="receiverRecords.length === 0"
-          text-color="black"  label="Weiter" />
-        </q-stepper-navigation>
-      </q-step>
-
-      <q-step
-        :name="3"
-        title="Quelle - Dokumente"
-        color="secondary"
-        icon="assignment"
-        :disable="step < 3"
-        :done="step > 3"
-      >
-        
-      <SourceDocuments
-        :use-local-storage="false"
-        :init-value="documentsSrc"
-        v-model="documentsSrc"      
-      >
-      </SourceDocuments>
-
-      <q-stepper-navigation>
-          <q-btn @click="step = 4" :disable="!validSourceDocuments" color="secondary"  text-color="black"  label="Weiter" />
-        </q-stepper-navigation>
-
-      </q-step>
-
-      <q-step
-        :name="4"
-        :disable="step < 4"
-        :done="step > 4"
-        title="Zuweisung - Dokumente"
-        color="secondary"
-        icon="add_comment"
-      >
-        <SourceDocumentsParser
-          :use-local-storage="false"
-          :init-value="documentsSrc"
-          :use-date-filter="false"
-          @parsed="onParsedDocuments($event)"
-          v-model="documentsSrc"
-        />
-
-        <q-stepper-navigation>
-          <q-btn  @click="step = 5" color="secondary" 
-          :disable="documentRecords.length === 0"
-          text-color="black" label="Weiter" />
-        </q-stepper-navigation>
-      </q-step>
-     
-      <q-step
-        :name="5"
-        :disable="step < 5"
-        :done="step > 5"
-        title="Aktion - Nicht Brifle Empfänger"
-        color="secondary"
-        icon="local_post_office"
-      >
-        <NonExistingReceiversAction
-        :api-id="apiId"
-        :tenant-id="tenantId"
-        :use-local-storage="false"
-        :init-value="actionNotBrifle"
-          @update="goToPage6($event)" 
-        />
-    
-    </q-step>
-    <q-step
-        :name="6"
-        :disable="step < 6"
-        :done="step > 6"
-        title="Betreff"
-        color="secondary"
-        icon="title"
-      >
-      <div class="q-my-lg text-center">
-          <SubjectSetter v-model="subjectData" :docs="documentRecords" />
-          <q-stepper-navigation>
-            <q-btn @click="step = 7" color="secondary" 
-            :disable="subjectData.default === ''"
-            text-color="black" label="Weiter" />
-          </q-stepper-navigation>
-
-      </div>
-
-    </q-step>
-      <q-step
-        :name="7"
-        :disable="step < 7"
-        :done="step > 7"
-        title="Übersicht"
-        color="secondary"
-        icon="assignment_turned_in"
-      >
-    
-    <div class="q-my-md">
-      <q-table
-          :columns="overviewColumns"
-          :rows="overviewRows"
-          flat
-          separator="none"
-          class="bg-transparent border-none"
-          
-          hide-pagination
-          :pagination="{
-            rowsPerPage: 100,
-            page: 1,
-
-          }"
-        >
-        <template v-slot:body-cell-property="props">
-          <q-td :props="props" class="text-caption ">
-            {{ props.row.property }}
-          </q-td>
-        </template>
-         <template v-slot:body-cell-value="props">
-          <q-td :props="props">
-            <div v-if="props.row.value" class="text-caption q-ml-sm muted-pill">
-              {{ props.row.value }}
-            </div>
-          </q-td>
-        </template>
-      </q-table>
-      </div>
-
-      <q-input filled v-model="templateName" label="Vorlagenname" color="secondary" class="q-mb-md" />
-      <q-input filled v-model="templateDescription" label="Vorlagenbeschreibung" color="secondary" class="q-mb-md" type="textarea" />
-      <div class="q-my-lg text-center row justify-between">
-        <q-btn flat class="muted-action-btn q-mb-lg" @click="cancelTemplate()" color="secondary" label="Abbrechen" />
-        <q-btn @click="storeTemplate()" color="secondary" text-color="black" label="Vorlage speichern" class="q-mb-lg" />
-        </div>
-    </q-step>
-
-    </q-stepper>
-        </div>
-    </p-page>
-                
+    </div>
 </template>
 <script lang="ts"> 
 
@@ -211,12 +101,23 @@ import SubjectSetter from '../components/SubjectSetter.vue';
 import { BulkSendTemplate } from '../../../../src-electron/service/send_templates/templates/template';
 import SendTemplate from 'src/services/node/SendTemplate';
 import { getAllAvailableDirParsers, loadDocumentSource } from '../util/helper';
+import { useI18n } from 'vue-i18n';
+import InputText from 'openvue/inputtext';
+import Textarea from 'openvue/textarea';
+import { ChevronRight, Save } from 'lucide-vue-next';
+import PageHeader from 'components/shell/PageHeader.vue';
+import StepsHeader from 'components/ui/StepsHeader.vue';
+import WizardFooter from 'components/ui/WizardFooter.vue';
+import FormField from 'components/ui/FormField.vue';
+import { useNotify } from 'src/composables/useNotify';
 
 export default defineComponent({
     name: 'EditBulkTemplatePage',
     components: {
         SourceReceivers, SourceReceiversParser, SourceDocuments, 
-        SourceDocumentsParser, NonExistingReceiversAction, SubjectSetter
+        SourceDocumentsParser, NonExistingReceiversAction, SubjectSetter,
+         
+        InputText, Textarea, PageHeader, StepsHeader, WizardFooter, FormField,
     },
     props: {
         id: {
@@ -227,62 +128,62 @@ export default defineComponent({
     computed: {
         title(): string {
             if (this.id === undefined) {
-                return 'Neue Vorlage erstellen';
+                return this.t('ui.bulk.edit.titleNew');
             } else {
-                return 'Vorlage bearbeiten';
+                return this.t('ui.bulk.edit.titleEdit');
             }
         },
-        overviewRows() {
-           const rows = [];
+        subtitle(): string {
+            const stepTitle = this.t(`ui.bulk.edit.step.s${this.step}`);
+            return this.id ? `${stepTitle} · ${this.id}` : stepTitle;
+        },
+        phases(): { title: string, description: string }[] {
+            return ['receivers', 'documents', 'options', 'subject', 'save'].map((key) => ({
+                title: this.t(`ui.bulk.edit.phase.${key}`),
+                description: this.t(`ui.bulk.edit.phaseText.${key}`),
+            }));
+        },
+        canProceed(): boolean {
+            switch (this.step) {
+                case 1: return this.validSourceReceiver;
+                case 2: return this.receiverRecords.length > 0;
+                case 3: return this.validSourceDocuments;
+                case 4: return this.documentRecords.length > 0;
+                case 5: return this.nonBrifleValid;
+                case 6: return this.subjectData.default !== '';
+                default: return true;
+            }
+        },
+        overviewRows(): { property: string, value: string }[] {
+           const rows: { property: string, value: string }[] = [];
+           const yes = this.t('ui.bulk.common.yes');
+           const no = this.t('ui.bulk.common.no');
 
-           const notBrifleAction = this.actionNotBrifle.action === 'ignore' ? 'Ignorieren' : 'Papierpost';
+           const notBrifleAction = this.actionNotBrifle.action === 'ignore' ? this.t('ui.bulk.nonBrifle.ignore') : this.t('ui.bulk.nonBrifle.paperMail');
 
-
-
-            rows.push({ property: 'Empfängerquelle', value: this.receiverSrc.type === 'file' ? `Datei` : `SFTP` });
-            rows.push({ property: 'Dokumentenquelle', value: this.documentsSrc.type === 'file' ? `Datei` : `SFTP` });
-            rows.push({ property: 'Aktion bei nicht Brifle Empfängern', value: notBrifleAction });
-            rows.push({ property: 'Betreff (Standard)', value: this.subjectData.default });
+            rows.push({ property: this.t('ui.bulk.edit.row.receiverSource'), value: this.receiverSrc.type === 'file' ? this.t('ui.bulk.common.file') : 'SFTP' });
+            rows.push({ property: this.t('ui.bulk.edit.row.documentSource'), value: this.documentsSrc.type === 'file' ? this.t('ui.bulk.common.file') : 'SFTP' });
+            rows.push({ property: this.t('ui.bulk.edit.row.nonBrifleAction'), value: notBrifleAction });
+            rows.push({ property: this.t('ui.bulk.edit.row.defaultSubject'), value: this.subjectData.default });
 
             for (const docType in this.subjectData.docTypes) {
-                rows.push({ property: `Betreff für ${docType}`, value: this.subjectData.docTypes[docType] });
+                rows.push({ property: this.t('ui.bulk.subject.forDocType', { type: docType }), value: this.subjectData.docTypes[docType] ?? '' });
             }
 
             if(this.actionNotBrifle.action === 'papermail') {
-              const useTestMode = this.actionNotBrifle.testModePaperMail ? 'Ja' : 'Nein';
-
-              rows.push({ property: 'Papierpost Testmodus aktiviert', value: useTestMode });
+              rows.push({ property: this.t('ui.bulk.edit.row.testMode'), value: this.actionNotBrifle.testModePaperMail ? yes : no });
               if (this.actionNotBrifle.testModePaperMail) {
-                rows.push({ property: 'E-Mail Empfänger für Papierpost Testmodus', value: this.actionNotBrifle.paperMailTestEmailRecipient });
+                rows.push({ property: this.t('ui.bulk.edit.row.testRecipient'), value: this.actionNotBrifle.paperMailTestEmailRecipient });
               }
-              const useCoverLetter = this.actionNotBrifle.useCoverLetter ? 'Ja' : 'Nein';
-              rows.push({ property: 'Deckblatt verwenden', value: useCoverLetter });
+              rows.push({ property: this.t('ui.bulk.edit.row.useCoverLetter'), value: this.actionNotBrifle.useCoverLetter ? yes : no });
               if(this.actionNotBrifle.useCoverLetter && this.actionNotBrifle.selectedCoverLetter) {
-                rows.push({ property: 'Ausgewähltes Deckblatt', value: this.actionNotBrifle.selectedCoverLetter.name });
+                rows.push({ property: this.t('ui.bulk.edit.row.coverLetter'), value: this.actionNotBrifle.selectedCoverLetter.name });
               }
             }
 
-          
             return rows;
-
         },
-      overviewColumns(){
-        return [
-          {
-            name: 'property',
-            label: 'Eigenschaft',
-            field: 'property',
-            align: 'left' as const,
-          },
-          {
-            name: 'value',
-            label: 'Wert',
-            field: 'value',
-            align: 'left' as const,
-          },
-        ]
-      },
-      validSourceReceiver() {
+      validSourceReceiver(): boolean {
         if(this.receiverSrc.type === 'file') {
             return this.receiverSrc.file != null && this.receiverSrc.file !== '';
         } else if(this.receiverSrc.type === 'sftp') {
@@ -291,7 +192,7 @@ export default defineComponent({
         return false;
     
       },
-      validSourceDocuments() {
+      validSourceDocuments(): boolean {
         if(this.documentsSrc.type === 'file') {
             return this.documentsSrc.file != null && this.documentsSrc.file !== '';
         } else if(this.documentsSrc.type === 'sftp') {
@@ -322,7 +223,16 @@ export default defineComponent({
         }
         void this.loadTemplate();
     },
-    methods: {      
+    methods: {
+      next() {
+        if (this.step === 5) {
+          (this.$refs.nonBrifle as { update: () => void } | undefined)?.update();
+        } else if (this.step === 7) {
+          this.storeTemplate();
+        } else {
+          this.step++;
+        }
+      },
       loadDocumentSource(templateData: BulkSendTemplate): DocumentSource {
         return loadDocumentSource(templateData, this.availableDirParsers, this.sftpServer);
       },
@@ -341,18 +251,12 @@ export default defineComponent({
               this.subjectData = template.subjects;
               this.actionNotBrifle = template.nonExistingReceiverAction;             
             } else {
-              this.$q.notify({
-                type: 'negative',
-                message: 'Vorlage nicht gefunden'
-              });
+              this.notify.error(this.t('ui.bulk.edit.notFound'));
             }
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (error: unknown) {
             Logger.error('Error loading template: ');
-            this.$q.notify({
-              type: 'negative',
-              message: 'Fehler beim Laden der Vorlage'
-            });
+            this.notify.error(this.t('ui.bulk.edit.loadFailed'));
           }
         }
       },
@@ -403,17 +307,11 @@ export default defineComponent({
         }
         
         this.templateService.saveTemplate(template).then(() => {
-          this.$q.notify({
-            type: 'positive',
-            message: 'Vorlage erfolgreich gespeichert'
-          });
+          this.notify.success(this.t('ui.bulk.edit.saved'));
           void this.$router.push({ name: 'bulk_sending.templates' });
         }).catch((error) => {
           Logger.error('Error saving template: ' + error);
-          this.$q.notify({
-            type: 'negative',
-            message: 'Fehler beim Speichern der Vorlage'
-          });
+          this.notify.error(this.t('ui.bulk.edit.saveFailed'));
         });
       }
     },
@@ -451,7 +349,18 @@ export default defineComponent({
         const documentRecords = ref<DocumentRecord[]>([]);
         const templateName = ref<string>('');
         const templateDescription = ref<string>('');
-        return { 
+        const { t } = useI18n();
+        const notify = useNotify();
+        const nonBrifleValid = ref<boolean>(true);
+        // steps 1–7 grouped into the phases of the stepper header
+        const phaseOfStep: Record<number, number> = { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 3, 7: 4 };
+        return {
+          t,
+          notify,
+          Save,
+          ChevronRight,
+          nonBrifleValid,
+          phaseOfStep,
           sessionStore, 
           encryptedStore, 
           brifleStore, 

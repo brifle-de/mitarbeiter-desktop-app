@@ -1,106 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
   <head>
-    <title><%= productName %></title>
-
     <meta charset="utf-8">
-    <meta name="description" content="<%= productDescription %>">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="msapplication-tap-highlight" content="no">
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, viewport-fit=cover<% } %>">
-
-    <link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-    <link rel="icon" type="image/ico" href="favicon.ico">
+    <title>Brifle Business</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' data: blob:">
+    <link rel="icon" type="image/png" sizes="128x128" href="/icons/favicon-128x128.png">
+    <link rel="icon" type="image/ico" href="/favicon.ico">
   </head>
   <body>
-    <!-- quasar:entry-point -->
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
-    <script>
-      // Ensure this script runs after the DOM is fully loaded
-    document.addEventListener('DOMContentLoaded', () => {
-      window.electronAPI.getPlatform().then(platform => {
-        // append platform as css class to body
-        document.body.classList.add(platform);
-      });
-    });
-
-
-    
-// Override console methods to also forward to main
-// Ignore noImplicitAny for this block
-// Keep original console methods
-const origConsole = {
-  log: console.log.bind(console),
-  info: console.info.bind(console),
-  warn: console.warn.bind(console),
-  error: console.error.bind(console),
-  debug: console.debug.bind(console)
-};
-
-/*
- * override console methods to also send logs to main process
- */
-// ignore noImplicitAny for this block
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-console.info = (...args) => {
-  origConsole.info(...args);
-  sendLog('info', args);
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-console.warn = (...args) => {
-  origConsole.warn(...args);
-  sendLog('warn', args);
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-console.error = (...args) => {
-  origConsole.error(...args);
-  sendLog('error', args);
-}
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-console.debug = (...args) => {
-  origConsole.debug(...args);
-  sendLog('debug', args);
-}
-
-// function to send log to main process
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function sendLog(level, args) {
-  // convert args to string
-  const message = args.map(arg => {
-    if (typeof arg === 'string') {
-      return arg;
-    } else if (arg instanceof Error) {
-      return arg.stack || arg.message;
-    } else {     
-      try {
-        return JSON.stringify(arg);
-      } catch (e) {
-        return "[Unable to serialize object]";
-      }
-    }
-  }).join(' ');
-  
-  void window.logApi.writeLog({ level: level, message });
-}
-
-
-// Global error handlers
-window.addEventListener('error', (event) => {
-  const err = event.error || { message: event.message, filename: event.filename, lineno: event.lineno, colno: event.colno };
-  sendLog('error', [err]);
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-
-  const reason = event.reason;
-  sendLog('error', [ { unhandledRejection: true, reason: reason instanceof Error ? { message: reason.message, stack: reason.stack } : reason } ]);
-});
-
-
-
-  </script>
 </html>

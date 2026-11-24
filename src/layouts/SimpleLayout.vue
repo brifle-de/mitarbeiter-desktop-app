@@ -1,34 +1,13 @@
 <template>
-    <q-layout view="hhh LpR lfr">
-      <q-header class="unselectable bg-titlebar titlebar">
-        <q-toolbar>         
-          
-        </q-toolbar>
-      </q-header>  
-      <div class="titlebar-placeholder"></div>
-  
-      <q-page-container class="unselectable main-container">        
-        <router-view />
-      </q-page-container>
-    </q-layout>
-  </template>
-  
-  <script lang="ts">
-  import { defineComponent } from 'vue';
-  
-  
-  export default defineComponent({
-    name: 'SimpleLayout',
-  
-    components: {
-   
-    },  
-    setup () {
-      // get current route and query params
-  
-      return {        
-      };
-    }
-  });
-  </script>
-  
+  <!-- before login (unlock, accounts): title bar without search, content centred -->
+  <div class="flex h-full flex-col">
+    <AppTitleBar :show-search="false" />
+    <main class="flex min-h-0 flex-1 flex-col items-center overflow-auto p-8">
+      <router-view />
+    </main>
+  </div>
+</template>
+
+<script setup lang="ts">
+import AppTitleBar from 'components/shell/AppTitleBar.vue';
+</script>

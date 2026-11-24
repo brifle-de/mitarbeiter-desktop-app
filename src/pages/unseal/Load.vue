@@ -1,117 +1,56 @@
 <template>
-     <div>
-        <h4>Initialisiere Anwendung</h4>
+  <UpdateBanner class="w-full" />
+  <BrandLogo />
+  <form class="ma-card w-full gap-4 p-8" @submit.prevent="unsealApp()">
+    <div class="flex items-center gap-3">
+      <IconBadge :icon="Lock" :size="40" round />
+      <h1 class="ma-title-l">{{ t('ui.access.unlock.title') }}</h1>
     </div>
-    <div class="muted-container-purple text-subtitle1 q-pa-md q-mt-md">
-        Die Anwendung ist versiegelt. Bitte gibt das vergebene Passwort ein, um die Anwendung zu entsperren.
-    </div>
-    <div class="q-mt-lg">
-        <q-input v-model="password" filled 
-        color="secondary"
-        :type="isPwd ? 'password' : 'text'"  
-        @keyup.enter="unsealApp()"
-        label="Passwort">
-        <template v-slot:append>
-          <q-icon
-            :name="isPwd ? 'visibility_off' : 'visibility'"
-            class="cursor-pointer"
-            @click="isPwd = !isPwd"
-          />
-        </template>
-      </q-input> 
-    </div>
-    <div class="text-right">
-        <q-btn
-        class="q-mt-lg q-px-md text-subtitle1 muted-action-btn"
-        label="Entsiegeln"        
-        flat
-        color="green-2"
-        @click="unsealApp()"
-    />
-    </div>
-    <div class="muted-container-orange q-pa-lg  q-mt-xl" v-if="showUpdateBox" >
-        <div class="text-bold">
-            Update verfügbar
-        </div>
-        
-        <div>
-            Die App-Version {{ appUpdateInfo?.version }} ist verfügbar.
-        </div>
-        <div class="text-right q-mt-lg">
-            <q-btn
-                class="q-px-md text-subtitle1 muted-action-btn"
-                label="Update herunterladen"
-                flat
-                color="orange-2"
-                @click="downloadAndInstallUpdate()"
-            />
-
-        </div>
-    </div>
+    <p class="text-ink-muted">{{ t('ui.access.unlock.text') }}</p>
+    <FormField :label="t('ui.access.password')" for-id="unlock-password">
+      <Password input-id="unlock-password" v-model="password" :feedback="false" toggle-mask fluid autofocus />
+    </FormField>
+    <Button type="submit" :label="t('ui.access.unlock.submit')" :disabled="password.length === 0" :loading="busy" fluid>
+      <template #icon><ChevronRight :size="18" /></template>
+    </Button>
+  </form>
+  <span v-if="version" class="ma-small text-ink-muted">{{ t('ui.access.unlock.version', { version }) }}</span>
 </template>
-<script lang="ts">
 
-import { defineComponent, ref } from 'vue';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { ChevronRight, Lock } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import Password from 'openvue/password';
+import FormField from 'components/ui/FormField.vue';
+import IconBadge from 'components/ui/IconBadge.vue';
+import UpdateBanner from 'components/ui/UpdateBanner.vue';
+import BrandLogo from './BrandLogo.vue';
 import { useEncryptedStore } from '@src/stores/encrypted-store';
-import { UpdateInformation } from 'app/src-electron/service/AppUpdateService';
-import EletronService from 'src/services/node/EletronService';
+import { useNotify } from 'src/composables/useNotify';
 
-export default defineComponent({
-    name: 'UnsealInitPage',
-    components: {
-    },
-    methods: {
-        unsealApp () {
-            this.encryptedStorage.loadData(this.password).then(() => {              
-                void this.$router.push({ path: '/accounts' }); 
-            }).catch((err: Error) => {
-                console.error('Error unsealing application:', err);
-                this.$q.notify({
-                    message: 'Das Passwort ist falsch oder es ist ein Fehler beim Laden der Daten aufgetreten. Bitte versuche es erneut.',
-                    color: 'negative',
-                    icon: 'error',
-                });
-                console.error(err);
-            });
-        },
-        downloadAndInstallUpdate() {
-            this.electronService.downloadAndInstallUpdate().catch((err: Error) => {
-                console.error('Error downloading and installing update:', err);
-                this.$q.notify({
-                    message: 'Beim Herunterladen und Installieren des Updates ist ein Fehler aufgetreten. Bitte versuche es erneut.',
-                    color: 'negative',
-                    icon: 'error',
-                });
-            });
-        }
-    },
-    computed: {      
-        showUpdateBox(){
-            return this.appUpdateInfo !== null && this.appUpdateInfo.isUpdateAvailable;
-        }
-    },
-    mounted() {
-        this.electronService.getUpdateInfo().then((updateInfo) => {
-            this.appUpdateInfo = updateInfo;
-        }).catch((err: Error) => {
-            console.error('Error getting update info:', err);
-        });
-       
-    },
-    setup () {
-        const password = ref<string>('');
-        const isPwd = ref<boolean>(true);
-        const encryptedStorage = useEncryptedStore();
-        const appUpdateInfo = ref<UpdateInformation | null>(null);
-        const electronService = new EletronService();
-        return {
-            password,
-            isPwd,
-            encryptedStorage,
-            appUpdateInfo,
-            electronService
-        };
-    },
-});
+const { t } = useI18n();
+const router = useRouter();
+const notify = useNotify();
+const encryptedStorage = useEncryptedStore();
 
+const password = ref('');
+const busy = ref(false);
+const version = ref('');
+void window.electronApi.getAppVersion().then((v: string) => (version.value = v)).catch(() => undefined);
+
+function unsealApp() {
+  if (busy.value) return;
+  busy.value = true;
+  encryptedStorage.loadData(password.value).then(() => {
+    void router.push({ path: '/accounts' });
+  }).catch((err: Error) => {
+    console.error('Error unsealing application:', err);
+    notify.error(t('ui.access.unlock.error'), { detail: t('ui.access.unlock.errorDetail') });
+  }).finally(() => {
+    busy.value = false;
+  });
+}
 </script>

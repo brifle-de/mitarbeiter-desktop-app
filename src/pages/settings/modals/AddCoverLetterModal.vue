@@ -1,136 +1,84 @@
 <template>
-     <q-dialog 
-    class="unselectable full-size-modal"
-    v-model="value">
-    <q-card >
-         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 q-px-md">Deckblatt Erstellen</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup @click="close()" />
-        </q-card-section>
-        <q-card-section>
-            <div class="row">
-                <div class="col-4 q-px-md q-pr-xl">
-                    <div class="material-card q-pa-md rounded-borders">
-                         <q-input 
-                        v-model="name"
-                        color="secondary"
-                        label="Name des Deckblatts"
-                    />
-                    <q-input 
-                        v-model="description"
-                        color="secondary"
-                        label="Beschreibung (optional)"
-                    />
-                   </div>
-                   
-                </div>
-                <div class="col-8">
-                    <!-- preview -->
-                     <DocumentView
-                        :content="getPreviewContent()"
-                    />
-                </div>
-
-            </div>
-        </q-card-section>
-        <q-card-section>            
-            <q-btn flat label="Abbrechen" @click="close()" />
-            <q-btn 
-                color="secondary"
-                text-color="black" 
-                label="Deckblatt erstellen" 
-                @click="createCoverLetter()"
-                class="q-ml-md"
-            />
-        </q-card-section>         
-        </q-card>   
-    </q-dialog>
+  <Dialog v-model:visible="value" modal :header="t('ui.settings.coverLetters.create.title')" :style="{ width: '960px', maxWidth: '92vw' }" @show="name = ''; description = ''">
+    <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6">
+      <form class="flex flex-col gap-4" @submit.prevent="createCoverLetter()">
+        <FormField :label="t('ui.settings.coverLetters.create.name')" for-id="cover-letter-name">
+          <InputText id="cover-letter-name" v-model="name" fluid autofocus />
+        </FormField>
+        <FormField :label="t('ui.settings.coverLetters.create.description')" for-id="cover-letter-description">
+          <Textarea id="cover-letter-description" v-model="description" rows="4" auto-resize fluid />
+        </FormField>
+        <button type="submit" class="hidden" />
+      </form>
+      <!-- preview -->
+      <div class="max-h-[65vh] overflow-auto rounded-[12px] bg-dezent p-4">
+        <DocumentView :content="previewBody" />
+      </div>
+    </div>
+    <template #footer>
+      <Button severity="secondary" outlined :label="t('ui.settings.cancel')" @click="close()" />
+      <Button :label="t('ui.settings.coverLetters.create.submit')" :disabled="name.trim().length === 0" @click="createCoverLetter()">
+        <template #icon><Check :size="18" /></template>
+      </Button>
+    </template>
+  </Dialog>
 </template>
+
 <script lang="ts">
-
-
-import { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
-import { defineComponent, PropType, ref } from 'vue';
-
-import DocumentView from 'src/components/ui-elements/DocumentView.vue';
-import { ContentBody } from '@brifle/brifle-sdk';
+import type { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
 
 export interface CoverLetterCreateValue {
-    name: string;
-    description?: string;
-    content: FileContent;
+  name: string;
+  description?: string;
+  content: FileContent;
+}
+</script>
+
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Check } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import Dialog from 'openvue/dialog';
+import InputText from 'openvue/inputtext';
+import Textarea from 'openvue/textarea';
+import FormField from 'components/ui/FormField.vue';
+import DocumentView from 'src/components/ui-elements/DocumentView.vue';
+import type { ContentBody } from '@brifle/brifle-sdk';
+
+const props = defineProps<{ contentValue?: FileContent }>();
+const value = defineModel<boolean>({ required: true });
+const emit = defineEmits<{ create: [value: CoverLetterCreateValue] }>();
+const { t } = useI18n();
+const name = ref('');
+const description = ref('');
+
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunkSize = 0x8000; // 32 KB chunks
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
 }
 
-export default defineComponent({
-  name: 'AddCoverLetterModal',
-  components: {
-    DocumentView,
-    },
+// computed, so typing a name does not reload the PDF preview
+const previewBody = computed<ContentBody[]>(() => [{
+  type: 'application/pdf',
+  content: uint8ToBase64(props.contentValue?.content || new Uint8Array()),
+}]);
 
-    props: {
-        modelValue: {
-            type: Boolean,
-            required: true,
-        },
-        contentValue: { 
-            type: Object as PropType<FileContent>,
-            required: false,
-        }
-    },
-    methods: {
-        uint8ToBase64(bytes: Uint8Array): string {
-            let binary = "";
-            const chunkSize = 0x8000; // 32 KB chunks
+function close() {
+  value.value = false;
+}
 
-            for (let i = 0; i < bytes.length; i += chunkSize) {
-                binary += String.fromCharCode(
-                ...bytes.subarray(i, i + chunkSize)
-                );
-            }
-
-            return btoa(binary);
-        },
-        getPreviewContent() : ContentBody[] {      
-            console.log('Content Value:', this.contentValue);
-            const b64encoded = this.uint8ToBase64(this.contentValue?.content || new Uint8Array());           
-            return [{
-                type: 'application/pdf', 
-                content: b64encoded
-            }];
-        },
-        close() {            
-            this.value = false;
-        },
-        createCoverLetter() {
-            this.$emit('create', {
-                name: this.name,
-                description: this.description,
-                content: this.contentValue!,
-            } as CoverLetterCreateValue);
-            this.close();
-        },
-       
-    },
-    emits: ['update:modelValue', 'create'],
-    computed: {
-    value: {
-      get() {
-        return this.modelValue;
-      },
-      set(value : boolean) {
-        this.$emit('update:modelValue', value);
-      },
-    },
-  },
-  setup() {
-    const name = ref('');
-    const description = ref('');
-    return {
-      name,
-      description,
-    };
-  },
-});
-
+function createCoverLetter() {
+  if (name.value.trim().length === 0 || !props.contentValue) return;
+  emit('create', {
+    name: name.value.trim(),
+    description: description.value,
+    content: props.contentValue,
+  });
+  close();
+}
 </script>

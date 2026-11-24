@@ -24,31 +24,26 @@ For windows ~ = C:\Users\YourUsername
 All local files are stored in the user home directory under `~/brifle-business`. This includes configuration files, logs, and any other data the application needs to store locally. Account data is stored in an encrypted format using a password to generate the encryption key.
 
 
-## Install the dependencies
-```bash
-yarn
-# or
-npm install
-```
+## Development
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
-```bash
-quasar dev -m electron
-```
+Electron + Vue 3 with [OpenVue](https://openvue.dev) (PrimeVue fork), Tailwind CSS 4 and electron-vite.
+The design is the Figma file "Mitarbeiter – Brifle App"; how Quasar parts map to the new
+components is in [docs/quasar-openvue-map.md](docs/quasar-openvue-map.md).
 
-
-### Lint the files
 ```bash
-yarn lint
-# or
+npm ci
+npm run dev            # app with hot reload (data folder ~/brifle-business-dev)
 npm run lint
+npm run typecheck
+npm run test:unit:ci
+npm run build          # bundles main, preload and renderer into out/
+npm run build:linux    # installers into dist/electron/Packaged (also build:win, build:mac)
 ```
 
+Installer settings (app id, targets, signing) are in `electron-builder.yml`.
 
-### Build the app for production
-```bash
-quasar build -m electron
-```
+## Releases and updates
 
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+Releases are built by GitHub Actions from `release/X.Y` branches and published as GitHub
+Releases; installed apps update themselves from there (release candidates only with the
+Testkanal switched on). See [.github/RELEASE.md](.github/RELEASE.md).

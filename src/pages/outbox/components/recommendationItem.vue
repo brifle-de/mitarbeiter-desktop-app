@@ -1,137 +1,53 @@
 <template>
-    <div 
-    :class="cssClasses"
-    @click="toogleSelection()">
-        <div class="text-h6">{{ title }}</div>
-        <div v-if="recommendation.type === 'receiver_record'" class="q-mt-sm">
-            <div><strong>Name:</strong> {{ receiverData?.firstName }} {{ receiverData?.lastName }}</div>
-            <div v-if="receiverData?.email"><strong>Email:</strong> {{ receiverData?.email }}</div>
-            <div v-if="receiverData?.phone"><strong>Tel.:</strong> {{ receiverData?.phone }}</div>
-            <div v-if="receiverAddress.length > 0"><strong>Adresse:</strong> {{ receiverAddress }}</div>
-        </div>
-        <div v-else-if="recommendation.type === 'subject'">
-            <div><strong>Betreff:</strong> {{ recommendation.data }}</div>
-            </div>
-        <div v-else-if="recommendation.type === 'document_type'">
-            <div class="text-muted">
-                Die Textanalyse des Dokuments deutet darauf hin, dass es sich um folgenden Dokumenttyp handeln könnte:
-            </div>
-            <div class="text-bold text-subtitle1">{{ documentType }}</div>
-        </div>
-        <div v-else-if="recommendation.type === 'invoice_iban'">
-            <div><strong>Rechnungs-IBAN:</strong> {{ recommendation.data }}</div>
-        </div>
-        <div v-else-if="recommendation.type === 'invoice_amount'">
-            <div><strong>Rechnungsbetrag:</strong> {{ recommendation.data }}</div>
-        </div>
-        <div v-else-if="recommendation.type === 'invoice_due_date'">
-            <div><strong>Rechnungsfälligkeitsdatum:</strong> {{ recommendation.data }}</div>
-        </div>
-        <div v-else-if="recommendation.type === 'signature_field'">
-            <div><strong>Empfohlenes Signaturfeld:</strong> {{ recommendation.data }}</div>
-        </div>
-        <div v-else-if="recommendation.type === 'invoice_reference'">
-            <div><strong>Rechnungsreferenz:</strong> {{ recommendation.data }}</div>
-        </div>
-    </div>
+  <!-- one OCR suggestion; click toggles whether it is taken over -->
+  <label class="flex cursor-pointer items-start gap-3 rounded-[10px] border px-3 py-2.5" :class="selected ? 'border-line-brand bg-mint' : 'border-line hover:bg-dezent'">
+    <Checkbox :model-value="selected" binary class="mt-0.5" @update:model-value="toggle" />
+    <span class="grid min-w-0 flex-1 grid-cols-[120px_minmax(0,1fr)] gap-x-3">
+      <span class="ma-small pt-0.5 text-ink-muted">{{ t(`ui.send.recommendations.types.${recommendation.type}`) }}</span>
+      <span class="break-words">
+        <template v-if="receiverData">
+          <span class="ma-text-strong block">{{ receiverData.firstName }} {{ receiverData.lastName }}</span>
+          <span v-if="receiverAddress" class="block">{{ receiverAddress }}</span>
+          <span v-if="receiverData.email" class="block">{{ receiverData.email }}</span>
+          <span v-if="receiverData.phone" class="block">{{ receiverData.phone }}</span>
+        </template>
+        <template v-else-if="recommendation.type === 'document_type'">{{ documentType }}</template>
+        <template v-else>{{ recommendation.data }}</template>
+      </span>
+    </span>
+  </label>
 </template>
-<script lang="ts">
-import ReceiverRecord from 'src/pages/bulk_sending/util/receivers/receiverRecord';
-import { defineComponent, ref } from 'vue';
 
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import Checkbox from 'openvue/checkbox';
+import type ReceiverRecord from 'src/pages/bulk_sending/util/receivers/receiverRecord';
+import type { RecommendationRecord } from '../util/types';
+import { isDocumentType } from '../util/outbox';
 
-export interface RecommendationRecord {
-    data: string | ReceiverRecord;
-    type: 'receiver_record' | 'subject' | 'document_type' | 'invoice_iban' | 'invoice_amount' | 'invoice_due_date' | 'signature_field' | 'invoice_reference';
+export type { RecommendationRecord };
 
+const props = defineProps<{ recommendation: RecommendationRecord; selected: boolean }>();
+const emit = defineEmits<{ select: [rec: RecommendationRecord]; unselect: [rec: RecommendationRecord] }>();
+const { t } = useI18n();
+
+const documentType = computed(() => {
+  const data = props.recommendation.data as string;
+  return isDocumentType(data) ? t(`ui.outbox.types.${data}`) : data;
+});
+const receiverData = computed(() => (props.recommendation.type === 'receiver_record' ? props.recommendation.data as ReceiverRecord : null));
+const receiverAddress = computed(() => {
+  const r = receiverData.value;
+  if (!r) return '';
+  const address = r.address?.trim() ?? '';
+  if (address !== '') return address;
+  return [r.addressStreet, `${r.addressPostcode ?? ''} ${r.addressCity ?? ''}`, r.addressCountry]
+    .filter((part) => part && part.trim() !== '').join(', ');
+});
+
+function toggle(value: boolean) {
+  if (value) emit('select', props.recommendation);
+  else emit('unselect', props.recommendation);
 }
-
-export default defineComponent({
-    name: 'RecommendationItem',
-    props: {
-        recommendation: {
-            type: Object,
-            required: true,
-        }
-    },
-    emits: ['select', 'unselect'],
-    computed: {
-        cssClasses(): string {
-            let classes = 'selection-item-box q-pa-md rounded-borders cursor-pointer';
-            if (this.selected) {
-                classes += ' active';
-            }
-            return classes;
-        },
-        documentType(): string{
-            switch(this.recommendation.data){
-                case 'invoice':
-                    return 'Rechnung';
-                case 'letter':
-                    return 'Brief';
-                case 'contract':
-                    return 'Vertrag';
-                default:
-                    return this.recommendation.data as string;
-
-            }
-        },
-        receiverData(): ReceiverRecord | null {
-            if (this.recommendation.type === 'receiver_record') {
-                return this.recommendation.data as ReceiverRecord;
-            }
-            return null;
-        },
-        receiverAddress(): string {
-            let address = ""
-            if (this.receiverData && this.receiverData.address) {
-                address = this.receiverData.address.trim();
-            }
-            if (this.receiverData && address === "") {
-                const addressParts = [
-                    this.receiverData.addressStreet,
-                    this.receiverData.addressPostcode + ' ' + this.receiverData.addressCity,
-                    this.receiverData.addressCountry
-
-                ].filter(part => part && part.trim() !== '');
-                address = addressParts.join(', ');
-            }
-            return address;
-        },
-        title(): string {
-            switch (this.recommendation.type) {
-                case 'receiver_record':
-                    return 'Empfänger';
-                case 'subject':
-                    return 'Betreff';
-                case 'document_type':
-                    return 'Dokumenttyp';
-                case 'invoice_iban':
-                    return 'Rechnungs-IBAN';
-                case 'invoice_amount':
-                    return 'Rechnungsbetrag';
-                case 'invoice_due_date':
-                    return 'Rechnungsfälligkeitsdatum';
-                case 'invoice_reference':
-                    return 'Rechnungsreferenz';
-                case 'signature_field':
-                    return 'Signaturfeld';
-                default:
-                    return '';
-            }
-        }
-    },
-    methods: { 
-        toogleSelection() {
-            this.selected = !this.selected;
-            this.$emit(this.selected ? 'select' : 'unselect', this.recommendation);
-        }
-    },
-    setup() {
-        const selected = ref(true);
-        return {
-            selected
-        }
-    }
-}); 
 </script>

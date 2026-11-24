@@ -6,6 +6,7 @@ export class BrifleApi{
     registerApi(contextBridge: ContextBridge, ipcRenderer: IpcRenderer){     
         contextBridge.exposeInMainWorld('brifleApi', {
             newApi: (endpoint: string) => ipcRenderer.invoke('brifle:newSession', endpoint),
+            closeAllSessions: () => ipcRenderer.invoke('brifle:closeAllSessions'),
             authLogin: (apiId: string, request: LoginRequest) => ipcRenderer.invoke('brifle:authLogin', apiId, request),
             contentCheckReceiver: (apiId: string, receiver: ReceiverRequest) => ipcRenderer.invoke('brifle:contentCheckReceiver', apiId, receiver),
             contentCheckReceiverBulk: (apiId: string, receivers: ReceiverRequest[]) => ipcRenderer.invoke('brifle:contentCheckReceiverBulk', apiId, receivers),
@@ -63,6 +64,8 @@ export class BrifleApi{
      * @returns the login response
      */
     authLogin: (apiId: string, request: LoginRequest) => Promise<ApiResponse<LoginResponse>>;
+    /** revokes and forgets all API sessions (used when the app is locked) */
+    closeAllSessions: () => Promise<number>;
 
     /**
      * check if the receiver is valid and exists in the brifle API
