@@ -1,18 +1,17 @@
 <template>
-    <span v-show="spinnerValue">
-
-        <span class="loadingSpinner" >
-            <q-spinner :color="color" :size="size" />
-        </span>
-
-    </span>
+  <span v-show="spinnerValue" class="inline-flex">
+    <ProgressSpinner :style="{ width: size, height: size }" stroke-width="4" />
+  </span>
 </template>
+
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import ProgressSpinner from 'openvue/progressspinner';
 
 export default defineComponent({
   name: 'LoadingSpinner',
+  components: { ProgressSpinner },
   props: {
     spinnerValue: {
       type: Boolean,
@@ -20,7 +19,7 @@ export default defineComponent({
     },
     size: {
       type: String,
-      default: '50px',
+      default: '40px',
     },
     color: {
       type: String,
@@ -42,15 +41,3 @@ export default defineComponent({
 });
 </script>
 
-<style scoped>
-
-.loadingSpinner {
-    margin: 0 auto;
-    display: inline-block;
-    border-radius: 50%;
-    padding: 3px;
-    background-color: #f5f5f508;
-    border: 1px solid #f5f5f512;
-}
-
-</style>

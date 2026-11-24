@@ -1,92 +1,56 @@
 <template>
-      <q-dialog v-model="value" class="full-size-modal" >
-          <q-card class="no-shadow unselectable">
-            <div class="row w-100">
-                <div class="col-2">
-                    <!-- back btn -->
-                     <div class="q-mx-sm" v-if="showPreview">
-                         <q-btn icon="arrow_back" flat round dense class="q-mr-md q-mt-md" @click="showPreview = false" />
-                     </div>
-                </div>
-                <div class="col text-center">
-                    <div class="text-h6 q-pa-md">
-                        {{ 
-                        showPreview ? 'Deckblatt Vorschau' : 'Deckblatt auswählen'    
-                        }}
-                    </div>
-                </div>
-                <div class="col-2 text-right">
-                    <q-btn icon="close" flat round dense class="q-mr-md q-mt-md" @click="close()" />
-                </div>
-            </div>
-            <q-separator />
-            <div class="flex-1 scroll q-pa-md">
-                <div v-if="loading" class="row items-center justify-center full-height">
-                    <q-spinner color="secondary" size="50px" />
-                </div>
-                <div v-else>
-                    <template v-if="showPreview">
-                         <div class="q-px-lg">
-                            <DocumentView
-                            :content="getPreviewContent()"
-                            />
-                         </div>
-                    </template>
-                        <template v-else>
-                            <div class="text-subtitle1 q-mb-md">
-                                Wählen Sie ein Deckblatt aus der Liste unten aus. Klicken Sie auf ein Deckblatt, um eine Vorschau anzuzeigen.
-                            </div>
-                            <q-list class="cover-letter-selection-list">
-                                <q-item v-for="coverLetter in allCoverLetters" :key="coverLetter.name"
-                                    clickable
-                                    :active="selectedCoverLetter?.name === coverLetter.name"
-                                    @click="selectedCoverLetter = coverLetter"
-                                >
-                                    <q-item-section>
-                                        <q-item-label>{{ coverLetter.displayName }}</q-item-label>
-                                        <q-item-label caption>
-                                            Typ: {{ coverLetter.type === 'default' ? 'Standard' : 'Benutzerdefiniert' }}
-                                        </q-item-label>
-                                    </q-item-section>
-                                </q-item>
-                            </q-list>
-                    </template>
-                </div>
-            </div>
-            <div>
-                <q-card-actions align="right" class="q-pa-md">
-                    <!-- Preview btn -->
-                     <q-btn 
-                        v-if="!showPreview"
-                        :disable="!selectedCoverLetter"
-                        color="secondary" 
-                        outline 
-                        @click="loadPreview(selectedCoverLetter!)">
-                        <q-icon name="visibility" class="q-mr-sm" />
-                        Vorschau
-                    </q-btn>
-                    <q-btn 
-                        :disable="!selectedCoverLetter"
-                        color="secondary" 
-                        text-color="black" 
-                        label="Auswählen" 
-                        @click="
-                            $emit('selected', selectedCoverLetter);
-                            value = false;
-                        " 
-                    />
-                </q-card-actions>
-            </div>
-            </q-card>
-            
-        </q-dialog>
+  <Dialog v-model:visible="value" modal :style="{ width: '760px', maxWidth: '90vw' }" :header="showPreview ? 'Deckblatt-Vorschau' : 'Deckblatt auswählen'">
+    <div class="flex max-h-[65vh] flex-col gap-3 overflow-auto">
+      <Button v-if="showPreview" text :label="'Zurück zur Liste'" class="self-start" @click="showPreview = false">
+        <template #icon><ArrowLeft :size="18" /></template>
+      </Button>
+      <div v-if="loading" class="flex justify-center py-10"><ProgressSpinner style="width: 40px; height: 40px" /></div>
+      <template v-else-if="showPreview">
+        <div class="rounded-[12px] bg-dezent p-4"><DocumentView :content="getPreviewContent()" /></div>
+      </template>
+      <template v-else>
+        <p class="text-ink-muted">Wähle ein Deckblatt. Mit „Vorschau“ siehst du es vorher an.</p>
+        <ul class="flex flex-col gap-1" role="listbox">
+          <li v-for="coverLetter in allCoverLetters" :key="coverLetter.name">
+            <button
+              role="option"
+              :aria-selected="selectedCoverLetter?.name === coverLetter.name"
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left"
+              :class="selectedCoverLetter?.name === coverLetter.name ? 'border border-line-brand bg-mint' : 'border border-transparent hover:bg-dezent'"
+              @click="selectedCoverLetter = coverLetter"
+            >
+              <FileText :size="20" :class="selectedCoverLetter?.name === coverLetter.name ? 'text-icon-brand' : 'text-ink-muted'" />
+              <span class="flex flex-1 flex-col">
+                <span class="ma-text-strong">{{ coverLetter.displayName }}</span>
+                <span class="ma-small text-ink-muted">{{ coverLetter.type === 'default' ? 'Vorgabe von Brifle' : 'Eigenes Deckblatt' }}</span>
+              </span>
+              <StatusTag :type="coverLetter.type === 'default' ? 'test' : 'delivered'" :label="coverLetter.type === 'default' ? 'Vorgabe' : 'Eigenes'" />
+            </button>
+          </li>
+        </ul>
+      </template>
+    </div>
+    <template #footer>
+      <Button v-if="!showPreview" severity="secondary" outlined label="Vorschau" :disabled="!selectedCoverLetter" @click="loadPreview(selectedCoverLetter!)">
+        <template #icon><Eye :size="18" /></template>
+      </Button>
+      <Button label="Auswählen" :disabled="!selectedCoverLetter" @click="$emit('selected', selectedCoverLetter); value = false">
+        <template #icon><Check :size="18" /></template>
+      </Button>
+    </template>
+  </Dialog>
 </template>
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 
 import BrifleApi from 'src/services/node/Brifle';
 import { ContentBody } from '@brifle/brifle-sdk';
-import DocumentView from 'src/components/ui-elements/DocumentView.vue'; 
+import DocumentView from 'src/components/ui-elements/DocumentView.vue';
+import Dialog from 'openvue/dialog';
+import Button from 'openvue/button';
+import ProgressSpinner from 'openvue/progressspinner';
+import StatusTag from 'components/ui/StatusTag.vue';
+import { ArrowLeft, Check, Eye, FileText } from 'lucide-vue-next'; 
 
 
 interface CoverLetterSelectionValue {
@@ -98,9 +62,7 @@ interface CoverLetterSelectionValue {
 
 export default defineComponent({
   name: 'CoverLetterSelectionModal',
-  components: {
-    DocumentView,
-  },
+  components: { DocumentView, Dialog, Button, ProgressSpinner, StatusTag, ArrowLeft, Check, Eye, FileText },
   props: {
     modelValue: {
       type: Boolean,
