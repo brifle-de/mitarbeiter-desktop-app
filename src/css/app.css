@@ -57,6 +57,12 @@
   --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
+/* Desktop base size: OpenVue components are sized in rem, the design uses 14px text.
+   Tailwind spacing stays in px (4px steps), so layout matches Figma exactly. */
+@theme {
+  --spacing: 4px;
+}
+
 @theme inline {
   --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
   --font-heading: 'Figtree Variable', 'Figtree', 'Inter Variable', sans-serif;
@@ -95,6 +101,9 @@
   #app {
     height: 100%;
     margin: 0;
+  }
+  html {
+    font-size: 14px;
   }
   body {
     @apply bg-seite text-ink font-sans antialiased;

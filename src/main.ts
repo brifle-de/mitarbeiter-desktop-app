@@ -16,6 +16,7 @@ import messages from 'src/i18n';
 import BriflePreset from 'src/theme/brifle-preset';
 import { applyStoredTheme } from 'src/composables/useTheme';
 import { installConsoleForwarding } from 'src/utils/consoleForward';
+import 'src/utils/pdfWorker';
 
 installConsoleForwarding();
 applyStoredTheme();
