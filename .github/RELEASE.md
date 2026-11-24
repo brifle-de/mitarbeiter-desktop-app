@@ -83,11 +83,11 @@ macOS only updates signed and notarised apps. To switch it on:
 
 Then set the variable `MAC_RELEASE_ENABLED` to `true`. The next release
 candidate also builds `dmg` and `zip` for arm64 and x64 on `macos-15`
-(hardened runtime, entitlements in `src-electron/build/entitlements.mac.plist`).
+(hardened runtime, entitlements in `src-electron/build/entitlements.mac.plist`, settings in `electron-builder.yml`).
 
 ## Windows signing (optional)
 
 The Windows installer is unsigned for now, so SmartScreen shows a warning on
 first install (updates are not affected). To sign later, add electron-builder's
 `win.azureSignOptions` (Azure Trusted Signing) or a certificate (`WIN_CSC_LINK`)
-in `quasar.config.ts` and pass the secrets in `build.yml`.
+in `electron-builder.yml` and pass the secrets in `build.yml`.
