@@ -1,51 +1,36 @@
 <template>
-    <p-page class="wrapper">
-        <h4 class="text-center">Parsers</h4>
-        <q-list class="q-mt-md bg-fading rounded-borders q-pa-md">
-            <q-item clickable @click="goTo('/settings/parsers/receiver-records')">
-                <q-item-section avatar>
-                    <q-icon name="groups" size="2.5rem" color="secondary" />
-                </q-item-section>
-                <q-item-section class="text-h6">
-                    <q-item-label>Massenversand - Empfänger</q-item-label>
-                    <q-item-label caption>
-                        Legt fest, wie Empfänger aus Stammdatendateien ausgelesen werden.
-                    </q-item-label>
-                </q-item-section>                
-            </q-item>
-            <!-- TODO:
-            <q-item clickable @click="goTo('/settings/parsers/document-records')">
-                <q-item-section avatar>
-                    <q-icon name="description" size="2.5rem" color="secondary" />
-                </q-item-section>
-                <q-item-section class="text-h6">
-                    <q-item-label>Massenversand - Verzeichnis Zuweisung</q-item-label>
-                    <q-item-label caption>
-                        Ermöglich das Auslesen eines Verzeichnissen und die Zuweisung der Dokumente anhand der Namen der Dokumente.
-                    </q-item-label>
-                </q-item-section>
-
-            </q-item>
-            -->
-        </q-list>
-    </p-page>
+  <div class="flex flex-col gap-6 overflow-auto px-8 py-7">
+    <PageHeader :path="t('ui.settings.path')" :title="t('ui.settings.parsers.title')" :subtitle="t('ui.settings.parsers.subtitle')" />
+    <section class="ma-card max-w-[760px] p-3">
+      <ul class="flex flex-col">
+        <li>
+          <button class="flex w-full items-center gap-3 rounded-[10px] px-3 py-3 text-left hover:bg-dezent" @click="goTo('/settings/parsers/receiver-records')">
+            <IconBadge :icon="Users" :size="40" />
+            <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span class="ma-text-strong">{{ t('ui.settings.parsers.receivers') }}</span>
+              <span class="ma-small text-ink-muted">{{ t('ui.settings.parsers.receiversText') }}</span>
+            </span>
+            <ChevronRight :size="20" class="shrink-0 text-ink-muted" />
+          </button>
+        </li>
+        <!-- TODO: Massenversand – Verzeichnis-Zuweisung (/settings/parsers/document-records):
+             reads a directory and assigns the documents by their names -->
+      </ul>
+    </section>
+  </div>
 </template>
-<script lang="ts">
 
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { ChevronRight, Users } from 'lucide-vue-next';
+import PageHeader from 'components/shell/PageHeader.vue';
+import IconBadge from 'components/ui/IconBadge.vue';
 
+const { t } = useI18n();
+const router = useRouter();
 
-export default defineComponent({
-    name: 'ParsersPage',
-    setup() {
-        return {};
-    },
-    methods: {
-        goTo (path: string) {
-            void this.$router.push({ path });
-        },
-    },
-});
-
-
+function goTo(path: string) {
+  void router.push({ path });
+}
 </script>

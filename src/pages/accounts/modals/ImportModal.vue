@@ -1,155 +1,100 @@
 <template>
-   <div>
-     <q-dialog 
-    class="unselectable"
-    v-model="value">
-    <q-card>
-         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6 q-px-md">Account Importieren</div>
-          <q-space />
-          <q-btn icon="close" flat round dense v-close-popup @click="close()" />
-        </q-card-section>
-        <q-card-section>
-            <q-banner rounded class="bg-accent text-white q-mb-md">
-                <p>Um die Backup-Datei zu importieren, wird ein das Passwort benötigt, das beim Erstellen des Backups verwendet wurde. Bitte gib das Passwort ein, um den Import durchzuführen.</p>
-            </q-banner>
-            <div class="row">
-              <div class="col-9">Dateipfad: {{ filePath }}</div>
-              <div class="col-3 text-right">
-                <q-btn 
-                outline
-                @click="selectFile()"
-                icon="upload"></q-btn>
-              </div>
-            </div>
-            <div>
-            <q-input 
-              :disable="!filePath || filePath.length == 0"
-                        v-model="password"
-                        type="password"
-                        color="secondary"
-                        label="Gib das Passwort für das Backup ein"
-                    />
-            </div>          
-        </q-card-section>
-        <q-card-section>            
-            <q-btn flat label="Abbrechen" @click="close()" />
-            <q-btn 
-                color="secondary"
-                text-color="black" 
-                label="Backup erstellen" 
-                @click="importData()"
-                class="q-ml-md"
-                :disable="!password || password.length === 0"
-            />
-        </q-card-section>
-      </q-card>
-            
-    </q-dialog>
-   </div>
+  <Dialog v-model:visible="value" modal :header="t('ui.access.import.title')" :style="{ width: '520px', maxWidth: '90vw' }" @hide="reset()">
+    <form class="flex flex-col gap-4" @submit.prevent="importData()">
+      <p class="text-ink-muted">{{ t('ui.access.import.text') }}</p>
+      <FormField :label="t('ui.access.import.file')">
+        <div class="flex items-center gap-3 rounded-[10px] border border-line bg-flaeche px-3.5 py-2.5">
+          <FileText :size="18" class="shrink-0 text-ink-muted" />
+          <span class="min-w-0 flex-1 truncate" :class="filePath ? '' : 'text-ink-muted'" :title="filePath">{{ filePath || t('ui.access.import.noFile') }}</span>
+          <Button type="button" size="small" severity="secondary" outlined :label="t('ui.access.import.choose')" @click="selectFile()">
+            <template #icon><Upload :size="16" /></template>
+          </Button>
+        </div>
+      </FormField>
+      <FormField :label="t('ui.access.import.password')" for-id="import-password">
+        <Password input-id="import-password" v-model="password" :feedback="false" toggle-mask fluid :disabled="!filePath || filePath.length == 0" />
+      </FormField>
+      <button type="submit" class="hidden" />
+    </form>
+    <template #footer>
+      <Button severity="secondary" outlined :label="t('ui.access.import.cancel')" @click="close()" />
+      <Button :label="t('ui.access.import.submit')" :disabled="!password || password.length === 0 || !fileData" @click="importData()">
+        <template #icon><Check :size="18" /></template>
+      </Button>
+    </template>
+  </Dialog>
 </template>
-<script lang="ts">
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Check, FileText, Upload } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import Dialog from 'openvue/dialog';
+import Password from 'openvue/password';
+import FormField from 'components/ui/FormField.vue';
 import EncryptedStoreService from 'src/services/node/EncryptedStoreService';
 import Files from 'src/services/node/Files';
-import { defineComponent, ref } from 'vue';
+import { useNotify } from 'src/composables/useNotify';
+import type { AccountData } from 'app/src-electron/models/EncryptedStore';
 
+const value = defineModel<boolean>({ required: true });
+const emit = defineEmits<{ import: [event: { accountData: AccountData }] }>();
+const { t } = useI18n();
+const notify = useNotify();
+const encryptedStoreService = new EncryptedStoreService();
 
+const password = ref('');
+const filePath = ref('');
+const fileData = ref('');
 
-export default defineComponent({
-  name: 'ExportAccountModal',
-    props: {
-        modelValue: {
-            type: Boolean,
-            required: true,
-        },
-    },
-    methods: {
-        close() {            
-            this.value = false;
-            this.errorMsg = ""
-            this.filePath = ""
-            this.fileData = ""
-        },
-        selectFile(){
-          void Files.pickFile({
-            properties: ['openFile'],
-            filters: [
-                { name: 'Brifle Backup', extensions: ['json'] },
-            ],
-        }).then((filePaths: string[]) => {
-            if (!filePaths) {
-                return;
-            }
-            const filePath = filePaths[0] ?? "";
-            this.filePath = filePath;
-            Files.readFile(filePath, "utf8").then((data: string) => {
-                if (!data) {
-                    console.error('No data found in file');
-                    return;
-                }
-                this.fileData = data;               
-                
-            }).catch((err: Error) => {
-                console.error(err);
-            });
-            
-        })
-        },
-        importData() {          
-          // parse the data
-          void this.encryptedStoreService.importAccount(this.password, this.fileData).then((parsedData) => {
-            if (!parsedData) {
-                console.error('No data found in file');
-                this.$q.notify({
-                    color: 'negative',
-                    message: 'Fehler beim Importieren des Kontos: Datei konnte nicht gelesen werden. Bitte überprüfe, ob die Datei korrekt ist und das Passwort stimmt.',
-                    icon: 'error'
-                });
-                return;
-            }
-            this.$emit('import', {accountData: parsedData});
-            this.close();   
-            this.$q.notify({
-                color: 'positive',
-                message: 'Kontodaten erfolgreich importiert.',
-                icon: 'check'
-            });
-          }).catch((err: Error) => {
-            this.$q.notify({
-                color: 'negative',
-                message: 'Fehler beim Importieren des Kontos: Datei konnte nicht gelesen werden. Bitte überprüfe, ob die Datei korrekt ist und das Passwort stimmt.',
-                icon: 'error'
-            });
-              console.error(err);
-          });              
-        },
-    },
-    emits: ['update:modelValue', 'import'],
-    computed: {
-    value: {
-      get() {
-        return this.modelValue;
-      },
-      set(value : boolean) {
-        this.$emit('update:modelValue', value);
-      },
-    },
-  },
-  setup() {
-    const password = ref('');
-    const encryptedStoreService = new EncryptedStoreService();
-    const filePath = ref('')
-    const fileData = ref('')
-    const errorMsg  = ref('')
-    return {
-      password,
-      encryptedStoreService,
-      filePath,
-      fileData,
-      errorMsg
-    };
-  },
-});
+function reset() {
+  filePath.value = '';
+  fileData.value = '';
+  password.value = '';
+}
+
+function close() {
+  value.value = false;
+}
+
+function selectFile() {
+  void Files.pickFile({
+    properties: ['openFile'],
+    filters: [{ name: 'Brifle Backup', extensions: ['json'] }],
+  }).then((filePaths: string[]) => {
+    if (!filePaths) {
+      return;
+    }
+    const path = filePaths[0] ?? '';
+    filePath.value = path;
+    Files.readFile(path, 'utf8').then((data: string) => {
+      if (!data) {
+        console.error('No data found in file');
+        return;
+      }
+      fileData.value = data;
+    }).catch((err: Error) => {
+      console.error(err);
+    });
+  });
+}
+
+function importData() {
+  if (!password.value || !fileData.value) return;
+  // parse the data
+  void encryptedStoreService.importAccount(password.value, fileData.value).then((parsedData) => {
+    if (!parsedData) {
+      console.error('No data found in file');
+      notify.error(t('ui.access.import.error'), { detail: t('ui.access.import.errorDetail') });
+      return;
+    }
+    emit('import', { accountData: parsedData });
+    close();
+    notify.success(t('ui.access.import.success'), { detail: t('ui.access.import.successDetail') });
+  }).catch((err: Error) => {
+    notify.error(t('ui.access.import.error'), { detail: t('ui.access.import.errorDetail') });
+    console.error(err);
+  });
+}
 </script>
-<style scoped>
-</style>

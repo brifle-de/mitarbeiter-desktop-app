@@ -1,366 +1,205 @@
 <template>
-    <p-page class="wrapper">
-        <h4 class="text-center">Konto</h4>
-        <div class="bg-fading q-pa-md rounded-borders">
+  <div class="flex flex-col gap-6 overflow-auto px-8 py-7">
+    <PageHeader :path="t('ui.settings.path')" :title="t('ui.settings.account.title')" :subtitle="t('ui.settings.account.subtitle')">
+      <template #actions>
+        <Button severity="secondary" outlined :label="t('ui.settings.account.backup.action')" :disabled="!lastData" @click="showExportAccountModal = true">
+          <template #icon><Download :size="18" /></template>
+        </Button>
+        <Button :label="t('ui.settings.account.save')" :disabled="!isDirty || !requiredFieldsFilledOut" :loading="saving" @click="saveAccount()">
+          <template #icon><Check :size="18" /></template>
+        </Button>
+      </template>
+    </PageHeader>
 
-            <!-- fields for account-->
-            <h5>
-                Kontodaten
-            </h5>
-            <div>
-                    <q-input v-model="name" filled 
-                    color="secondary"
-                    :type="'text'"  
-                    hint="Name zum Erkennen des Kontos"
-                    label="Name*">
-                    </q-input>        
-            </div>
-            <div class="row q-mt-md">
-                    <div class="col-6 q-pr-md">
-                            <q-input v-model="apiKey" filled 
-                            color="secondary"
-                            :type="'text'"  
-                            hint="API Key für den Zugriff auf die API."
-                            label="API Key*">
-                            </q-input>
-                    </div>
-                    <div class="col-6 q-pl-md">
-                            <q-input v-model="apiSecret" filled 
-                            color="secondary"
-                            type="password"  
-                            hint="API Secret für den Zugriff auf die API."
-                            label="API Secret*">
-                            </q-input>
-                    </div>
-            </div> 
-            <div class="bg-accent text-white q-mt-lg q-pa-sm rounded-borders">
-                    Hinweis: Neue API Keys können in Brifle unter "Einstellungen" erstellt werden.
-            </div>
-            <div class="q-mt-md">
-                <q-input v-model="tenantId" filled
-                color="secondary" label="Mandanten ID" 
-                hint="Mandanten ID legt den Absender fest.">
-                </q-input>
-            </div>
-            <div class="bg-accent text-white q-mt-lg q-pa-sm rounded-borders">
-                Die Mandaten ID kann in Brifle unter 'Einstellungen > Absender' gefunden werden.
-            </div>
-            <div class="q-mt-md">
-                    <!-- select api environment-->
-                    <q-select filled v-model="apiEnv" :options="apiEnvs" 
-                    emit-value
-                    map-options
-                    color="secondary"
-                    label="API Umgebung" 
-                    />
-            </div>     
-            <h5>
-                    Sftp-Server
-            </h5>
-            <div class="bg-accent text-white q-pa-sm rounded-borders">
-                    Hinweis: Die sFTP Daten werden nur lokal und verschlüsselt auf ihrem Computer gespeichert.
-            </div>
-            <div class="q-mt-md">          
-                    <div v-for="(server, index) in sftpServer" 
-                    :key="index+'sfpserver'" 
-                    class="q-mt-md border q-pa-md rounded-borders">     
-                        <div class="row">
-                            <div class="col-12 q-px-md"> 
-                                <q-input v-model="server.displayName" filled 
-                                color="secondary"
-                                :type="'text'"
-                                hint="Name zum Erkennen des sFTP Servers"  
-                                label="Anzeigename">
-                                </q-input>     
-                            </div>                                 
-                        </div>           
-                        <div class="row q-my-md">
-                            <div class="col-6 q-px-md">
-                                <q-input v-model="server.host" filled 
-                                color="secondary"
-                                :type="'text'"  
-                                label="sFTP Hostname">
-                                </q-input> 
-                            </div>
-                            <div class="col-6 q-px-md">
-                                <q-input v-model="server.port" filled 
-                                color="secondary"
-                                :type="'text'"  
-                                label="sFTP Port">
-                                </q-input>
-                            </div>                    
-                        </div>
-                        <div class="row">
-                            <div class="col-6 q-px-md">
-                                <q-input v-model="server.username" filled 
-                                color="secondary"
-                                type='text'  
-                                label="sFTP Username">
-                                </q-input>
-                            </div>   
-                            <div class="col-6 q-px-md">
-                                <q-input v-model="server.password" filled 
-                                color="secondary"
-                                type='password'  
-                                label="sFTP Passwort">
-                                </q-input>
-                            </div>                   
-                        </div>
-                        <div class="text-right q-my-lg q-px-md">
-                            <q-btn 
-                            @click="sftpServer.splice(index, 1)"
-                            color="negative">
-                                <q-icon name="delete" size="1.5rem" color="white" />
-                            </q-btn>
-                        </div>
-                        
-                    </div>
-            </div>
-            <div class="q-my-lg text-center">
-                <!-- add new sfpt server-->
-                <q-btn 
-                @click="addNewSftpServer()"
-                color="blue-grey-9">
-                    +
-                </q-btn>
-            </div>
-            <div class="q-my-lg">
-                Pflichtfelder sind mit * gekennzeichnet.
-            </div>
-        </div>
-        <div v-if="!requiredFieldsFilledOut" class="bg-negative text-white q-mt-lg q-pa-sm rounded-borders">
-            Hinweis: Bitte füllen Sie alle Pflichtfelder aus.
-        </div>
-        <div class="text-right q-my-lg">
-            <q-btn
-            class="q-mt-lg q-px-md text-subtitle1"
-            label="Änderungen speichern"
-            rounded
-            text-color="black"        
-            color="secondary"
-            @click="saveAccount()"
-            :disable="!isDirty"
-            />
-
-        </div>
-        <q-list class="q-mt-xl bg-fading rounded-borders q-pa-md">   
-            <h5 class="text-negative">Gefährlicher Bereich</h5> 
-            <q-item class="q-mt-xl" clickable @click="showExportAccountModal = true">
-                <q-item-section avatar>
-                    <q-icon name="download" size="2.5rem" color="primary" />
-                </q-item-section>
-                <q-item-section class="text-h6">Download Konto Backup</q-item-section>
-
-            </q-item>        
-            <q-item class="q-mt-xl" clickable @click="deleteAccount()">
-                <q-item-section avatar>
-                    <q-icon name="delete" size="2.5rem" color="negative" />
-                </q-item-section>
-                <q-item-section class="text-h6 text-negative">Konto löschen</q-item-section>
-            </q-item>
-            <ExportAccountModal
-            v-model="showExportAccountModal"
-            @export="backupAccount($event)"
+    <Message v-if="!lastData" severity="warn">{{ t('ui.settings.noAccount') }}</Message>
+    <div v-else class="grid grid-cols-2 items-start gap-6">
+      <section class="ma-card">
+        <h2 class="ma-title-m">{{ t('ui.settings.account.access') }}</h2>
+        <AccountFields
+          v-model:name="name"
+          v-model:api-key="apiKey"
+          v-model:api-secret="apiSecret"
+          v-model:api-env="apiEnv"
+          v-model:tenant-id="tenantId"
+          :show-errors="true"
         />
-        </q-list>
-        
-    </p-page>
+        <p class="ma-small text-ink-muted">{{ t('ui.settings.account.fields.requiredNote') }}</p>
+      </section>
+
+      <section class="ma-card">
+        <h2 class="ma-title-m">{{ t('ui.settings.account.storage.title') }}</h2>
+        <p class="text-ink-muted">{{ t('ui.settings.account.storage.text') }}</p>
+        <ul class="flex flex-col">
+          <li class="flex items-center gap-3 py-2">
+            <Download :size="20" class="shrink-0 text-ink-muted" />
+            <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span class="ma-text-strong">{{ t('ui.settings.account.storage.exportTitle') }}</span>
+              <span class="ma-small text-ink-muted">{{ t('ui.settings.account.storage.exportText') }}</span>
+            </div>
+            <Button size="small" severity="secondary" outlined :label="t('ui.settings.account.storage.open')" @click="showExportAccountModal = true" />
+          </li>
+          <li class="flex items-center gap-3 py-2">
+            <Trash2 :size="20" class="shrink-0 text-ink-muted" />
+            <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span class="ma-text-strong">{{ t('ui.settings.account.storage.removeTitle') }}</span>
+              <span class="ma-small text-ink-muted">{{ t('ui.settings.account.storage.removeText') }}</span>
+            </div>
+            <Button size="small" severity="danger" outlined :label="t('ui.settings.account.storage.remove')" @click="confirmDelete()" />
+          </li>
+        </ul>
+      </section>
+    </div>
+
+    <ExportAccountModal v-model="showExportAccountModal" @export="backupAccount($event)" />
+  </div>
 </template>
-<script lang="ts">
 
-import { defineComponent, ref } from 'vue';
-
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { Check, Download, Trash2 } from 'lucide-vue-next';
+import Button from 'openvue/button';
+import Message from 'openvue/message';
+import { useConfirm } from 'openvue/useconfirm';
+import PageHeader from 'components/shell/PageHeader.vue';
 import { useEncryptedStore } from '@src/stores/encrypted-store';
 import { useSessionStore } from 'src/stores/session-store';
-import { AccountData, ApiEnvironment, SftpData } from 'app/src-electron/models/EncryptedStore';
+import { useNotify } from 'src/composables/useNotify';
+import { AccountData, ApiEnvironment } from 'app/src-electron/models/EncryptedStore';
 import ExportAccountModal from './modals/exportAccountModal.vue';
+import AccountFields from './components/AccountFields.vue';
 
-export default defineComponent({
-    name: 'SettingsAccountPage',
-    components: {
-        ExportAccountModal,
-    },
-    setup () {
-        const sessionStore = useSessionStore();
-        const name = ref<string>('');
-        const apiKey = ref<string>('');
-        const apiSecret = ref<string>('');
-        const sftpServer = ref<SftpData[]>([]);
-        const apiEnv = ref<ApiEnvironment>(ApiEnvironment.PRODUCTION);
-        const hasSent = ref<boolean>(false);
-        const encryptedStore = useEncryptedStore();
-        const lastData = ref<AccountData|null>(null);
-        const tenantId = ref<string>('');
-        const showExportAccountModal = ref<boolean>(false);
-        const apiEnvs = [
-            {
-                label: 'Produktion',
-                value: ApiEnvironment.PRODUCTION,
-            },
-            {
-                label: 'Sandbox',
-                value: ApiEnvironment.SANDBOX,
-            },
-            {
-                label: 'Internal',
-                value: ApiEnvironment.INTERNAL,
-            },
-        ]
-        return { 
-            name,
-            apiKey,
-            apiSecret,
-            sftpServer,
-            apiEnvs,
-            hasSent,
-            apiEnv,
-            encryptedStore,
-            sessionStore,
-            lastData,
-            tenantId,
-            showExportAccountModal,
-        };  
-    },
-    mounted() {
-        const selectedAccountId = this.sessionStore.selectedAccountId
-        if (!selectedAccountId) {
-            console.error('No account selected for deletion.');
-            return;
-        }
-        // copy to avoid reference issues
-        const selectedAccount = this.cpAccount(this.encryptedStore.getAccount(selectedAccountId))
-        if (selectedAccount) {
-            this.name = selectedAccount.name
-            this.apiKey = selectedAccount.apiKey
-            this.apiSecret = selectedAccount.apiSecret
-            this.sftpServer = selectedAccount.sftpData || []
-            this.apiEnv = selectedAccount.apiEnv      
-            this.tenantId = selectedAccount.tenantId || ''      
-        }       
-        // copy to avoid reference issues
-        this.lastData = this.cpAccount({
-            name: this.name,
-            apiKey: this.apiKey,
-            apiSecret: this.apiSecret,
-            sftpData: this.sftpServer,
-            apiEnv: this.apiEnv,
-            id: selectedAccountId || '',
-            tenantId: this.tenantId,
-        })
-    },
-    computed: {
-        requiredFieldsFilledOut () {
-            return this.name && this.apiKey && this.apiSecret;
-        },
-        isDirty () {
-            const hasFtpServerUpdated = this.sftpServer.some((server, index) => {
-                if (!this.lastData?.sftpData) {
-                    return true; // If lastData is not available, consider it as updated
-                }
-                return server.host !== this.lastData?.sftpData[index]?.host ||
-                    server.port !== this.lastData?.sftpData[index]?.port ||
-                    server.username !== this.lastData?.sftpData[index]?.username ||
-                    server.password !== this.lastData?.sftpData[index]?.password ||
-                    server.displayName !== this.lastData?.sftpData[index]?.displayName;
+const { t } = useI18n();
+const router = useRouter();
+const notify = useNotify();
+const confirm = useConfirm();
+const sessionStore = useSessionStore();
+const encryptedStore = useEncryptedStore();
 
-            });
-           
-            return this.name !== this.lastData?.name ||
-                this.apiKey !== this.lastData?.apiKey ||
-                this.apiSecret !== this.lastData?.apiSecret ||
-                this.sftpServer.length !== this.lastData?.sftpData?.length ||
-                hasFtpServerUpdated ||
-                this.tenantId !== this.lastData?.tenantId ||
-                this.apiEnv !== this.lastData?.apiEnv;
-        },
-    },
-    methods: {
-        backupAccount(event: { password: string }) {
-            const accountData : AccountData = this.cpAccount({
-                name: this.name,
-                apiKey: this.apiKey,
-                apiSecret: this.apiSecret,
-                sftpData: this.sftpServer,
-                apiEnv: this.apiEnv,
-                id: this.sessionStore.selectedAccountId || '',
-                tenantId: this.tenantId,
-            });
-            const password = event.password;
-            void this.encryptedStore.exportAccount(password, accountData).then((exportData) => {
-                if (!exportData) {
-                    console.error('Export failed or no data to export.');
-                    return;
-                }
-                // trigger download
-                const blob = new Blob([exportData], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');  
-                a.href = url;
-                a.download = `${accountData.name || 'account'}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            });
-        },
-        cpAccount(account?: AccountData) {
-            if (!account) {
-                return null;
-            }
-            return JSON.parse(JSON.stringify(account));       
-        },
-        addNewSftpServer () {
-            this.sftpServer.push({
-                host: '',
-                port: 22,
-                username: '',
-                password: '',
-                displayName: '',
-                // random id for the sftp server
-                id: Math.random().toString(36).substring(2, 15),
-            });
-        },
-        goTo (path: string) {
-            void this.$router.push({ path });
-        },
-        saveAccount(){
-            // copy to avoid reference issues
-            const accountData : AccountData = this.cpAccount({
-                name: this.name,
-                apiKey: this.apiKey,
-                apiSecret: this.apiSecret,
-                sftpData: this.sftpServer,
-                apiEnv: this.apiEnv,
-                id: this.sessionStore.selectedAccountId || '',
-                tenantId: this.tenantId,
-            });
-            this.encryptedStore.updateAccount(accountData).then(() => {
-                this.lastData = accountData
-            }).catch((err: Error) => {
-                console.error(err);
-            });
-        },
-        deleteAccount(){            
-            const selectedAccountId = this.sessionStore.selectedAccountId
-            if (!selectedAccountId) {
-                console.error('No account selected for deletion.');
-                return;
-            }
-            void this.encryptedStore.deleteAccount(selectedAccountId).then(() => {
-                this.$q.notify({
-                    color: 'positive',
-                    message: 'Konto erfolgreich gelöscht.',
-                    icon: 'check'
-                });
-                void this.$router.push({ path: '/accounts' });
-            }).catch(() => {
-                this.$q.notify({
-                    color: 'negative',
-                    message: 'Fehler beim Löschen des Kontos.',
-                    icon: 'error'
-                });
-            });
-        }
-    },
+const name = ref<string>('');
+const apiKey = ref<string>('');
+const apiSecret = ref<string>('');
+const apiEnv = ref<ApiEnvironment>(ApiEnvironment.PRODUCTION);
+const tenantId = ref<string>('');
+// last saved state of the account (also carries sftpData, which is edited under Verbindungen)
+const lastData = ref<AccountData | null>(null);
+const showExportAccountModal = ref<boolean>(false);
+const saving = ref(false);
+
+function cpAccount(account?: AccountData | null): AccountData | null {
+  if (!account) {
+    return null;
+  }
+  return JSON.parse(JSON.stringify(account)) as AccountData;
+}
+
+onMounted(() => {
+  const selectedAccountId = sessionStore.selectedAccountId;
+  if (!selectedAccountId) {
+    console.error('No account selected.');
+    return;
+  }
+  // copy to avoid reference issues
+  const selectedAccount = cpAccount(encryptedStore.getAccount(selectedAccountId));
+  if (selectedAccount) {
+    name.value = selectedAccount.name;
+    apiKey.value = selectedAccount.apiKey ?? '';
+    apiSecret.value = selectedAccount.apiSecret ?? '';
+    apiEnv.value = selectedAccount.apiEnv;
+    tenantId.value = selectedAccount.tenantId || '';
+    lastData.value = { ...selectedAccount, tenantId: tenantId.value };
+  }
 });
 
+const requiredFieldsFilledOut = computed(() => !!(name.value.trim() && apiKey.value.trim() && apiSecret.value.trim()));
+const isDirty = computed(() =>
+  name.value !== lastData.value?.name ||
+  apiKey.value !== (lastData.value?.apiKey ?? '') ||
+  apiSecret.value !== (lastData.value?.apiSecret ?? '') ||
+  tenantId.value !== (lastData.value?.tenantId ?? '') ||
+  apiEnv.value !== lastData.value?.apiEnv,
+);
+
+/** the account as currently edited; SFTP connections come from the stored account */
+function currentAccount(): AccountData {
+  const id = sessionStore.selectedAccountId || '';
+  const stored = encryptedStore.getAccount(id) ?? lastData.value;
+  return cpAccount({
+    ...stored,
+    name: name.value,
+    apiKey: apiKey.value,
+    apiSecret: apiSecret.value,
+    sftpData: stored?.sftpData ?? [],
+    apiEnv: apiEnv.value,
+    id,
+    tenantId: tenantId.value,
+  })!;
+}
+
+function backupAccount(event: { password: string }) {
+  const accountData = currentAccount();
+  void encryptedStore.exportAccount(event.password, accountData).then((exportData) => {
+    if (!exportData) {
+      console.error('Export failed or no data to export.');
+      notify.error(t('ui.settings.account.backup.error'));
+      return;
+    }
+    // trigger download
+    const blob = new Blob([exportData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${accountData.name || 'account'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }).catch((err: Error) => {
+    console.error(err);
+    notify.error(t('ui.settings.account.backup.error'));
+  });
+}
+
+function saveAccount() {
+  if (!requiredFieldsFilledOut.value) {
+    notify.warn(t('ui.settings.account.requiredMissing'));
+    return;
+  }
+  const accountData = currentAccount();
+  saving.value = true;
+  encryptedStore.updateAccount(accountData).then(() => {
+    lastData.value = cpAccount(accountData);
+    notify.success(t('ui.settings.account.saved'));
+  }).catch((err: Error) => {
+    console.error(err);
+    notify.error(t('ui.settings.account.saveError'));
+  }).finally(() => {
+    saving.value = false;
+  });
+}
+
+function confirmDelete() {
+  confirm.require({
+    header: t('ui.settings.account.storage.removeTitle'),
+    message: t('ui.settings.account.storage.removeConfirm', { name: lastData.value?.name ?? '' }),
+    rejectProps: { label: t('ui.settings.cancel'), severity: 'secondary', outlined: true },
+    acceptProps: { label: t('ui.settings.account.storage.remove'), severity: 'danger' },
+    accept: () => deleteAccount(),
+  });
+}
+
+function deleteAccount() {
+  const selectedAccountId = sessionStore.selectedAccountId;
+  if (!selectedAccountId) {
+    console.error('No account selected for deletion.');
+    return;
+  }
+  Promise.resolve().then(() => encryptedStore.deleteAccount(selectedAccountId)).then(() => {
+    notify.success(t('ui.settings.account.storage.removed'));
+    void router.push({ path: '/accounts' });
+  }).catch(() => {
+    notify.error(t('ui.settings.account.storage.removeError'));
+  });
+}
 </script>
