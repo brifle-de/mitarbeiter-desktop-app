@@ -1,265 +1,131 @@
 <template>
-    <q-dialog v-model="value" class="full-size-modal" > 
-          <q-card class="no-shadow unselectable">
-            <div class="row w-100">
-                <div class="col-2">
-                    <!-- back btn --> 
-                     
-                </div>
-                <div class="col text-center">
-                    <div class="text-h6 q-pa-md">
-                        Empfänger hinzufügen
-                    </div>
-                </div>
-                <div class="col-2 text-right">
-                    <q-btn icon="close" flat round dense class="q-mr-md q-mt-md" @click="close()" />
-                </div>
-            </div>
-            <div class="q-pa-md flex-1">
-                <div class="text-outline q-px-lg">
-                    Wir suchen den Brifle Empfänger anhand der folgenden Informationen. Nicht alle Informationen sind notwendig, aber je mehr du bereitstellst, desto höher ist die Chance den Empfänger zu finden.
-                </div>
-                <div class="text-h6 q-px-lg q-mt-md">
-                    Persönliche Informationen
-                </div>
-                <div class="row q-my-md">
+  <Dialog v-model:visible="value" modal :header="t('ui.send.receiverModal.title')" :style="{ width: '720px', maxWidth: '92vw' }" @hide="onHide">
+    <div v-if="current" class="flex flex-col gap-5">
+      <p class="text-ink-muted">{{ t('ui.send.receiverModal.intro') }}</p>
 
-                    <div class="col-6 q-px-lg">
-                        <q-input 
-                            v-model="currentReceiver!.firstName"
-                            label="Vorname*"
-                            color="secondary"
-                            class="q-mb-md"
-                        />
-                    </div>
-                    <div class="col-6 q-px-lg">
-                        <q-input 
-                            v-model="currentReceiver!.lastName"
-                            label="Nachname*"
-                            color="secondary"
-                            class="q-mb-md"
-                        />   
-                    </div>                     
-                </div>
-                <div>
-                    <div class="text-h6 q-px-lg">
-                        Geburtsdaten (optional)
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-6 q-px-lg">
-                        <q-input 
-                            v-model="currentReceiver!.dateOfBirth"
-                            label="Geburtsdatum"
-                            color="secondary"
-                            fill-mask
-                            mask="##/##/####"
-                            class="q-mb-md"
-                        />
-                    </div>
-                    <div class="col-6 q-px-lg">
-                        <q-input 
-                            v-model="currentReceiver!.placeOfBirth"
-                            label="Geburtsort"
-                            color="secondary"
-                            class="q-mb-md"
-                        />   
-                    </div>
-                </div>
-                <div>
-                    <div class="text-h6 q-px-lg">
-                        Postanschrift
-                    </div>
-                    <div class="row">
-                        <div class="col-6 q-px-lg">
-                            <q-input 
-                                v-model="currentReceiver!.addressStreet"
-                                label="Straße und Hausnummer"
-                                color="secondary"
-                                class="q-mb-md"
-                            />
-                        </div>
-                        <div class="col-6 q-px-lg">
-                            <q-input 
-                                v-model="currentReceiver!.addressPostcode"
-                                label="Postleitzahl"
-                                fill-mask
-                                mask="#####"
-                                color="secondary"
-                                class="q-mb-md"
-                            />   
-                        </div>
-                        <div class="col-6 q-px-lg">
-                            <q-input 
-                                v-model="currentReceiver!.addressCity"
-                                label="Stadt"
-                                color="secondary"
-                                class="q-mb-md"
-                            />   
-                        </div>
-                        <div class="col-6 q-px-lg">
-                            <q-select
-                                v-model="currentReceiver!.addressCountry"
-                                :options="countriesValues"
-                                option-label="name"
-                                option-value="code"
-                                label="Land"
-                                color="secondary"
-                                class="q-mb-md"
-                            />   
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="text-h6 q-px-lg">
-                        Kontaktinformationen (optional)
-                    </div>
-                    <div class="row">
-                        <div class="col-6 q-px-lg">
-                            <q-input 
-                                v-model="currentReceiver!.phone"
-                                label="Telefonnummer"
-                                color="secondary"
-                                class="q-mb-md"
-                            />
-                        </div>
-                        <div class="col-6 q-px-lg">
-                            <q-input 
-                                v-model="currentReceiver!.email"
-                                label="E-Mail Adresse"
-                                color="secondary"
-                                class="q-mb-md"
-                            />   
-                        </div>
-                    </div>
-                </div>
-                <div class="text-caption q-px-lg">
-                    * Pflichtfelder
-                </div>
-            </div>
-            <div class="row q-pa-md justify-end">
-                <q-btn 
-                    label="Abbrechen" 
-                    flat 
-                    class="q-mr-md" 
-                    @click="close()" 
-                />
-                <q-btn 
-                    label="Empfänger hinzufügen" 
-                    color="secondary" 
-                    text-color="green-9"
-                    @click="save()" 
-                />
-            </div>
-          </q-card>
-    </q-dialog>
+      <section class="flex flex-col gap-3">
+        <h3 class="ma-title-m">{{ t('ui.send.receiverModal.personal') }}</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <FormField :label="t('ui.send.receiverModal.firstName') + '*'" for-id="rcv-first" :error="showErrors && !current.firstName?.trim() ? t('ui.send.receiverModal.required') : ''">
+            <InputText id="rcv-first" v-model="current.firstName" :invalid="showErrors && !current.firstName?.trim()" autofocus />
+          </FormField>
+          <FormField :label="t('ui.send.receiverModal.lastName') + '*'" for-id="rcv-last" :error="showErrors && !current.lastName?.trim() ? t('ui.send.receiverModal.required') : ''">
+            <InputText id="rcv-last" v-model="current.lastName" :invalid="showErrors && !current.lastName?.trim()" />
+          </FormField>
+        </div>
+      </section>
 
+      <section class="flex flex-col gap-3">
+        <h3 class="ma-title-m">{{ t('ui.send.receiverModal.birth') }}</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <FormField :label="t('ui.send.receiverModal.dateOfBirth')" for-id="rcv-dob" :hint="t('ui.send.receiverModal.dateHint')">
+            <InputMask id="rcv-dob" v-model="current.dateOfBirth" mask="99/99/9999" slot-char="_" />
+          </FormField>
+          <FormField :label="t('ui.send.receiverModal.placeOfBirth')" for-id="rcv-pob">
+            <InputText id="rcv-pob" v-model="current.placeOfBirth" />
+          </FormField>
+        </div>
+      </section>
 
+      <section class="flex flex-col gap-3">
+        <h3 class="ma-title-m">{{ t('ui.send.receiverModal.address') }}</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <FormField :label="t('ui.send.receiverModal.street')" for-id="rcv-street">
+            <InputText id="rcv-street" v-model="current.addressStreet" />
+          </FormField>
+          <FormField :label="t('ui.send.receiverModal.postcode')" for-id="rcv-postcode">
+            <InputMask id="rcv-postcode" v-model="current.addressPostcode" mask="99999" slot-char="_" />
+          </FormField>
+          <FormField :label="t('ui.send.receiverModal.city')" for-id="rcv-city">
+            <InputText id="rcv-city" v-model="current.addressCity" />
+          </FormField>
+          <FormField :label="t('ui.send.receiverModal.country')" for-id="rcv-country">
+            <Select v-model="current.addressCountry" input-id="rcv-country" :options="countriesValues" option-label="name" option-value="code" filter />
+          </FormField>
+        </div>
+      </section>
+
+      <section class="flex flex-col gap-3">
+        <h3 class="ma-title-m">{{ t('ui.send.receiverModal.contact') }}</h3>
+        <div class="grid grid-cols-2 gap-4">
+          <FormField :label="t('ui.send.receiverModal.phone')" for-id="rcv-phone">
+            <InputText id="rcv-phone" v-model="current.phone" />
+          </FormField>
+          <FormField :label="t('ui.send.receiverModal.email')" for-id="rcv-email">
+            <InputText id="rcv-email" v-model="current.email" type="email" />
+          </FormField>
+        </div>
+      </section>
+      <span class="ma-small text-ink-muted">{{ t('ui.send.receiverModal.requiredHint') }}</span>
+    </div>
+    <template #footer>
+      <Button text :label="t('ui.send.cancel')" @click="close()" />
+      <Button :label="t('ui.send.receiverModal.save')" @click="save()">
+        <template #icon><UserPlus :size="18" /></template>
+      </Button>
+    </template>
+  </Dialog>
 </template>
-<script lang="ts">
 
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { UserPlus } from 'lucide-vue-next';
+import Dialog from 'openvue/dialog';
+import Button from 'openvue/button';
+import InputText from 'openvue/inputtext';
+import InputMask from 'openvue/inputmask';
+import Select from 'openvue/select';
+import FormField from 'components/ui/FormField.vue';
+import { useNotify } from 'src/composables/useNotify';
 import { getAllCountriesWithNames } from 'src/pages/bulk_sending/util/receivers/countries';
-import ReceiverRecord from 'src/pages/bulk_sending/util/receivers/receiverRecord';
-import { defineComponent, PropType, ref } from 'vue';
+import type ReceiverRecord from 'src/pages/bulk_sending/util/receivers/receiverRecord';
 
-export default defineComponent({
-    name: 'AddReceiverModal',
-    props: {
-        modelValue: {
-            type: Boolean,
-            required: true,
-        },
-        initValue: {
-            type: Object as PropType<ReceiverRecord>,
-            required: false,
-        }
-    },
-    emits: ['update:modelValue', 'close', 'save'],
-    computed: {   
-    value: {
-      get() {
-        return this.modelValue;
-      },
-      set(value : boolean) {
-        this.$emit('update:modelValue', value);
-      },
-    },
-  },
-    methods: { 
-        validateInput(): boolean {
-            if(!this.currentReceiver) return false;
-            const requiredFields = [
-                this.currentReceiver.firstName,
-                this.currentReceiver.lastName,
-            ];
-            return requiredFields.every(field => field && field.trim() !== '');
-        },
-        close() {            
-            this.value = false;
-            this.reset();
-            this.$emit('close');
-        },
-        reset(){
-            if(this.initValue){
-            // deep copy to avoid mutating the parent component's data
-            this.currentReceiver = JSON.parse(JSON.stringify(this.initValue));
-            }else{
-                this.currentReceiver = {
-                    firstName: '',
-                    lastName: '',
-                    dateOfBirth: '',
-                    placeOfBirth: '',
-                    addressStreet: '',
-                    addressPostcode: '',
-                    addressCity: '',
-                    addressCountry: 'DE',
-                    phone: '',
-                    email: ''
-                };
-            }
-        },
-        save() {
-            if (this.validateInput()) {
+const props = defineProps<{ modelValue: boolean; initValue?: ReceiverRecord }>();
+const emit = defineEmits<{ 'update:modelValue': [value: boolean]; close: []; save: [receiver: ReceiverRecord] }>();
+const { t } = useI18n();
+const notify = useNotify();
 
-                // deep copy value
-                const val = JSON.parse(JSON.stringify(this.currentReceiver));
-
-                // convert date of birth to iso string if it's not already in that format
-                // convert dd/mm/yyyy to iso string (yyyy-mm-dd) 
-                const dob = val!.dateOfBirth ?? null;
-                if(dob != null) {
-                    const dobParts = dob.split(/[/.]/);
-                    if(dobParts.length === 3) {
-                        const day = dobParts[0]!.padStart(2, '0');
-                        const month = dobParts[1]!.padStart(2, '0');
-                        const year = dobParts[2];
-                        val.dateOfBirth = `${year}-${month}-${day}`;
-                    }
-                } 
-                
-                this.$emit('save', val);
-                this.close();
-            } else {
-                this.$q.notify({
-                    type: 'negative',
-                    message: 'Bitte fülle alle Pflichtfelder aus.',
-                    timeout: 3000
-                });
-            }
-        }
-    },
-    mounted() {
-        this.reset();
-    },
-    setup() {      
-        const countriesValues = getAllCountriesWithNames("de");
-        const currentReceiver = ref<ReceiverRecord>();
-
-        return {
-            countriesValues,
-            currentReceiver
-        };
-    }
+const value = computed({
+  get: () => props.modelValue,
+  set: (v: boolean) => emit('update:modelValue', v),
 });
+const countriesValues = getAllCountriesWithNames('de');
+const current = ref<ReceiverRecord>();
+const showErrors = ref(false);
 
+function reset() {
+  showErrors.value = false;
+  current.value = props.initValue
+    // deep copy so the parent's data is not changed
+    ? JSON.parse(JSON.stringify(props.initValue)) as ReceiverRecord
+    : { firstName: '', lastName: '', dateOfBirth: '', placeOfBirth: '', addressStreet: '', addressPostcode: '', addressCity: '', addressCountry: 'DE', phone: '', email: '' };
+}
+watch(() => props.modelValue, (open) => { if (open) reset(); }, { immediate: true });
+
+function validateInput(): boolean {
+  const c = current.value;
+  return !!c && [c.firstName, c.lastName].every((field) => field && field.trim() !== '');
+}
+function onHide() {
+  emit('close');
+}
+function close() {
+  value.value = false;
+}
+function save() {
+  if (!validateInput()) {
+    showErrors.value = true;
+    notify.error(t('ui.send.receiverModal.missing'), { life: 3000 });
+    return;
+  }
+  const val = JSON.parse(JSON.stringify(current.value)) as ReceiverRecord;
+  // dd/mm/yyyy (or dd.mm.yyyy) → yyyy-mm-dd
+  const dobParts = (val.dateOfBirth ?? '').split(/[/.]/);
+  if (dobParts.length === 3) {
+    val.dateOfBirth = `${dobParts[2]}-${dobParts[1]!.padStart(2, '0')}-${dobParts[0]!.padStart(2, '0')}`;
+  }
+  emit('save', val);
+  close();
+}
 </script>

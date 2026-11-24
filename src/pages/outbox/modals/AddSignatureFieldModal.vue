@@ -1,172 +1,80 @@
 <template>
-    <q-dialog v-model="value" class="full-size-modal" > 
-          <q-card class="no-shadow unselectable">
-            <div class="row w-100">
-                <div class="col-2">
-                    <!-- back btn --> 
-                     
-                </div>
-                <div class="col text-center">
-                    <div class="text-h6 q-pa-md">
-                        Signaturfeld hinzufügen
-                    </div>
-                </div>
-                <div class="col-2 text-right">
-                    <q-btn icon="close" flat round dense class="q-mr-md q-mt-md" @click="close()" />
-                </div>
-            </div>
-            <div class="q-pa-md flex-1">
-               
-                <div class="text-h6 q-px-lg q-mt-md">
-                    Informationen zum Signaturfeld
-                </div>
-                <!-- name -->
-                <q-input 
-                    v-model="currentSignatureField!.fieldName"
-                    label="Feldname*"
-                    color="secondary"
-                    class="q-mb-md q-px-lg"
-                />
-                <!-- purpose -->
-                <q-input 
-                    v-model="currentSignatureField!.purpose"
-                    label="Zweck*"
-                    color="secondary"
-                    class="q-mb-md q-px-lg"
-                />
-                <!-- role -->
-                <q-input 
-                    v-model="currentSignatureField!.role"
-                    label="Rolle* (z.B. Unterzeichner, Vertragsnehmer, etc.)"
-                    color="secondary"
-                    class="q-mb-md q-px-lg"
-                />
-                <!-- signing party -->
-                <div class="q-px-lg q-mt-md">
-                    <div class="text-subtitle1 q-mb-sm">Wer soll dieses Feld unterschreiben?</div>
-                    <q-option-group
-                        v-model="currentSignatureField!.signingParty"
-                        :options="[
-                            { label: 'Empfänger', value: 'receiver' },
-                            { label: 'Absender', value: 'sender' }
-                        ]"
-                        color="secondary"
-                    />
-                </div>
-              
-                <div class="text-caption q-px-lg">
-                    * Pflichtfelder
-                </div>
-            </div>
-            <div class="row q-pa-md justify-end">
-                <q-btn 
-                    label="Abbrechen" 
-                    flat 
-                    class="q-mr-md" 
-                    @click="close()" 
-                />
-                <q-btn 
-                    label="Signaturfeld hinzufügen" 
-                    color="secondary" 
-                    text-color="green-9"
-                    @click="save()" 
-                />
-            </div>
-          </q-card>
-    </q-dialog>
-
-
+  <Dialog v-model:visible="value" modal :header="t('ui.send.signatureModal.title')" :style="{ width: '560px', maxWidth: '92vw' }" @hide="emit('close')">
+    <div v-if="current" class="flex flex-col gap-4">
+      <FormField :label="t('ui.send.signatureModal.fieldName') + '*'" for-id="sig-name" :error="errorFor(current.fieldName)">
+        <InputText id="sig-name" v-model="current.fieldName" :invalid="!!errorFor(current.fieldName)" autofocus />
+      </FormField>
+      <FormField :label="t('ui.send.signatureModal.purpose') + '*'" for-id="sig-purpose" :error="errorFor(current.purpose)">
+        <InputText id="sig-purpose" v-model="current.purpose" :invalid="!!errorFor(current.purpose)" />
+      </FormField>
+      <FormField :label="t('ui.send.signatureModal.role') + '*'" for-id="sig-role" :hint="t('ui.send.signatureModal.roleHint')" :error="errorFor(current.role)">
+        <InputText id="sig-role" v-model="current.role" :invalid="!!errorFor(current.role)" />
+      </FormField>
+      <fieldset class="flex flex-col gap-2">
+        <legend class="ma-label mb-2">{{ t('ui.send.signatureModal.signingParty') }}</legend>
+        <label v-for="option in partyOptions" :key="option.value" class="flex items-center gap-2.5">
+          <RadioButton v-model="current.signingParty" :value="option.value" name="signing-party" />
+          {{ option.label }}
+        </label>
+      </fieldset>
+      <span class="ma-small text-ink-muted">{{ t('ui.send.receiverModal.requiredHint') }}</span>
+    </div>
+    <template #footer>
+      <Button text :label="t('ui.send.cancel')" @click="value = false" />
+      <Button :label="t('ui.send.signatureModal.save')" @click="save()">
+        <template #icon><Plus :size="18" /></template>
+      </Button>
+    </template>
+  </Dialog>
 </template>
-<script lang="ts">
-import { defineComponent, PropType, ref } from 'vue';
 
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { Plus } from 'lucide-vue-next';
+import Dialog from 'openvue/dialog';
+import Button from 'openvue/button';
+import InputText from 'openvue/inputtext';
+import RadioButton from 'openvue/radiobutton';
+import FormField from 'components/ui/FormField.vue';
+import { useNotify } from 'src/composables/useNotify';
+import type { SignatureRecord } from '../util/types';
 
-export interface SignatureRecord {
-    purpose: string;
-    fieldName: string;
-    role: string;
-    signingParty?: 'sender' | 'receiver';
-}
+const props = defineProps<{ modelValue: boolean; initValue?: SignatureRecord }>();
+const emit = defineEmits<{ 'update:modelValue': [value: boolean]; close: []; save: [field: SignatureRecord] }>();
+const { t } = useI18n();
+const notify = useNotify();
 
-export default defineComponent({
-    name: 'AddSignatureFieldModal',
-    props: {
-        modelValue: {
-            type: Boolean,
-            required: true,
-        },
-        initValue: {
-            type: Object as PropType<SignatureRecord>,
-            required: false,
-        }
-    },
-    emits: ['update:modelValue', 'close', 'save'],
-    computed: {   
-    value: {
-      get() {
-        return this.modelValue;
-      },
-      set(value : boolean) {
-        this.$emit('update:modelValue', value);
-      },
-    },
-  },
-    methods: { 
-        validateInput(): boolean {
-            if(!this.currentSignatureField) return false;
-            const requiredFields = [
-                this.currentSignatureField.purpose,
-                this.currentSignatureField.fieldName,
-                this.currentSignatureField.role
-            ];
-            return requiredFields.every(field => field && field.trim() !== '');
-        },
-        close() {            
-            this.value = false;
-            this.reset();
-            this.$emit('close');
-        },
-        reset(){
-            if(this.initValue){
-            // deep copy to avoid mutating the parent component's data
-            this.currentSignatureField = JSON.parse(JSON.stringify(this.initValue));
-            }else{
-                this.currentSignatureField = {
-                    purpose: '',
-                    fieldName: '',
-                    role: '',
-                    signingParty: 'receiver'
-                };
-            }
-        },
-        save() {
-            if (this.validateInput()) {
-
-                // deep copy value
-                const val = JSON.parse(JSON.stringify(this.currentSignatureField));
-             
-                
-                this.$emit('save', val);
-                this.close();
-            } else {
-                this.$q.notify({
-                    type: 'negative',
-                    message: 'Bitte fülle alle Pflichtfelder aus.',
-                    timeout: 3000
-                });
-            }
-        }
-    },
-    mounted() {
-        this.reset();
-    },
-    setup() {      
-        const currentSignatureField = ref<SignatureRecord>();
-
-        return {
-            currentSignatureField
-        };
-    }
+const value = computed({
+  get: () => props.modelValue,
+  set: (v: boolean) => emit('update:modelValue', v),
 });
+const current = ref<SignatureRecord>();
+const showErrors = ref(false);
+const partyOptions = computed(() => [
+  { label: t('ui.send.signatureModal.receiver'), value: 'receiver' },
+  { label: t('ui.send.signatureModal.sender'), value: 'sender' },
+]);
 
+function reset() {
+  showErrors.value = false;
+  current.value = props.initValue
+    ? JSON.parse(JSON.stringify(props.initValue)) as SignatureRecord
+    : { purpose: '', fieldName: '', role: '', signingParty: 'receiver' };
+}
+watch(() => props.modelValue, (open) => { if (open) reset(); }, { immediate: true });
+
+function errorFor(field: string) {
+  return showErrors.value && !field?.trim() ? t('ui.send.receiverModal.required') : '';
+}
+function save() {
+  const c = current.value;
+  if (!c || ![c.purpose, c.fieldName, c.role].every((field) => field && field.trim() !== '')) {
+    showErrors.value = true;
+    notify.error(t('ui.send.receiverModal.missing'), { life: 3000 });
+    return;
+  }
+  emit('save', JSON.parse(JSON.stringify(c)) as SignatureRecord);
+  value.value = false;
+}
 </script>

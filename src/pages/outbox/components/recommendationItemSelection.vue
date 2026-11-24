@@ -1,65 +1,32 @@
 <template>
-    <div>
-        <RecommendationItem 
-            v-for="(rec, index) in recommendations" 
-            :key="index+'recommendation'"
-            :recommendation="rec"
-             class="q-my-sm"
-            @unselect="unselectRecommendation(rec)"
-            @select="selectRecommendation(rec)"
-        />
-    </div>
+  <div class="flex flex-col gap-2">
+    <RecommendationItem
+      v-for="(rec, index) in recommendations"
+      :key="index + 'recommendation'"
+      :recommendation="rec"
+      :selected="selectedRecommendations.some((item) => matchRecommendations(item, rec))"
+      @select="selectRecommendation(rec)"
+      @unselect="unselectRecommendation(rec)"
+    />
+  </div>
 </template>
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { RecommendationRecord } from './recommendationItem.vue';
+
+<script setup lang="ts">
 import RecommendationItem from './recommendationItem.vue';
+import type { RecommendationRecord } from '../util/types';
 
-export default defineComponent({
-    name: 'RecommendationItemSelection',
-    emits: ['select'],
-    components: {
-        RecommendationItem
-    },
-    props: {
-        recommendations: {
-            type: Array as () => RecommendationRecord[],
-            required: true,
-        },
-        selectedRecommendations: {
-            type: Array as () => RecommendationRecord[],
-            required: false,
-            default: () => []
-        }
-    },
-    watch: {
-        selectedRecommendations(newVal) {
-            this.selectedItems = newVal;
-        }
-    },
-    methods: { 
-        selectRecommendation(rec: RecommendationRecord) {   
-            this.selectedItems.push(rec);
-            this.$emit('select', this.selectedItems);
-        },
-        unselectRecommendation(rec: RecommendationRecord) {
-            this.selectedItems = this.selectedItems.filter(item => !this.matchRecommendations(item, rec));
-            this.$emit('select', this.selectedItems);
-        },
-        matchRecommendations(rec1: RecommendationRecord, rec2: RecommendationRecord): boolean {
-            if (rec1.type !== rec2.type) return false;
-            const v1 = JSON.stringify(rec1.data);
-            const v2 = JSON.stringify(rec2.data);
-            return v1 === v2;
-        }
-    },
-    setup(props) {
-        const selectedItems = ref<RecommendationRecord[]>(props.selectedRecommendations || []);
-
-        return {
-            selectedItems
-        }
-    }
-
+const props = withDefaults(defineProps<{ recommendations: RecommendationRecord[]; selectedRecommendations?: RecommendationRecord[] }>(), {
+  selectedRecommendations: () => [],
 });
-</script> 
+const emit = defineEmits<{ select: [recs: RecommendationRecord[]] }>();
+
+function matchRecommendations(rec1: RecommendationRecord, rec2: RecommendationRecord): boolean {
+  return rec1.type === rec2.type && JSON.stringify(rec1.data) === JSON.stringify(rec2.data);
+}
+function selectRecommendation(rec: RecommendationRecord) {
+  emit('select', [...props.selectedRecommendations, rec]);
+}
+function unselectRecommendation(rec: RecommendationRecord) {
+  emit('select', props.selectedRecommendations.filter((item) => !matchRecommendations(item, rec)));
+}
+</script>
