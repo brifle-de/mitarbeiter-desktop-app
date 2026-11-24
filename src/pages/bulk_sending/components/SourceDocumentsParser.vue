@@ -1,139 +1,107 @@
 <template>
-    <q-select v-if="isDirAnalysis"
-        v-model="selectedDirParserName"
-        :options="availableDirParsers"
-        @update:model-value="selectDirParser($event)"
-        color="secondary"
-        option-label="name"
-        option-value="name"
-        label="Parser auswählen" 
-        emit-value
-        map-options
-    >
-    </q-select>
-    <q-select v-else
-        v-model="selectedFileParserName"
-        @update:model-value="selectFileParser($event)"
-        :options="availableAssignmentParser"
-        color="secondary"
-        option-label="name"
-        option-value="name"
-        label="Parser auswählen"
-        emit-value
-        map-options
-    ></q-select>
-    <div class="q-my-xl" v-if="value.dirParser != null && isDirAnalysis">
-        <q-expansion-item
-            v-model="expandedTimeFilter"
-            icon="perm_identity"
-            label="Zeitstempel Filter"
-            caption="Optional"
-            v-if="useDateFilter"
-        >      
-            <div class="row q-mt-md border q-pa-md rounded-borders">
-                <div class="col-6">
-                    <div class="q-pa-md">       
-                        <q-date v-model="dateRange" 
-                        text-color="black"
-                        flat
-                        bordered
-                        color="secondary" range /> 
-                    </div>               
-                </div>
-                <div class="col-6">                
-                    <div class="flex-column quick-actions">
-                        <div>
-                            <q-btn color="accent" class="q-mb-md" @click="dateRangeToThisMonth()">
-                                Diesen Monat
-                            </q-btn>
-                        </div>
-                        <div>
-                            <q-btn  color="grey-3" outline @click="resetDateRange()">
-                                Zurücksetzen
-                            </q-btn>
-                        </div>
-                        
-                    </div>
-                </div>
-            </div>            
-        </q-expansion-item>        
-    </div>
-    <div v-else-if="!isDirAnalysis">
-        <!-- 
-            requires that a base directory can be selected, required if the path is selected from a file system 
-            (Window and Mac have different path structures)
-            optional for sftp, since path should be be consistent (relative path is still recommended)
-         -->
-        <q-input v-model="basePath" 
-            color="secondary"
-            label="Basisverzeichnis"
-            placeholder="z.B. /home/user/documents"
-            :rules="[val => val && val.length > 0 || 'Pfad ist erforderlich']" />
-    </div>
-    <div class="q-my-lg text-right">        
-        <q-btn color="secondary" flat class="muted-action-btn" label="Einlesen" @click="parse()" />
-    </div>
-    <div class="q-my-lg">
-        <!-- table with results-->
-        <q-table
-            v-if="fileReceiverMapping.length > 0 || hasLoaded"
-            :rows="fileReceiverMapping"
-            :columns="columns()"
-            class="q-pa-md material-card material-card-muted"
-            flat>
-            <template v-slot:body-cell-filePath="props">
-                <q-td :props="props">
-                    <div class="text-caption text-muted">
-                    {{ props.row.filePath }}
-                    </div>
-                </q-td>
-            </template>
-            <template v-slot:body-cell-receiverId="props">
-                <q-td :props="props">
-                    <div class="text-caption q-ml-sm muted-pill" v-if="props.row.receiverId">
-                        {{ props.row.receiverId }}
-                    </div>
-                </q-td>
-            </template>
-                <template v-slot:body-cell-docType="props">
+    <div class="flex flex-col gap-4">
+        <div class="flex items-end gap-3">
+            <FormField :label="t('ui.bulk.common.parser')" class="flex-1">
+                <Select
+                    v-if="isDirAnalysis"
+                    v-model="selectedDirParserName"
+                    :options="availableDirParsers"
+                    option-label="name"
+                    option-value="name"
+                    :placeholder="t('ui.bulk.common.selectParser')"
+                    @update:model-value="selectDirParser($event)"
+                />
+                <Select
+                    v-else
+                    v-model="selectedFileParserName"
+                    :options="availableAssignmentParser"
+                    option-label="name"
+                    option-value="name"
+                    :placeholder="t('ui.bulk.common.selectParser')"
+                    @update:model-value="selectFileParser($event)"
+                />
+            </FormField>
+            <Button :label="t('ui.bulk.common.read')" severity="secondary" outlined @click="parse()">
+                <template #icon><RefreshCw :size="18" /></template>
+            </Button>
+        </div>
 
-                <q-td :props="props">
-                    <div :class="'text-caption q-ml-sm muted-pill ' + (pillColors[props.row.docType] ?? '')" v-if="props.row.docType">                        
-                        {{ props.row.docType }}
-                    </div>
-                </q-td>
-            </template>
-            <template v-slot:body-cell-date="props">
-                <q-td :props="props">
-                    <div class="text-caption q-ml-sm muted-pill" v-if="props.row.date">
-                        {{ props.row.date.toLocaleDateString('de-DE', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                        }) }}
-                    </div>
-                </q-td>
-            </template>
-        </q-table>
-    </div>
-    
-    <SftpModal v-if="documentSource.sftp?.connection != null"
-                :sftpConnection="documentSource.sftp?.connection"
-                @select-file="selectSftpBasePath"
-                :showFiles="false"
+        <!-- base directory: needed for local paths of an assignment file (Windows and macOS paths differ), optional for SFTP -->
+        <FormField
+            v-if="!isDirAnalysis"
+            :label="t('ui.bulk.documentParser.basePath')"
+            :error="basePath ? '' : t('ui.bulk.documentParser.basePathRequired')"
+            :hint="t('ui.bulk.documentParser.basePathHint')"
+        >
+            <div class="flex gap-2">
+                <InputText v-model="basePath" class="flex-1" :invalid="!basePath" :placeholder="t('ui.bulk.documentParser.basePathPlaceholder')" />
+                <Button severity="secondary" outlined :label="t('ui.bulk.common.chooseDirectory')" @click="pickBasePath()">
+                    <template #icon><FolderOpen :size="18" /></template>
+                </Button>
+            </div>
+        </FormField>
 
-                v-model="showSftpModalBasePath">
- 
-    </SftpModal>
+        <Panel v-if="value.dirParser != null && isDirAnalysis && useDateFilter" v-model:collapsed="timeFilterCollapsed" toggleable>
+            <template #header>
+                <span class="flex items-center gap-2">
+                    <CalendarRange :size="18" class="text-icon-brand" />
+                    <span class="ma-text-strong">{{ t('ui.bulk.documentParser.dateFilter') }}</span>
+                    <span class="ma-small text-ink-muted">{{ t('ui.bulk.common.optional') }}</span>
+                </span>
+            </template>
+            <div class="flex flex-wrap items-start gap-6">
+                <DatePicker v-model="dateRangeModel" selection-mode="range" inline :manual-input="false" />
+                <div class="flex flex-col gap-2">
+                    <p class="ma-small max-w-xs text-ink-muted">{{ t('ui.bulk.documentParser.dateFilterHint') }}</p>
+                    <Button severity="secondary" outlined :label="t('ui.bulk.documentParser.thisMonth')" @click="dateRangeToThisMonth()">
+                        <template #icon><CalendarDays :size="18" /></template>
+                    </Button>
+                    <Button text :label="t('ui.bulk.common.reset')" @click="resetDateRange()" />
+                </div>
+            </div>
+        </Panel>
+
+        <template v-if="fileReceiverMapping.length > 0 || hasLoaded">
+            <div class="flex items-center gap-2">
+                <StatusTag :type="fileReceiverMapping.length > 0 ? 'delivered' : 'error'" :label="t('ui.bulk.documentParser.assigned', { n: fileReceiverMapping.length })" />
+            </div>
+            <TableCard>
+                <DataTable :value="fileReceiverMapping" paginator :rows="10" sort-mode="single">
+                    <Column field="filePath" :header="t('ui.bulk.columns.file')" sortable>
+                        <template #body="{ data }">
+                            <span class="ma-small break-all text-ink-muted">{{ data.filePath }}</span>
+                        </template>
+                    </Column>
+                    <Column field="receiverId" :header="t('ui.bulk.columns.receiver')" sortable>
+                        <template #body="{ data }">
+                            <DocTypePill v-if="data.receiverId" :label="data.receiverId" />
+                        </template>
+                    </Column>
+                    <Column field="docType" :header="t('ui.bulk.columns.docType')" sortable>
+                        <template #body="{ data }">
+                            <DocTypePill v-if="data.docType" :label="data.docType" :color="pillColors[data.docType]" />
+                        </template>
+                    </Column>
+                    <Column field="date" :header="t('ui.bulk.columns.date')" sortable>
+                        <template #body="{ data }">{{ formatDate(data.date) }}</template>
+                    </Column>
+                    <template #empty>
+                        <span class="text-ink-muted">{{ t('ui.bulk.documentParser.empty') }}</span>
+                    </template>
+                </DataTable>
+            </TableCard>
+        </template>
+
+        <SftpModal
+            v-if="documentSource.sftp?.connection != null"
+            v-model="showSftpModalBasePath"
+            :sftp-connection="documentSource.sftp?.connection"
+            :show-files="false"
+            :select-text="t('ui.bulk.common.chooseDirectory')"
+            @select-file="selectSftpBasePath"
+        />
+    </div>
 </template>
-<style lang="scss">
-    .quick-actions{
-        .q-btn {
-            width: 300px;
-            max-width: 100%;
-        }
-    }
-</style>
 <script lang="ts">
 
 import { defineComponent, PropType, ref} from 'vue';
@@ -150,15 +118,58 @@ import AssignmentFile, { AssignmentRules } from '../util/documents/assignmentFil
 import SampleAssignmentParser from '../util/documents/sampleAssignmentRules';
 import SftpModal from 'src/components/SftpModal.vue';
 import { computePillColors } from '../util/helper';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import Select from 'openvue/select';
+import InputText from 'openvue/inputtext';
+import Panel from 'openvue/panel';
+import DatePicker from 'openvue/datepicker';
+import DataTable from 'openvue/datatable';
+import Column from 'openvue/column';
+import { CalendarDays, CalendarRange, FolderOpen, RefreshCw } from 'lucide-vue-next';
+import FormField from 'components/ui/FormField.vue';
+import StatusTag from 'components/ui/StatusTag.vue';
+import TableCard from './ui/TableCard.vue';
+import DocTypePill from './ui/DocTypePill.vue';
+
+/** 'YYYY/MM/DD', the format the date filter has always stored */
+function toFilterDate(d: Date): string {
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}/${mm}/${dd}`;
+}
 
 
 export default defineComponent({
   name: 'SourceDocumentsParser',
   components: {
-    SftpModal,
+    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+    SftpModal, Button, Select, InputText, Panel, DatePicker, DataTable, Column,
+    CalendarDays, CalendarRange, FolderOpen, RefreshCw, FormField, StatusTag, TableCard, DocTypePill,
   },
   
   computed: {
+    pillColors(): Record<string, string> {
+        return computePillColors(this.fileReceiverMapping);
+    },
+    /** DatePicker range model on top of the stored {from, to} strings */
+    dateRangeModel: {
+        get(): (Date | null)[] | null {
+            if (!this.dateRange || !this.dateRange.from) {
+                return null;
+            }
+            return [new Date(this.dateRange.from), this.dateRange.to ? new Date(this.dateRange.to) : null];
+        },
+        set(val: (Date | null)[] | null) {
+            const from = val?.[0];
+            if (!from) {
+                this.resetDateRange();
+                return;
+            }
+            const to = val?.[1];
+            this.dateRange = { from: toFilterDate(from), to: to ? toFilterDate(to) : '' };
+        },
+    },
     isDirAnalysis () {
         return this.value.destType === 'directory';
     },
@@ -189,27 +200,21 @@ export default defineComponent({
         } else {
             void this.parseAssignmentFile();
         }
-        this.pillColors = computePillColors(this.fileReceiverMapping);
-    },  
-    
-    columns() {
-        return [
-            { name: 'fileName', label: 'Datei', field: 'filePath', sortable: true, align: 'left' as const },
-            { name: 'receiverId', label: 'Empfänger',  field: 'receiverId', sortable: true, align: 'left' as const  },
-            { name: 'docType', label: 'Dok-Typ', field: 'docType', sortable: true, align: 'left' as const  },
-            { name: 'date', label: 'Datum', field: 'date', sortable: true, align: 'left' as const, format: (val: Date|null) => {       
-                    if(val == null) {
-                        return '';
-                    }      
-                    return val.toLocaleDateString('de-DE', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                    });
-                } 
-            }
-        ];
     },
+    formatDate(val: Date | null) {
+        if (val == null) {
+            return '';
+        }
+        return val.toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    },
+    pickBasePath() {
+        if (this.isSFtp) {
+            this.showSftpModalBasePath = true;
+        } else {
+            this.selectLocaleBasePath();
+        }
+    },
+    
     getDirAnalyticsBasePath() {
         if(this.isSFtp) {
             return this.value.sftp?.filePath ?? '/';
@@ -351,7 +356,7 @@ export default defineComponent({
                 }
                 // remove time from date
                 const fromDate = new Date(new Date(this.dateRange!.from ?? '').toDateString());
-                const toDate = new Date(new Date(this.dateRange!.to ?? '').toDateString());
+                const toDate = new Date(new Date(this.dateRange!.to || this.dateRange!.from || '').toDateString());
                 return date >= fromDate && date <= toDate;
             });
         }
@@ -527,7 +532,7 @@ export default defineComponent({
     const hasLoaded = ref<boolean>(false);
     const showSftpModalBasePath = ref<boolean>(false);
     const basePath = ref<string>('');
-    const expandedTimeFilter = ref<boolean>(false);
+    const timeFilterCollapsed = ref<boolean>(true);
     
     SampleParser.forEach(element => {
         availableDirParsers.value.push({
@@ -540,7 +545,7 @@ export default defineComponent({
     const dateRange = ref<{from?: string, to?: string}>();
     const selectedDirParserName = ref<string>('');
     const selectedFileParserName = ref<string>('');
-    const pillColors = ref<Record<string, string>>({});
+    const { t } = useI18n();
 
     return {
         files,
@@ -552,10 +557,10 @@ export default defineComponent({
         availableAssignmentParser,
         showSftpModalBasePath,
         basePath,
-        expandedTimeFilter,
+        timeFilterCollapsed,
         selectedDirParserName,
         selectedFileParserName,
-        pillColors,
+        t,
 
     };
 

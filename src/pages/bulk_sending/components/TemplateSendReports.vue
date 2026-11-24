@@ -1,197 +1,87 @@
 <template>
-    <h5>
-        Bericht über den Versand der Dokumente       
-    </h5>   
-     <!-- grid 3 col -->
-     <div class="result-grid">       
-        <div class="material-card material-card-muted">
-            <div class="text-bold text-h5">
-                {{ errorRecords.length }}
-            </div>
-            <div class="text-h6 q-py-md" style="height: 60px;">
-                Dokumente nicht versendet
-            </div>             
+    <div class="flex flex-col gap-6">
+        <div class="grid grid-cols-3 gap-4">
+            <KpiCard :label="t('ui.bulk.kpi.sent')" :value="successRecords.length" />
+            <KpiCard :label="t('ui.bulk.kpi.failed')" :value="errorRecords.length" />
+            <KpiCard :label="t('ui.bulk.kpi.notBrifle')" :value="notBrifleRecords.length" />
         </div>
-        <div class="material-card material-card-muted">
-            <div class="text-bold text-h5">
-                {{ successRecords.length }}
-            </div>
-            <div class="text-h6 q-py-md" style="height: 60px;">
-                Dokumente erfolgreich versendet
-            </div>
-        </div>
-        <div class="material-card material-card-muted">
-            <div class="text-bold text-h5">
-                {{ notBrifleRecords.length }}
-            </div>
-            <div class="text-h6 q-py-md" style="height: 60px;">
-                Kein Brifle Empfänger
-            </div>
-        </div>
-     </div>
-     <div class="q-mt-xl">
-        <q-list class="rounded-borders">
-      <q-expansion-item
-        label="Erfolgreiche Versendung mit Brifle"
-      >
-        <q-card class="material-card material-card-muted">
-          <q-card-section>
-            <q-table
-              :rows="successRecords"
-              :columns="getColumns()"
-              row-key="path"
-              :pagination="{ rowsPerPage: 10 }"
-              class="q-pa-md bg-transparent"
-              flat
-            >
-              <template v-slot:top-right>
-                <q-btn color="secondary"  
-                @click="showExport(successRecords)"
-                text-color="black" label="Export" icon="file_download" />
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-expansion-item>
-
-      <q-expansion-item
-        label="Fehlgeschlagene Versendung mit Brifle"
-      >
-        <q-card class="material-card material-card-muted">
-          <q-card-section>
-            <q-table
-              :rows="errorRecords"
-              :columns="getColumns()"
-              row-key="path"
-              :pagination="{ rowsPerPage: 10 }"
-              class="q-pa-md bg-transparent"
-              flat
-            >
-              <template v-slot:top-right>
-                <q-btn color="secondary" 
-                @click="showExport(errorRecords)"
-                text-color="black" label="Export" icon="file_download" />
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-expansion-item>
-
-      <q-expansion-item
-        label="Dokumente ohne Brifle Empfänger"
-      >
-        <q-card class="material-card material-card-muted">
-          <q-card-section>
-            <q-table
-              :rows="notBrifleRecords"
-              :columns="getColumns()"
-              row-key="path"
-              :pagination="{ rowsPerPage: 10 }"
-              class="q-pa-md bg-transparent"
-              flat
-            >
-              <template v-slot:top-right>
-                <q-btn color="secondary" 
-                @click="showExport(notBrifleRecords)"
-                text-color="black" label="Export" icon="file_download" />
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </q-expansion-item>
-
-    </q-list>
-    <ExportModal
-    :records="exportRecords"
-    v-model="showExportModal"
-    />
-     </div>
+        <Accordion multiple :value="[]">
+            <AccordionPanel v-for="group in groups" :key="group.key" :value="group.key">
+                <AccordionHeader>
+                    <span class="flex flex-1 items-center gap-3 pr-3">
+                        <span class="ma-text-strong flex-1 text-left">{{ group.title }}</span>
+                        <StatusTag :type="group.status" :label="String(group.records.length)" />
+                    </span>
+                </AccordionHeader>
+                <AccordionContent>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-end">
+                            <Button severity="secondary" outlined size="small" :label="t('ui.bulk.report.export')" :disabled="group.records.length === 0" @click="showExport(group.records)">
+                                <template #icon><Download :size="16" /></template>
+                            </Button>
+                        </div>
+                        <TableCard>
+                            <DataTable :value="group.records" paginator :rows="10">
+                                <Column field="doc.filePath" :header="t('ui.bulk.columns.filePath')" sortable>
+                                    <template #body="{ data }"><span class="ma-small break-all text-ink-muted">{{ data.doc.filePath }}</span></template>
+                                </Column>
+                                <Column field="receiver.original.receiverId" :header="t('ui.bulk.columns.receiverId')" sortable />
+                                <Column field="receiver.req.birth_information.last_name" :header="t('ui.bulk.columns.lastName')" sortable />
+                                <Column field="receiver.req.birth_information.given_names" :header="t('ui.bulk.columns.firstName')" sortable />
+                                <Column field="receiver.req.birth_information.date_of_birth" :header="t('ui.bulk.columns.dateOfBirth')" sortable />
+                                <template #empty><span class="text-ink-muted">{{ t('ui.bulk.report.empty') }}</span></template>
+                            </DataTable>
+                        </TableCard>
+                    </div>
+                </AccordionContent>
+            </AccordionPanel>
+        </Accordion>
+        <ExportModal v-model="showExportModal" :records="exportRecords" />
+    </div>
 </template>
-<style lang="scss" scoped>
-
-    $bg-grid-item: #f0f0f022;
-    $bg-grid-item-hover: #f0f0f033;
-    $bg-grid-item-active: #f0f0f02c;
-
-    .result-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-
-    }
-
-    .overview_grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    .overview_grid > div, .overview_card, .result-grid > div {  
-        padding: 20px;
-        min-height: 200px;
-        border-radius: 10px;        
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-    }
-</style>
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import { SendDocReceiverReq } from '../util/receivers/receiverRecord';
 import ExportModal from './modal/ExportModal.vue';
+import { useI18n } from 'vue-i18n';
+import Accordion from 'openvue/accordion';
+import AccordionPanel from 'openvue/accordionpanel';
+import AccordionHeader from 'openvue/accordionheader';
+import AccordionContent from 'openvue/accordioncontent';
+import Button from 'openvue/button';
+import DataTable from 'openvue/datatable';
+import Column from 'openvue/column';
+import { Download } from 'lucide-vue-next';
+import KpiCard from 'components/ui/KpiCard.vue';
+import StatusTag, { type StatusType } from 'components/ui/StatusTag.vue';
+import TableCard from './ui/TableCard.vue';
 
 export default defineComponent({
     name: 'TemplateSendReports',
     components: {
-        ExportModal
+        // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+        ExportModal, Accordion, AccordionPanel, AccordionHeader, AccordionContent, Button, DataTable, Column, Download, KpiCard, StatusTag, TableCard,
+    },
+    computed: {
+        groups(): { key: string, title: string, status: StatusType, records: SendDocReceiverReq[] }[] {
+            return [
+                { key: 'success', title: this.t('ui.bulk.report.success'), status: 'delivered', records: this.successRecords },
+                { key: 'error', title: this.t('ui.bulk.report.failed'), status: 'error', records: this.errorRecords },
+                { key: 'notBrifle', title: this.t('ui.bulk.report.notBrifle'), status: 'post', records: this.notBrifleRecords },
+            ];
+        },
     },
     setup() {
         const exportRecords = ref<SendDocReceiverReq[]>([]);
         const showExportModal = ref<boolean>(false);
+        const { t } = useI18n();
         return {
+            t,
             exportRecords,
             showExportModal,
         };
     },
     methods: {
-        getColumns(){
-            // default for birth_info
-            const defaultCol = [   
-                {
-                    name: 'path',
-                    label: 'Dateipfad',
-                    field: (row: SendDocReceiverReq) => row.doc.filePath,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverID',
-                    label: 'Empfänger ID',
-                    field: (row: SendDocReceiverReq) => row.receiver?.original.receiverId,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Nachname',
-                    field: (row: SendDocReceiverReq) => row.receiver?.req.birth_information?.last_name,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Vorname',
-                    field: (row: SendDocReceiverReq) => row.receiver?.req.birth_information?.given_names,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Geburtsdatum',
-                    field: (row: SendDocReceiverReq) => row.receiver?.req.birth_information?.date_of_birth,
-                    sortable: true,
-                },
-            ];
-
-            return defaultCol;
-        },
         showExport(records: SendDocReceiverReq[]) {
             this.exportRecords = records;
             this.showExportModal = true;

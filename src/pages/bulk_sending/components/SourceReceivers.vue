@@ -1,99 +1,57 @@
 <template>
-    <div>
-        Lege die Quelle der Empfänger fest.
-    </div>
-    <div class="src_grid q-my-lg">
-        <div class="text-bold selection-item-box clickable" 
-            @click="selectSource('file')" :class="{ active: value.type === 'file' }">
-            <div>
-                <!-- icon -->
-                <q-icon name="file_open" size="32px" class="q-mb-sm" />
-            </div>
-            <div>
-                Lokale Datei
-            </div>
+    <div class="flex flex-col gap-4">
+        <p class="text-ink-muted">{{ t('ui.bulk.receiverSource.intro') }}</p>
+        <div class="grid grid-cols-2 gap-4">
+            <SourceTile
+                :icon="FileText"
+                :title="t('ui.bulk.common.localFile')"
+                :text="t('ui.bulk.receiverSource.localText')"
+                :active="value.type === 'file'"
+                @select="selectSource('file')"
+            />
+            <SourceTile
+                :icon="Server"
+                :title="t('ui.bulk.common.sftpServer')"
+                :text="t('ui.bulk.receiverSource.sftpText')"
+                :active="value.type === 'sftp'"
+                @select="selectSource('sftp')"
+            />
         </div>
-        <div class="text-bold selection-item-box clickable" 
-            @click="selectSource('sftp')" :class="{ active: value.type === 'sftp' }">
-            <div>
-                <!-- icon -->
-                <q-icon name="storage" size="32px" class="q-mb-sm" />
-            </div>
-            <div>
-                SFTP-Server
-            </div>
+        <div v-if="value.type === 'sftp'" class="flex flex-col gap-4">
+            <FormField :label="t('ui.bulk.common.sftpServer')">
+                <Select
+                    v-model="sftpServerSelected"
+                    :options="sftpServer"
+                    option-label="displayName"
+                    data-key="id"
+                    :placeholder="t('ui.bulk.common.selectSftpServer')"
+                />
+            </FormField>
+            <template v-if="sftpServerSelected != null">
+                <SelectedPath
+                    :icon="FileText"
+                    :path="sftpFilePath"
+                    :placeholder="t('ui.bulk.common.noFileSelected')"
+                    :button-label="t('ui.bulk.common.chooseFile')"
+                    @pick="showSftpModal = true"
+                />
+                <SftpModal
+                    v-model="showSftpModal"
+                    :sftp-connection="sftpServerSelected"
+                    @select-file="selectSftpFile"
+                />
+            </template>
         </div>
-    </div>
-    <div v-if="value.type === 'sftp'">
-        <q-select
-            filled
-            v-model="sftpServerSelected"
-            :options="sftpServer"
-            option-label="displayName"
-            label="SFTP-Server auswählen"
-            color="secondary"
-            map-options
+        <SelectedPath
+            v-if="value.type === 'file'"
+            :icon="FileText"
+            :path="filePath"
+            :placeholder="t('ui.bulk.common.noFileSelected')"
+            :button-label="t('ui.bulk.common.chooseFile')"
+            @pick="selectFile()"
         />
-
-        <div class="row q-my-md" v-if="sftpServerSelected != null">   
-            <div class="col-9">
-                {{ sftpFilePath }}
-            </div>
-            <div class="col-3 text-right">
-                <SftpModal 
-                :sftpConnection="sftpServerSelected"
-                @select-file="selectSftpFile"
-                v-model="showSftpModal">
- 
-                </SftpModal>
-                <q-btn
-                flat class="muted-action-btn"
-                 @click="showSftpModal = true" color="secondary" label="Datei auswählen" />
-            </div>
-        </div>
-        
-
     </div>
-    <div v-if="value.type === 'file'">
-        <div class="row">
-            <div class="col-9">
-                {{ filePath }}
-            </div>
-            <div class="col-3 text-right">
-                <q-btn 
-                flat class="muted-action-btn"
-                @click="selectFile()" color="secondary"  label="Datei auswählen" />
-            </div>
-        </div>
-      
-    </div>
-
-
 </template>
-<style lang="scss" scoped>
-
-    $bg-grid-item: #f0f0f022;
-    $bg-grid-item-hover: #f0f0f033;
-    $bg-grid-item-active: #f0f0f02c;
-
-   .src_grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    .src_grid > div {
-        padding: 20px;
-        min-height: 200px;
-        border-radius: 10px;        
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        border-width: 1px;
-        border-style: solid;
-    }
-</style>
 <script lang="ts">
 import { defineComponent, PropType, ref } from 'vue';
 import { ReceiverSource } from '../util/helper';
@@ -102,11 +60,18 @@ import { useSessionStore } from 'src/stores/session-store';
 import Files from 'src/services/node/Files';
 import { SftpData } from 'app/src-electron/models/EncryptedStore';
 import SftpModal from 'src/components/SftpModal.vue';
+import { useI18n } from 'vue-i18n';
+import Select from 'openvue/select';
+import { FileText, Server } from 'lucide-vue-next';
+import FormField from 'components/ui/FormField.vue';
+import SourceTile from './ui/SourceTile.vue';
+import SelectedPath from './ui/SelectedPath.vue';
 
 export default defineComponent({
   name: 'SourceReceivers',
   components: {
-    SftpModal
+    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+    SftpModal, Select, FormField, SourceTile, SelectedPath,
   },
   emits: ['update:modelValue'],
   props: {
@@ -250,7 +215,11 @@ export default defineComponent({
     const sftpServerSelected = ref<SftpData|null>(null);
     const showSftpModal = ref<boolean>(false);
     const sftpFilePath = ref<string>('');
+    const { t } = useI18n();
     return {
+        t,
+        FileText,
+        Server,
         receiverSrc,
         filePath,
         sessionStore,

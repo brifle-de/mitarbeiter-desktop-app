@@ -1,38 +1,31 @@
 <template>
-    <div>
-        <!-- Select Box to pick rules -->
-        <q-select
-            filled
-            v-model="parser"
-            :options="getRules()"
-            @update:model-value="cacheParser($event)"
-            option-label="name"
-            label="Parser auswählen"
-            color="secondary"
-            map-options
-            ></q-select>            
+    <div class="flex flex-col gap-4">
+        <div class="flex items-end gap-3">
+            <FormField :label="t('ui.bulk.common.parser')" class="flex-1">
+                <Select
+                    v-model="parser"
+                    :options="getRules()"
+                    option-label="name"
+                    :placeholder="t('ui.bulk.common.selectParser')"
+                    @update:model-value="cacheParser($event)"
+                />
+            </FormField>
+            <Button severity="secondary" outlined :label="t('ui.bulk.common.read')" :disabled="!parser" @click="parseFile()">
+                <template #icon><FileInput :size="18" /></template>
+            </Button>
+        </div>
+        <template v-if="receivers.length > 0">
+            <div class="flex items-center gap-2">
+                <StatusTag type="delivered" :label="t('ui.bulk.receiverParser.count', { n: receivers.length })" />
+            </div>
+            <TableCard>
+                <DataTable :value="receivers" paginator :rows="10" :loading="isLoading">
+                    <Column v-for="col in receiverColumns" :key="col.name" :field="col.field" :header="col.label" sortable />
+                </DataTable>
+            </TableCard>
+        </template>
     </div>
-    <div class="q-my-lg text-right">        
-        <q-btn 
-        flat class="muted-action-btn" color="secondary" label="Einlesen" @click="parseFile()" />
-    </div>
-    <div class="q-my-lg">
-        <!-- table with results-->
-        <q-table
-            v-if="receivers.length > 0"
-            :rows="receivers"
-            :columns="receiverColumns"
-            row-key="id"
-            class="q-pa-md material-card material-card-muted"
-            flat
-            :pagination="{ rowsPerPage: 10 }"
-            :loading="isLoading"
-        />
-
-    </div>
-
 </template>
-
 <script lang="ts">
 
 import { defineComponent, PropType, Ref, ref } from 'vue';
@@ -45,13 +38,26 @@ import ReceiverRecord from '../util/receivers/receiverRecord';
 import Sftp from 'src/services/node/Sftp';
 import { Buffer } from 'buffer';
 import { ParsersProvider } from 'src/services/node/ParsersProvider';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import Select from 'openvue/select';
+import DataTable from 'openvue/datatable';
+import Column from 'openvue/column';
+import { FileInput } from 'lucide-vue-next';
+import FormField from 'components/ui/FormField.vue';
+import StatusTag from 'components/ui/StatusTag.vue';
+import TableCard from './ui/TableCard.vue';
+import { useNotify } from 'src/composables/useNotify';
+import { receiverColumnDefs } from './receiverColumns';
 
 
 export default defineComponent({
   name: 'SourceReceiversParser',
 
   components: {
-   },
+    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+    Button, Select, DataTable, Column, FileInput, FormField, StatusTag, TableCard,
+  },
   setup() {   
     const parser = ref<{rules: ReceiverParserRules, name: string, id: string} | null>(null);
     const directories : Ref<string[]> = ref([]);
@@ -61,55 +67,16 @@ export default defineComponent({
     const rules = SampleParsers
     const content = ref<string>('');
     const receivers: Ref<ReceiverParserResult[]> = ref([]);
-    const receiverColumns = ref([
-        {
-            name: 'id',
-            label: 'ID',
-            field: 'receiverId',
-            sortable: true,
-        },
-        {
-            name: 'firstName',
-            label: 'Vorname',
-            field: 'firstName',
-            sortable: true,
-        },
-        {
-            name: 'lastName',
-            label: 'Nachname',
-            field: 'lastName',
-            sortable: true,
-        },
-        {
-            name: 'dateOfBirth',
-            label: 'Geburtsdatum',
-            field: 'dateOfBirth',
-            sortable: true,
-        },
-        {
-            name: 'placeOfBirth',
-            label: 'Geburtsort',
-            field: 'placeOfBirth',
-            sortable: true,
-        },
-        {
-            name: 'email',
-            label: 'Email',
-            field: 'email',
-            sortable: true,
-        },
-        {
-            name: 'phone',
-            label: 'Phone',
-            field: 'phone',
-            sortable: true,
-        }
-    ]);
+    const { t } = useI18n();
+    const notify = useNotify();
+    const receiverColumns = receiverColumnDefs(t);
     
 
     const parsersProvider = ref(new ParsersProvider());
 
-    return {      
+    return {
+      t,
+      notify,
       parser,
       directories,
       files,
@@ -147,12 +114,7 @@ export default defineComponent({
         }
     }).catch((err: Error) => {
         console.error('Error fetching custom parsers:', err);
-        this.$q.notify({
-            message: 'Fehler beim Laden der benutzerdefinierten Parser',
-            color: 'red',
-            position: 'top',
-            timeout: 2000,
-        });
+        this.notify.error(this.t('ui.bulk.errors.loadParsers'));
     });    
   },
   methods: {

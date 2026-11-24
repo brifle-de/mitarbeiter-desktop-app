@@ -1,69 +1,51 @@
 <template>
-    <div>
-        Im folgenden wird geprüft, welche Empfänger bereits ein Brifle Konto haben. Es werden nur die Empfänger angefragt, für die auch Dokumente vorliegen.
-    </div>
-    <div class="q-my-md">
-        <div class="text-right">
-            <q-btn @click="checkForExistenceClick()" color="secondary" class="q-mt-md" text-color="black">
-                Empfänger Suchen              
-            </q-btn>
+    <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-4">
+            <p class="flex-1 text-ink-muted">{{ t('ui.bulk.check.resultsIntro') }}</p>
+            <Button :label="t('ui.bulk.check.start')" :loading="isLoading" @click="checkForExistenceClick()">
+                <template #icon><UserSearch :size="18" /></template>
+            </Button>
         </div>
-        <div class="q-mt-sm" v-if="totalChecking > 0 && totalChecked < totalChecking">
-            <div v-if="isLoading" class="q-mb-sm">
-                <q-spinner size="20px" color="secondary" />
+        <div v-if="totalChecking > 0 && totalChecked < totalChecking" class="flex flex-col gap-3 rounded-[12px] border border-line bg-flaeche px-5 py-4">
+            <span class="ma-text-strong">{{ t('ui.bulk.search.progress', { done: totalChecked, total: totalChecking }) }}</span>
+            <ProgressBar :value="Math.round((totalChecked / totalChecking) * 100)" :show-value="false" style="height: 8px" />
+        </div>
+        <template v-if="records.length > 0">
+            <div class="grid grid-cols-3 gap-4">
+                <KpiCard :label="t('ui.bulk.check.reachable')" :value="reachableCount" :hint="t('ui.bulk.check.reachableHint', { percent: reachablePercent })" />
+                <KpiCard :label="t('ui.bulk.check.unreachable')" :value="records.length - reachableCount" :hint="t('ui.bulk.check.unreachableHint')" />
+                <KpiCard :label="t('ui.bulk.check.checked')" :value="records.length" :hint="t('ui.bulk.check.checkedHint', { n: receiverRecords.length })" />
             </div>
-            <span v-if="totalChecking > 0">
-                {{ totalChecked }} / {{ totalChecking }}
-            </span>
-            <span>
-                Empfänger geprüft
-            </span>
-        </div>
-        
-    </div>
-    <div v-if="records.length > 0">
-        <div class="q-mt-md">
-        {{ records.filter(r => r.exists).length }} von {{ records.length }} Empfängern haben ein Brifle Konto.
-        </div>
-
-        <q-table            
-            :rows="records"
-            :columns="getColumns()"    
-            class="q-mt-md search-receiver-table material-card material-card-muted"
-            flat
-            v-model:selected="selected"
-        >
-         <template v-slot:header-cell-exists="props">
-            <q-th :props="props" class="q-mx-xl">                                                
-                <q-img width="40px" src="/src/assets/electron-web-logo.png" />
-                <span class="q-ml-md">Hat Brifle</span>                
-            </q-th>
+            <SelectButton v-model="filter" :options="filterOptions" option-label="label" option-value="value" :allow-empty="false" class="self-start" />
+            <TableCard>
+                <DataTable :value="filteredRecords" paginator :rows="10">
+                    <Column :field="nameField" :header="t('ui.bulk.columns.receiver')" sortable>
+                        <template #body="{ data }">
+                            <span class="flex flex-col">
+                                <span class="ma-text-strong">{{ nameField(data) || '–' }}</span>
+                                <span class="ma-small text-ink-muted">{{ [formatBirthday(data.original.dateOfBirth), data.original.placeOfBirth].filter(Boolean).join(' · ') || '–' }}</span>
+                            </span>
+                        </template>
+                    </Column>
+                    <Column :field="addressField" :header="t('ui.bulk.columns.address')" sortable />
+                    <Column field="type" :header="t('ui.bulk.columns.checkedBy')" sortable>
+                        <template #body="{ data }">{{ data.exists ? getTypeString(data.type) : '–' }}</template>
+                    </Column>
+                    <Column field="exists" :header="t('ui.bulk.columns.result')" sortable>
+                        <template #body="{ data }">
+                            <StatusTag :type="data.exists ? 'delivered' : 'error'" :label="data.exists ? t('ui.bulk.check.reachableTag') : t('ui.bulk.check.unreachableTag')" />
+                        </template>
+                    </Column>
+                    <template #empty><span class="text-ink-muted">{{ t('ui.bulk.check.emptyFilter') }}</span></template>
+                </DataTable>
+            </TableCard>
         </template>
-        <template v-slot:body-cell-exists="props">
-            <q-td :props="props" class="text-center">
-                <div>
-                    <q-icon v-if="props.row.exists" name="check" color="green" size="xs" />
-                    <q-icon v-else name="close" color="red" size="xs" />
-                </div>
-                <div v-if="props.row.exists">
-                    <span class="text-caption q-ml-sm">Per {{ getTypeString(props.row.type) }}</span>
-                </div>
-            </q-td>
-        </template>
-        
-        </q-table>
-       
     </div>
 </template>
-
-<style lang="scss">
- 
-</style>
-
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 
-import ReceiverRecord, { PostalAddress, ReceiverRecordConverter, SendDocReq } from '../../util/receivers/receiverRecord';
+import ReceiverRecord, { ReceiverRecordConverter, SendDocReq } from '../../util/receivers/receiverRecord';
 import {useBrifleStore} from 'src/stores/brifle-store';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
 import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
@@ -73,10 +55,47 @@ import { ReceiverRequest } from '@brifle/brifle-sdk';
 import Logger from 'src/services/node/Log';
 import BirthdayParser from 'src/utils/birthdayParser';
 import { CountryCodeUtil } from 'src/utils/countryCodes';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import DataTable from 'openvue/datatable';
+import Column from 'openvue/column';
+import ProgressBar from 'openvue/progressbar';
+import SelectButton from 'openvue/selectbutton';
+import { UserSearch } from 'lucide-vue-next';
+import KpiCard from 'components/ui/KpiCard.vue';
+import StatusTag from 'components/ui/StatusTag.vue';
+import TableCard from '../ui/TableCard.vue';
+import { useNotify } from 'src/composables/useNotify';
 
 export default defineComponent({
   name: 'SearchReceiversResults',
+  // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+  components: { Button, DataTable, Column, ProgressBar, SelectButton, UserSearch, KpiCard, StatusTag, TableCard },
   emits: ['confirmed'],
+  computed: {
+    reachableCount(): number {
+        return this.records.filter(r => r.exists).length;
+    },
+    reachablePercent(): number {
+        return this.records.length === 0 ? 0 : Math.round((this.reachableCount / this.records.length) * 100);
+    },
+    filterOptions(): { label: string, value: 'all' | 'reachable' | 'unreachable' }[] {
+        return [
+            { label: this.t('ui.bulk.check.filterAll', { n: this.records.length }), value: 'all' },
+            { label: this.t('ui.bulk.check.filterReachable', { n: this.reachableCount }), value: 'reachable' },
+            { label: this.t('ui.bulk.check.filterUnreachable', { n: this.records.length - this.reachableCount }), value: 'unreachable' },
+        ];
+    },
+    filteredRecords(): ReceiverCheckRequestWithOriginal[] {
+        if (this.filter === 'reachable') {
+            return this.records.filter(r => r.exists);
+        }
+        if (this.filter === 'unreachable') {
+            return this.records.filter(r => !r.exists);
+        }
+        return this.records;
+    },
+  },
     props: {
         receiverRecords: {
             type: Array as () => ReceiverRecord[],
@@ -91,60 +110,29 @@ export default defineComponent({
         getTypeString(type: string | undefined) : string {
             switch(type) {
                 case 'birth_info':
-                    return 'Geburtsinformationen';
+                    return this.t('ui.bulk.check.type.birthInfo');
                 case 'email':
-                    return 'E-Mail Adresse';
+                    return this.t('ui.bulk.check.type.email');
                 case 'tel':
-                    return 'Telefonnummer';
+                    return this.t('ui.bulk.check.type.tel');
                 case 'postal_address':
-                    return 'Postadresse';                    
+                    return this.t('ui.bulk.check.type.postalAddress');
                 default:
                     return '';
             }
         },
-        getColumns(){
-            // default for birth_info
-            const defaultCol = [                  
-                {
-                    name: 'exists',
-                    label: 'Hat Brifle Konto',
-                    field: (row: ReceiverCheckRequestWithOriginal) => row.exists,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Nachname',
-                    field: (row: ReceiverCheckRequestWithOriginal) => row?.original.lastName,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Vorname',
-                    field: (row: ReceiverCheckRequestWithOriginal) => row?.original.firstName,
-                    sortable: true,
-                },
-                {
-                    name: 'receiverName',
-                    label: 'Geburtsdatum',
-                    field: (row: ReceiverCheckRequestWithOriginal) => row?.original.dateOfBirth,                    
-                    sortable: true,
-                    format: (val: string) => {
-                        if(val) {
-                            return BirthdayParser.parseBirthday(val)?.toLocaleDateString('de-DE');
-                        }
-                        return '';
-                    },
-                },
-                {
-                    name: 'postalAddress',
-                    label: 'Adresse',
-                    field: (row: ReceiverCheckRequestWithOriginal) => row.req.postal_address, 
-                    format: (val: PostalAddress) => val ? `${val.street}, ${val.postcode} ${val.city}, ${val.country}` : '',
-                    sortable: true,
-                },
-            ];
-
-            return defaultCol;
+        nameField(row: ReceiverCheckRequestWithOriginal) {
+            return [row.original.firstName, row.original.lastName].filter(Boolean).join(' ');
+        },
+        addressField(row: ReceiverCheckRequestWithOriginal) {
+            const val = row.req.postal_address;
+            return val ? `${val.street}, ${val.postcode} ${val.city}, ${val.country}` : '';
+        },
+        formatBirthday(val: string | undefined) {
+            if(val) {
+                return BirthdayParser.parseBirthday(val)?.toLocaleDateString('de-DE') ?? '';
+            }
+            return '';
         },
         computeCountryCode(row: ReceiverRecord) {
             const val = row.addressCountry ?? null;
@@ -189,7 +177,7 @@ export default defineComponent({
                         }
                     });
                 } else {
-                    throw new Error('Fehler bei der Überprüfung der Empfänger');
+                    throw new Error(this.t('ui.bulk.errors.checkReceivers'));
                 }
               
             })
@@ -278,11 +266,7 @@ export default defineComponent({
                     return false;
                 }
             }).catch((e) => {
-                this.$q.notify({
-                    color: 'negative',
-                    message: e.message || 'Fehler beim Überprüfen des Empfängers',
-                    icon: 'error'
-                });
+                this.notify.error(e.message || this.t('ui.bulk.errors.checkReceiver'));
                 return false;
             });
 
@@ -326,8 +310,12 @@ export default defineComponent({
 
     const records = ref<ReceiverCheckRequestWithOriginal[]>([]);
     const selected = ref<SendDocReq[]>([])
+    const filter = ref<'all' | 'reachable' | 'unreachable'>('all');
+    const { t } = useI18n();
+    const notify = useNotify();
 
     return {
+      t, notify, filter,
       isLoading,
       totalChecked, totalChecking, apiKey, apiId, brifleStore,
       encryptedStore, account, session, receiverType, records, selected

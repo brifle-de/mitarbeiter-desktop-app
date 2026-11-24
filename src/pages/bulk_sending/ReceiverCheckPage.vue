@@ -1,183 +1,102 @@
 <template>
-    <q-page class="q-px-xl">
+    <div class="flex flex-col gap-6 overflow-auto px-8 py-7">
+        <PageHeader :path="t('ui.bulk.path')" :title="t('ui.bulk.check.title')" :subtitle="t('ui.bulk.check.subtitle')">
+            <template #actions>
+                <SelectButton
+                    v-model="fileSource"
+                    :options="sourceOptions"
+                    option-label="label"
+                    option-value="value"
+                    :allow-empty="false"
+                    @update:model-value="clear()"
+                />
+            </template>
+        </PageHeader>
 
-      <div class="text-h4 q-my-xl">Empfänger Prüfen</div>
+        <!-- local files -->
+        <section v-if="fileSource === 'local'" class="ma-card">
+            <h2 class="ma-title-m">{{ t('ui.bulk.check.localTitle') }}</h2>
+            <FileDragAndDrop :formats="['text/csv']" :multiple="true" @drop="addFile($event)" />
+            <ul v-if="files.length > 0" class="flex flex-col gap-2">
+                <li v-for="file in files" :key="file.name + 'file_names'" class="flex items-center gap-3 rounded-[10px] border border-line px-4 py-2.5">
+                    <FileText :size="18" class="shrink-0 text-icon-brand" />
+                    <span class="min-w-0 flex-1 truncate">{{ file.name }}</span>
+                    <Button text rounded severity="danger" size="small" :aria-label="t('ui.bulk.check.removeFile')" @click="files.splice(files.indexOf(file), 1)">
+                        <template #icon><Trash2 :size="16" /></template>
+                    </Button>
+                </li>
+            </ul>
+        </section>
 
-      <q-separator class="q-mb-lg q-mt-lg" />
-
-      <div class="text-right">
-         <q-btn-toggle
-        v-model="fileSource"
-        push
-        class="border"
-        text-color="white"
-        toggle-color="secondary"
-        toggle-text-color="black"
-        unelevated
-        no-caps
-        @update:model-value="clear()"
-        :options="[
-          {label: 'Lokal', value: 'local', slot: 'local'},
-          {label: 'Sftp', value: 'sftp', slot: 'sftp'},
-        ]"
-      >
-        <template v-slot:local>
-          <q-tooltip class="muted-tooltip">Lokale Datei</q-tooltip>
-        </template>
-
-        <template v-slot:sftp>
-          <q-tooltip class="muted-tooltip">Sftp Server</q-tooltip>
-        </template>
-
-      </q-btn-toggle>
-      </div>
-      
-      <div v-if="fileSource === 'local'" class="q-mt-xl" color="material-card">
-        <div class="text-h5 q-mb-lg">
-            Lokale Datei
-        </div>
-        <div>
-             <FileDragAndDrop 
-                :formats="['text/csv']"
-                :multiple="true"
-                @drop="addFile($event)"
+        <!-- files from an SFTP server -->
+        <section v-if="fileSource === 'sftp'" class="ma-card">
+            <h2 class="ma-title-m">{{ t('ui.bulk.check.sftpTitle') }}</h2>
+            <div class="flex items-end gap-3">
+                <FormField :label="t('ui.bulk.common.sftpServer')" class="flex-1">
+                    <Select
+                        v-model="sftpServerSelected"
+                        :options="sftpServer"
+                        option-label="displayName"
+                        data-key="id"
+                        :placeholder="t('ui.bulk.common.selectSftpServer')"
+                    />
+                </FormField>
+                <Button severity="secondary" outlined :label="t('ui.bulk.check.addFile')" :disabled="sftpServerSelected == null" @click="showSftpModal = true">
+                    <template #icon><Plus :size="18" /></template>
+                </Button>
+            </div>
+            <SftpModal
+                v-if="sftpServerSelected != null"
+                v-model="showSftpModal"
+                :sftp-connection="sftpServerSelected"
+                :select-text="t('ui.bulk.check.addFile')"
+                :show-path="false"
+                @select-file="selectSftpFile"
             />
-        </div>
-        <div>
-            <!-- files grid -->
-             <div class="row q-col-gutter-md q-mt-md">
-                <div v-for="file in files" :key="file.name+'file_names'" class="col-4">
-                    <q-card class="bg-fading rounded-borders q-pa-md">
-                        <div class="text-h6">{{ file.name }}</div>       
-                        <!-- delete -->                
-                        <q-btn icon="delete" color="red-5" flat round dense class="absolute-top-right" @click="files.splice(files.indexOf(file), 1)" />
-                    </q-card>   
-                </div>
-            </div>
-        </div>        
-      </div>
-      <div v-if="fileSource === 'sftp'" class="q-mt-xl ">
-        <div class="text-h5 q-mb-lg">
-            SFTP Verbindung
-        </div>
-        <div class="material-card rounded-borders q-pa-md">
-            <div class="text-h6 q-mb-lg">
-                Sftp Server
-            </div>
-            <div>
-                <q-select
-                filled
-                v-model="sftpServerSelected"
-                :options="sftpServer"
-                option-label="displayName"
-                label="SFTP-Server auswählen"
-                color="secondary"
-                map-options
-            />
-            </div>
-            <div class="row q-my-md" v-if="sftpServerSelected != null">   
-                <div class="col-9">
-              
-                </div>
-                <div class="col-3 text-right">
-                    <SftpModal 
-                    :sftpConnection="sftpServerSelected"
-                    @select-file="selectSftpFile"
-                    :select-text="'Datei hinzufügen'"
-                    :show-path="false"
-                    v-model="showSftpModal">
-    
-                    </SftpModal>
-                    <q-btn @click="showSftpModal = true" color="secondary" text-color="black" label="Datei auswählen" />
-                </div>
-            </div>
-        </div>
-        <div>
-                <!-- files grid -->
-                <div class="row q-col-gutter-md q-mt-md" v-if="sftpFilePaths.length > 0">
-                     <div v-for="filePath in sftpFilePaths" :key="filePath+'file_paths'" class="col-4">
-                    <div class="col-4">
-                        <q-card class="bg-fading rounded-borders q-pa-md">
-                            <div class="text-h6">{{ filePath }}</div>       
-                            <!-- delete -->                
-                            <q-btn icon="delete" color="red-5" flat round dense class="absolute-top-right" @click="sftpFilePaths.splice(sftpFilePaths.indexOf(filePath), 1)" />
-                        </q-card>   
-                    </div>
-                    </div>
-                </div>
-        </div>
-        <div class="q-mt-lg" v-if="sftpFilePaths.length > 0">
-        <!-- Select Box to pick rules -->
-            <q-select
-                filled
-                v-model="parser"
-                :options="getRules()"
-                @update:model-value="cacheParser($event)"
-                option-label="name"
-                label="Parser auswählen"
-                color="secondary"
-                map-options
-                ></q-select>            
-        </div>
-        <div>
-            <!-- Search Btn -->
-            <div class="row q-my-md" v-if="sftpFilePaths.length > 0">   
-                <div class="col-9">
-            
-                </div>
-                <div class="col-3 text-right">
-                    <q-btn color="secondary" text-color="black" label="Einlesen" @click="parseSftpFiles()" />
-                </div>
-            </div>
-        </div>
-       
-      </div>
-      <div class="q-mt-lg" v-if="files.length > 0">
-        <!-- Select Box to pick rules -->
-        <q-select
-            filled
-            v-model="parser"
-            :options="getRules()"
-            @update:model-value="cacheParser($event)"
-            option-label="name"
-            label="Parser auswählen"
-            color="secondary"
-            map-options
-            ></q-select>            
+            <ul v-if="sftpFilePaths.length > 0" class="flex flex-col gap-2">
+                <li v-for="filePath in sftpFilePaths" :key="filePath + 'file_paths'" class="flex items-center gap-3 rounded-[10px] border border-line px-4 py-2.5">
+                    <FileText :size="18" class="shrink-0 text-icon-brand" />
+                    <span class="min-w-0 flex-1 truncate" :title="filePath">{{ filePath }}</span>
+                    <Button text rounded severity="danger" size="small" :aria-label="t('ui.bulk.check.removeFile')" @click="sftpFilePaths.splice(sftpFilePaths.indexOf(filePath), 1)">
+                        <template #icon><Trash2 :size="16" /></template>
+                    </Button>
+                </li>
+            </ul>
+        </section>
+
+        <!-- parser + read -->
+        <section v-if="(fileSource === 'local' && files.length > 0) || (fileSource === 'sftp' && sftpFilePaths.length > 0)" class="flex items-end gap-3">
+            <FormField :label="t('ui.bulk.common.parser')" class="flex-1">
+                <Select
+                    v-model="parser"
+                    :options="getRules()"
+                    option-label="name"
+                    :placeholder="t('ui.bulk.common.selectParser')"
+                    @update:model-value="cacheParser($event)"
+                />
+            </FormField>
+            <Button :label="t('ui.bulk.common.read')" :disabled="!parser" :loading="isLoading" @click="fileSource === 'sftp' ? readSftpFiles() : parseLocalFile()">
+                <template #icon><FileInput :size="18" /></template>
+            </Button>
+        </section>
+
+        <template v-if="receivers.length > 0">
+            <section class="flex flex-col gap-3">
+                <h2 class="ma-title-l">{{ t('ui.bulk.check.inputTitle') }}</h2>
+                <p class="text-ink-muted">{{ t('ui.bulk.check.inputText', { n: receivers.length }) }}</p>
+                <TableCard>
+                    <DataTable :value="receivers" paginator :rows="10" :loading="isLoading">
+                        <Column v-for="col in receiverColumns" :key="col.name" :field="col.field" :header="col.label" sortable />
+                    </DataTable>
+                </TableCard>
+            </section>
+            <section class="flex flex-col gap-3">
+                <h2 class="ma-title-l">{{ t('ui.bulk.check.resultsTitle') }}</h2>
+                <SearchReceiversResults :receiver-records="receivers" />
+            </section>
+        </template>
     </div>
-    <div class="q-my-lg text-right" v-if="files.length > 0">
-        <q-btn color="secondary" text-color="black" label="Einlesen" @click="parseLocalFile()" />
-    </div>
-    <div v-if="receivers.length > 0">
-        <q-separator class="q-mb-lg q-mt-lg" />
-        <div class="text-h5 q-mb-lg">
-            Datei Eingabe
-        </div>
-        <div class="q-my-md">
-            Die eingelesenen Dateien enthalten {{ receivers.length }} Empfänger. Die folgende Tabelle zeigt die Einträge die geprüft werden.
-        </div>
-        <q-table
-            v-if="receivers.length > 0"
-            :rows="receivers"
-            :columns="receiverColumns"
-            row-key="id"
-            class="q-pa-md"
-            flat
-            bordered
-            :pagination="{ rowsPerPage: 10 }"
-            :loading="isLoading"
-        />
-    </div>
-    <div class="text-h5 q-my-lg" v-if="receivers.length > 0">
-            Ergebnisse
-    </div>
-    <SearchReceiversResults
-        v-if="receivers.length > 0"
-        :receiverRecords="receivers"
-    />
-    </q-page>
 </template>
-
 <script lang="ts">
 import { defineComponent, Ref, ref } from 'vue';
 import FileDragAndDrop, { FileContent } from 'src/components/ui-elements/FileDragAndDrop.vue';
@@ -193,20 +112,48 @@ import { SftpData } from 'app/src-electron/models/EncryptedStore';
 import SftpModal from 'src/components/SftpModal.vue';
 import { useSessionStore } from 'src/stores/session-store';
 import { useEncryptedStore } from 'src/stores/encrypted-store';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import Column from 'openvue/column';
+import DataTable from 'openvue/datatable';
+import Select from 'openvue/select';
+import SelectButton from 'openvue/selectbutton';
+import { FileInput, FileText, Plus, Trash2 } from 'lucide-vue-next';
+import PageHeader from 'components/shell/PageHeader.vue';
+import FormField from 'components/ui/FormField.vue';
+import { useNotify } from 'src/composables/useNotify';
+import TableCard from './components/ui/TableCard.vue';
+import { receiverColumnDefs } from './components/receiverColumns';
 
 export default defineComponent({
   name: 'ReceiverCheckPage',
   components: {
     FileDragAndDrop,
     SearchReceiversResults,
-    SftpModal
+    SftpModal,
+    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+    Button, Column, DataTable, Select, SelectButton, FileInput, FileText, Plus, Trash2, PageHeader, FormField, TableCard,
   },
   computed: {
     parserType() {        
         return "csv";
-    }
+    },
+    sourceOptions(): { label: string, value: string }[] {
+        return [
+            { label: this.t('ui.bulk.check.sourceLocal'), value: 'local' },
+            { label: 'SFTP', value: 'sftp' },
+        ];
+    },
   },
   methods: {
+    readSftpFiles() {
+        this.isLoading = true;
+        this.parseSftpFiles().catch((err: Error) => {
+            console.error(err);
+        }).finally(() => {
+            this.isLoading = false;
+        });
+    },
     selectSftpFile (filePath: string) {
         this.sftpFilePaths.push(filePath);
     },
@@ -316,12 +263,7 @@ export default defineComponent({
         }
     }).catch((err: Error) => {
         console.error('Error fetching custom parsers:', err);
-        this.$q.notify({
-            message: 'Fehler beim Laden der benutzerdefinierten Parser',
-            color: 'red',
-            position: 'top',
-            timeout: 2000,
-        });
+        this.notify.error(this.t('ui.bulk.errors.loadParsers'));
     });    
     },
   setup() {
@@ -334,50 +276,9 @@ export default defineComponent({
     const isLoading = ref(false);
     const sessionStore = useSessionStore();
     const encryptedStore = useEncryptedStore();
-     const receiverColumns = ref([
-        {
-            name: 'id',
-            label: 'ID',
-            field: 'receiverId',
-            sortable: true,
-        },
-        {
-            name: 'firstName',
-            label: 'Vorname',
-            field: 'firstName',
-            sortable: true,
-        },
-        {
-            name: 'lastName',
-            label: 'Nachname',
-            field: 'lastName',
-            sortable: true,
-        },
-        {
-            name: 'dateOfBirth',
-            label: 'Geburtsdatum',
-            field: 'dateOfBirth',
-            sortable: true,
-        },
-        {
-            name: 'placeOfBirth',
-            label: 'Geburtsort',
-            field: 'placeOfBirth',
-            sortable: true,
-        },
-        {
-            name: 'email',
-            label: 'Email',
-            field: 'email',
-            sortable: true,
-        },
-        {
-            name: 'phone',
-            label: 'Phone',
-            field: 'phone',
-            sortable: true,
-        }
-    ]);
+    const { t } = useI18n();
+    const notify = useNotify();
+    const receiverColumns = receiverColumnDefs(t);
 
     const sftpServer = ref<SftpData[]>([]);
     const sftpServerSelected = ref<SftpData|null>(null);
@@ -385,6 +286,8 @@ export default defineComponent({
     const sftpFilePaths = ref<string[]>([]);
   
     return {
+      t,
+      notify,
       fileSource,
       files,
       parser,

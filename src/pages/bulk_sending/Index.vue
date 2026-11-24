@@ -1,75 +1,43 @@
 <template>
-    <q-page class="wrapper">
-      <div class="q-pa-md q-mb-lg">
-          <div class="text-h4">Serienversand Übersicht</div>            
-      </div>
-      <q-separator />
-      <div 
-      @click="goToRoute('bulk_sending.custom')"
-      class="material-card material-card-muted clickable q-my-md q-mt-lg q-py-md q-px-sm">
-        <div class="row align-items-center items-center">
-          <div class="col-12 col-md-3 text-center">
-            <img src="~assets/img/letter.png" style="width: 100px; aspect-ratio: 1;"/>
-          </div>
-          <div class="col-12 col-md-9">
-            <div class="q-pa-md">
-              <div class="text-h5 q-mb-md">Individuell</div>
-              <p class="text-muted">
-                Senden Sie Dokumente an mehrere Empfänger gleichzeitig. Ideal für Briefe, Rechnungen oder Verträge, die nur einmalig oder unregelmäßig gesendet werden müssen.
-              </p>
-            </div>
-          </div>
+  <div class="flex flex-col gap-6 overflow-auto px-8 py-7">
+    <PageHeader :path="t('ui.bulk.path')" :title="t('ui.bulk.index.title')" :subtitle="t('ui.bulk.index.subtitle')" />
+    <div class="grid grid-cols-2 gap-6">
+      <section class="ma-card">
+        <IconBadge :icon="Layers" />
+        <h2 class="ma-title-l">{{ t('ui.bulk.index.custom.title') }}</h2>
+        <p class="flex-1 text-ink-muted">{{ t('ui.bulk.index.custom.text') }}</p>
+        <div>
+          <Button :label="t('ui.bulk.index.custom.action')" @click="go('bulk_sending.custom')">
+            <template #icon><Play :size="18" /></template>
+          </Button>
         </div>
-      </div>
-      <div 
-      @click="goToRoute('bulk_sending.templates')"
-      class="material-card material-card-muted clickable q-my-md q-py-md q-px-sm">
-        <div class="row align-items-center items-center">
-          <div class="col-12 col-md-3 text-center">
-            <img src="~assets/img/letter_old.png" style="width: 100px; aspect-ratio: 1;"/>
-          </div>
-          <div class="col-12 col-md-9">
-            <div class="q-pa-md">
-              <div class="text-h5 q-mb-md">Vorlagen</div>
-              <p class="text-muted">
-                Senden Sie Dokumente an mehrere Empfänger gleichzeitig. Ideal für Briefe, Rechnungen oder Verträge, die regelmäßig gesendet werden. Sie können Vorlagen mit vordefinierten Dokumentenursprung und Empfängerkreis definieren und anschließend immer wieder verwenden.
-              </p>
-            </div>
-          </div>
+      </section>
+      <section class="ma-card">
+        <IconBadge :icon="LayoutTemplate" />
+        <h2 class="ma-title-l">{{ t('ui.bulk.index.template.title') }}</h2>
+        <p class="flex-1 text-ink-muted">{{ t('ui.bulk.index.template.text') }}</p>
+        <div>
+          <Button severity="secondary" outlined :label="t('ui.bulk.index.template.action')" @click="go('bulk_sending.templates')">
+            <template #icon><ChevronRight :size="18" /></template>
+          </Button>
         </div>
-      </div>
-    </q-page>
+      </section>
+    </div>
+  </div>
 </template>
-<style lang="scss">
-   
-</style>
-<script lang="ts">
 
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
+import Button from 'openvue/button';
+import { ChevronRight, Layers, LayoutTemplate, Play } from 'lucide-vue-next';
+import PageHeader from 'components/shell/PageHeader.vue';
+import IconBadge from 'components/ui/IconBadge.vue';
 
+const { t } = useI18n();
+const router = useRouter();
 
-
-export default defineComponent({
-    name: 'BulkSendingPage',
-    components: {
-    },
-    mounted() {
-     
-    },
-    methods: {
-      goToRoute(routeName: string) {
-        void this.$router.push({ name: routeName });
-      },
-    },
-    setup () {      
-        return {
-          
-        };
-    },
-    computed: {
-              
-    },
-});
-
-
+function go(name: string) {
+  void router.push({ name });
+}
 </script>

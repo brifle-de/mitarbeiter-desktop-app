@@ -1,128 +1,49 @@
 <template>
-    <h4>Übersicht</h4>
-    <div class="overview_grid q-my-lg">
-        <div>     
-            <div class="text-bold text-h5">
-                {{ brifleReceivers.length }}
-            </div>  
-            <div class="text-h6">
-                Brife Empfänger
+    <div class="flex flex-col gap-6">
+        <section class="ma-card">
+            <h3 class="ma-title-m">{{ t('ui.bulk.overview.summary') }}</h3>
+            <dl class="grid grid-cols-[240px_1fr] items-center gap-x-4 gap-y-3">
+                <dt class="ma-small text-ink-muted">{{ t('ui.bulk.overview.brifleReceivers') }}</dt>
+                <dd class="flex items-center gap-3">
+                    <span class="ma-text-strong">{{ brifleReceivers.length }}</span>
+                    <Button text size="small" :label="t('ui.bulk.common.show')" :disabled="brifleReceivers.length === 0" @click="showReceiversModal(brifleReceivers)" />
+                </dd>
+                <dt class="ma-small text-ink-muted">{{ t('ui.bulk.overview.externalReceivers') }}</dt>
+                <dd class="flex items-center gap-3">
+                    <span class="ma-text-strong">{{ externalReceivers.length }}</span>
+                    <Button text size="small" :label="t('ui.bulk.common.show')" :disabled="externalReceivers.length === 0" @click="showReceiversModal(externalReceivers)" />
+                </dd>
+                <dt class="ma-small text-ink-muted">{{ t('ui.bulk.overview.externalAction') }}</dt>
+                <dd>
+                    <StatusTag v-if="actionNotBrifle.action === 'papermail'" type="post" :label="t('ui.bulk.overview.byPaperMail')" />
+                    <StatusTag v-else type="test" :label="t('ui.bulk.overview.ignored')" />
+                </dd>
+                <dt class="ma-small text-ink-muted">{{ t('ui.bulk.subject.subject') }}</dt>
+                <dd class="ma-text-strong break-words">{{ subject }}</dd>
+            </dl>
+        </section>
+
+        <label class="flex items-center gap-2.5">
+            <Checkbox v-model="confirmedSend" binary :disabled="hasStarted" />
+            {{ t('ui.bulk.overview.confirm') }}
+        </label>
+
+        <section class="flex flex-col gap-4">
+            <h3 class="ma-title-m">{{ t('ui.bulk.overview.process') }}</h3>
+            <div class="flex flex-col gap-3 rounded-[12px] border border-line bg-flaeche px-5 py-4">
+                <span class="ma-text-strong">{{ t('ui.bulk.progress.sentOf', { done: successItems.length + failedItems.length, total: totalDocs }) }}</span>
+                <ProgressBar :value="progressPercent" :show-value="false" style="height: 8px" />
             </div>
-            <div class="q-pt-lg">
-                <q-btn color="accent" @click="showReceiversModal(brifleReceivers)">
-                    Anzeigen
-                </q-btn>
+            <div class="grid grid-cols-3 gap-4">
+                <KpiCard :label="t('ui.bulk.kpi.pending')" :value="totalDocs - failedItems.length - successItems.length" />
+                <KpiCard :label="t('ui.bulk.kpi.failed')" :value="failedItems.length" />
+                <KpiCard :label="t('ui.bulk.kpi.sent')" :value="successItems.length" />
             </div>
-            
-        </div>      
-        <div>     
-            <div class="text-bold text-h5">
-                {{ externalReceivers.length }}
-            </div>  
-            <div class="text-h6">
-                Externe Empfänger
-            </div>
-            <div class="q-pt-lg">
-                <q-btn color="accent" @click="showReceiversModal(externalReceivers)">
-                    Anzeigen
-                </q-btn>
-            </div>          
-        </div>    
-        <SendDocsModal 
-        v-model="showReceivers"
-        :records="showReceiversRecords"
-        ></SendDocsModal>       
+        </section>
+
+        <SendDocsModal v-model="showReceivers" :records="showReceiversRecords" />
     </div>
-    <div class="overview_card">
-        <div class="text-h6">Externe Empfänger werden:</div>
-        <div class="text-h5">
-            {{ actionNotBrifle.action === 'ignore' ? 'Ignoriert' : 'Per Papierpost versendet' }}
-        </div>
-    </div>
-    <div class="overview_card q-mt-lg">
-        <div class="text-h6">Betreff:</div>
-        <div class="text-h5">
-            {{ subject }}
-        </div>
-    </div>
-    <div class="q-mt-lg row">
-        <div class="col-9">
-            <q-checkbox v-model="confirmedSend"  
-            color="accent"
-            label="Ich habe die Eingabe überprüft" />
-        </div>
-        <div class="col-3 text-right">
-            <q-btn color="secondary" :disable="!confirmedSend"
-            :loading="hasStarted" 
-            @click="sendAll()"
-            text-color="black" icon="send" >
-            
-        </q-btn>
-        </div>
-    </div>
-    <h5>
-        Prozess
-    </h5>
-    <!-- grid 3 col -->
-     <div class="result-grid">
-        <div>
-            <div class="text-bold text-h5">
-                {{ totalDocs - failedItems.length - successItems.length }} 
-            </div>
-            <div class="text-h6 q-py-md" style="height: 60px;">
-                Ausstehende Dokumente
-            </div>            
-        </div>
-        <div>
-            <div class="text-bold text-h5">
-                {{ failedItems.length }}
-            </div>
-            <div class="text-h6 q-py-md" style="height: 60px;">
-                Dokumente nicht versendet
-            </div>             
-        </div>
-        <div>
-            <div class="text-bold text-h5">
-                {{ successItems.length }}
-            </div>
-            <div class="text-h6 q-py-md" style="height: 60px;">
-                Dokumente erfolgreich versendet
-            </div>
-        </div>
-     </div>
-    
 </template>
-<style lang="scss" scoped>
-
-    $bg-grid-item: #f0f0f022;
-    $bg-grid-item-hover: #f0f0f033;
-    $bg-grid-item-active: #f0f0f02c;
-
-    .result-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-
-    }
-
-    .overview_grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-    .overview_grid > div, .overview_card, .result-grid > div {
-        background-color: $bg-grid-item;
-        padding: 20px;
-        min-height: 200px;
-        border-radius: 10px;        
-        text-align: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        border: 3px solid $bg-grid-item;
-    }
-</style>
 <script lang="ts">
 
 import { defineComponent, PropType, ref } from 'vue';
@@ -135,12 +56,25 @@ import { useEncryptedStore } from 'src/stores/encrypted-store';
 import SendDocsModal from './modal/SendDocsModal.vue';
 import { SendContentRequest } from '@brifle/brifle-sdk';
 import { NonExistingReceiverAction } from './NonExistingReceiversAction.vue';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import Checkbox from 'openvue/checkbox';
+import ProgressBar from 'openvue/progressbar';
+import KpiCard from 'components/ui/KpiCard.vue';
+import StatusTag from 'components/ui/StatusTag.vue';
 
 export default defineComponent({
     name: 'SendingOverviewPage',
-    emits: ['sent'],
+    // the flow's footer starts sendAll(); 'update:confirmed' reports the review checkbox
+    emits: ['sent', 'update:confirmed'],
     components: {
-        SendDocsModal,
+        // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+        SendDocsModal, Button, Checkbox, ProgressBar, KpiCard, StatusTag,
+    },
+    watch: {
+        confirmedSend(value: boolean) {
+            this.$emit('update:confirmed', value);
+        },
     },
     computed: {
         externalReceivers(){
@@ -152,6 +86,12 @@ export default defineComponent({
             return this.sendDocRecord.filter((record: SendDocReq) => {
                 return record.exists === true;
             });
+        },
+        progressPercent(): number {
+            if (this.totalDocs === 0) {
+                return 0;
+            }
+            return Math.round(((this.successItems.length + this.failedItems.length) / this.totalDocs) * 100);
         },
         totalDocs(){
             if(this.actionNotBrifle.action === 'ignore') {
@@ -291,7 +231,9 @@ export default defineComponent({
         const showReceivers = ref<boolean>(false);
         const showReceiversRecords = ref<SendDocReq[]>([]);
         const hasStarted = ref<boolean>(false);
+        const { t } = useI18n();
         return {
+            t,
             confirmedSend,
             failedItems,
             successItems,

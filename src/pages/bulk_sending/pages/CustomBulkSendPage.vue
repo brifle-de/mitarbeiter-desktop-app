@@ -1,189 +1,81 @@
 <template>
-    <q-page class="wrapper">
-        <div class="q-pa-md">
-            <h4 class="text-center">Massenversand</h4>            
+    <div class="flex min-h-0 flex-1 flex-col">
+        <div class="flex flex-1 flex-col gap-6 overflow-auto px-8 py-7">
+            <PageHeader :path="t('ui.bulk.custom.path')" :title="t(`ui.bulk.custom.step.s${step}`)" :subtitle="summary || t(`ui.bulk.custom.stepText.s${step}`)" />
+            <StepsHeader :steps="phases" :active="phaseOfStep[step] ?? 0" />
+
+            <SourceReceivers v-if="step === 1" v-model="receiverSrc" />
+
+            <SourceReceiversParser
+                v-if="step === 2"
+                :receiver-source="receiverSrc"
+                @parsed="onParsedReceivers($event)"
+            />
+
+            <SourceDocuments v-if="step === 3" v-model="documentsSrc" />
+
+            <SourceDocumentsParser
+                v-if="step === 4"
+                v-model="documentsSrc"
+                @parsed="onParsedDocuments($event)"
+            />
+
+            <SearchReceivers
+                v-if="step === 5"
+                :receiver-records="receiverRecords"
+                :document-records="documentRecords"
+                @selection="pendingSelection = $event"
+                @confirmed="onConfirmedDocuments($event)"
+            />
+
+            <NonExistingReceiversAction
+                v-if="step === 6"
+                ref="nonBrifle"
+                :api-id="apiId"
+                :tenant-id="tenantId"
+                @valid="nonBrifleValid = $event"
+                @update="goToPage7($event)"
+            />
+
+            <section v-if="step === 7" class="ma-card">
+                <FormField :label="t('ui.bulk.subject.subject')" for-id="bulk-custom-subject" :hint="t('ui.bulk.custom.subjectHint')">
+                    <InputText id="bulk-custom-subject" v-model="subject" :invalid="subject === ''" autofocus />
+                </FormField>
+            </section>
+
+            <SendingOverviewPage
+                v-if="step === 8"
+                ref="overview"
+                :subject="subject"
+                :api-id="apiId"
+                :tenant-id="tenantId"
+                :send-doc-record="docsToSend"
+                :action-not-brifle="actionNotBrifle"
+                @update:confirmed="overviewConfirmed = $event"
+                @sent="sentAll($event)"
+            />
+
+            <SendReports
+                v-if="step === 9"
+                :success-records="reportSuccess"
+                :error-records="reportError"
+                :not-brifle-records="reportNotBrifle"
+            />
         </div>
-        <div class="q-pa-md">
-    <q-stepper
-      v-model="step"
-      vertical
-      flat
-      color="secondary" 
-      class="material-card material-card-muted"
-      animated
-    >
-      <q-step
-        :name="1"
-        title="Quelle - Empfänger"
-        color="secondary"
-        icon="settings"
-        :done="step > 1"
-      >
-        
-            <SourceReceivers v-model="receiverSrc" />
-
-
-        <q-stepper-navigation class="text-center">          
-          <q-btn :disable="!validSourceReceiver" @click="step = 2" color="secondary" text-color="black" label="Weiter" />
-        </q-stepper-navigation>
-      </q-step>
-
-      <q-step
-        :name="2"
-        title="Empfänger"        
-        color="secondary"
-        icon="create_new_folder"
-        :disable="step < 2"
-        :done="step > 2"
-      >
-        <SourceReceiversParser
-          :receiverSource="receiverSrc"          
-          @parsed="onParsedReceivers($event)"
+        <WizardFooter
+            :cancel-label="step < 9 && !sending ? t('ui.bulk.common.cancel') : ''"
+            :back-label="step > 1 && step < 9 && !sending ? t('ui.bulk.common.back') : ''"
+            :next-label="nextLabel"
+            :next-icon="step === 8 ? Send : step === 9 ? Check : ChevronRight"
+            :next-disabled="!canProceed"
+            :loading="sending"
+            :hint="footerHint"
+            @cancel="leave()"
+            @back="step--"
+            @next="next()"
         />
-
-
-        <q-stepper-navigation>
-          <q-btn @click="step = 3" color="secondary"  
-          :disable="receiverRecords.length === 0"
-          text-color="black"  label="Weiter" />
-        </q-stepper-navigation>
-      </q-step>
-
-      <q-step
-        :name="3"
-        title="Quelle - Dokumente"
-        color="secondary"
-        icon="assignment"
-        :disable="step < 3"
-        :done="step > 3"
-      >
-        
-      <SourceDocuments
-        v-model="documentsSrc"
-      >
-      </SourceDocuments>
-
-      <q-stepper-navigation>
-          <q-btn @click="step = 4" :disable="!validSourceDocuments" color="secondary"  text-color="black"  label="Weiter" />
-        </q-stepper-navigation>
-
-      </q-step>
-
-      <q-step
-        :name="4"
-        :disable="step < 4"
-        :done="step > 4"
-        title="Zuweisung - Dokumente"
-        color="secondary"
-        icon="add_comment"
-      >
-        <SourceDocumentsParser
-          @parsed="onParsedDocuments($event)"
-          v-model="documentsSrc"
-        />
-
-        <q-stepper-navigation>
-          <q-btn  @click="step = 5" color="secondary" 
-          :disable="documentRecords.length === 0"
-          text-color="black" label="Weiter" />
-        </q-stepper-navigation>
-      </q-step>
-      <q-step
-        :name="5"
-        :disable="step < 5"
-        :done="step > 5"
-        title="Suche - Empfänger Brifle Account"
-        color="secondary"
-        icon="add_comment"
-      >     
-      <SearchReceivers
-        :receiverRecords="receiverRecords"
-        :documentRecords="documentRecords"
-        @confirmed="onConfirmedDocuments($event)"
-      />
-        
-      </q-step>
-      <q-step
-        :name="6"
-        :disable="step < 6"
-        :done="step > 6"
-        title="Aktion - Nicht Brifle Empfänger"
-        color="secondary"
-        icon="local_post_office"
-      >
-        <NonExistingReceiversAction
-        :api-id="apiId"
-        :tenant-id="tenantId"
-          @update="goToPage7($event)" 
-        />
-    
-    </q-step>
-    <q-step
-        :name="7"
-        :disable="step < 7"
-        :done="step > 7"
-        title="Betreff"
-        color="secondary"
-        icon="title"
-      >
-      <div class="q-my-lg text-center">
-          <q-input filled
-          v-model="subject"
-          color="secondary"
-          label="Betreff"
-          class="q-mt-lg"
-          />
-          <q-stepper-navigation>
-            <q-btn @click="step = 8" color="secondary" 
-            :disable="subject === ''"
-            text-color="black" label="Weiter" />
-          </q-stepper-navigation>
-
-      </div>
-
-    </q-step>
-      <q-step
-        :name="8"
-        :disable="step < 8"
-        :done="step > 8"
-        title="Übersicht"
-        color="secondary"
-        icon="assignment_turned_in"
-      >
-
-      <SendingOverviewPage
-      :subject="subject"
-      :api-key="apiKey"
-      :api-id="apiId"
-      :tenant-id="tenantId"
-      :send-doc-record="docsToSend"
-      :action-not-brifle="actionNotBrifle"
-      @sent="sentAll($event)"
-      >
-
-      </SendingOverviewPage>
-    </q-step>
-    <q-step
-        :name="9"
-        :disable="step < 9"
-        :done="step > 9"
-        title="Bericht"
-        color="secondary"
-        icon="send"
-      >
-      <SendReports
-      :success-records="reportSuccess"
-      :error-records="reportError"
-      :not-brifle-records="reportNotBrifle"
-      ></SendReports>
-    </q-step>
-    </q-stepper>
-  </div>
-    </q-page>
+    </div>
 </template>
-<style lang="scss">
-   
-</style>
 <script lang="ts">
 
 import { defineComponent, ref } from 'vue';
@@ -206,6 +98,13 @@ import SendReports from '../components/SendReports.vue';
 import Logger from 'src/services/node/Log';
 import { useBrifleStore } from 'src/stores/brifle-store';
 import { AccountData, ApiEndpoints } from 'app/src-electron/models/EncryptedStore';
+import { useI18n } from 'vue-i18n';
+import InputText from 'openvue/inputtext';
+import { Check, ChevronRight, Send } from 'lucide-vue-next';
+import PageHeader from 'components/shell/PageHeader.vue';
+import StepsHeader from 'components/ui/StepsHeader.vue';
+import WizardFooter from 'components/ui/WizardFooter.vue';
+import FormField from 'components/ui/FormField.vue';
 
 
 export default defineComponent({
@@ -213,7 +112,7 @@ export default defineComponent({
     components: {
         SourceReceivers, SourceReceiversParser, SourceDocuments, 
         SourceDocumentsParser, SearchReceivers, NonExistingReceiversAction,
-        SendingOverviewPage, SendReports,
+        SendingOverviewPage, SendReports, InputText, PageHeader, StepsHeader, WizardFooter, FormField,
     },
     mounted() {
        const accountId = this.sessionStore.getSelectedAccountId as string;
@@ -265,7 +164,24 @@ export default defineComponent({
         const brifleStore = useBrifleStore();
         const account = ref<AccountData | null>(null);
         const tenantId = ref<string>('');
+        const { t } = useI18n();
+        // footer state reported by the step components
+        const pendingSelection = ref<SendDocReq[]>([]);
+        const nonBrifleValid = ref<boolean>(true);
+        const overviewConfirmed = ref<boolean>(false);
+        const sending = ref<boolean>(false);
+        // steps 1–9 grouped into the phases of the stepper header
+        const phaseOfStep: Record<number, number> = { 1: 0, 2: 0, 3: 1, 4: 1, 5: 2, 6: 3, 7: 4, 8: 5, 9: 5 };
         return {
+            t,
+            Send,
+            Check,
+            ChevronRight,
+            pendingSelection,
+            nonBrifleValid,
+            overviewConfirmed,
+            sending,
+            phaseOfStep,
             sessionStore,
             encryptedStore,
             step,
@@ -286,8 +202,65 @@ export default defineComponent({
             account,
         };
     },
+    watch: {
+      // step components start empty when they are shown again, so their footer state does too
+      step(value: number) {
+        if (value === 5) {
+          this.pendingSelection = [];
+        } else if (value === 8) {
+          this.overviewConfirmed = false;
+        }
+      },
+    },
     computed: {
-      validSourceReceiver() {
+      phases(): { title: string, description: string }[] {
+        return ['receivers', 'documents', 'check', 'options', 'subject', 'send'].map((key) => ({
+          title: this.t(`ui.bulk.custom.phase.${key}`),
+          description: this.t(`ui.bulk.custom.phaseText.${key}`),
+        }));
+      },
+      summary(): string {
+        const parts: string[] = [];
+        if (this.receiverRecords.length > 0) {
+          parts.push(this.t('ui.bulk.custom.summaryReceivers', { n: this.receiverRecords.length }));
+        }
+        if (this.documentRecords.length > 0) {
+          parts.push(this.t('ui.bulk.custom.summaryDocuments', { n: this.documentRecords.length }));
+        }
+        if (this.step >= 6 && this.docsToSend.length > 0) {
+          parts.push(this.t('ui.bulk.custom.summarySelected', { n: this.docsToSend.length }));
+        }
+        return parts.join(' · ');
+      },
+      canProceed(): boolean {
+        switch (this.step) {
+          case 1: return this.validSourceReceiver;
+          case 2: return this.receiverRecords.length > 0;
+          case 3: return this.validSourceDocuments;
+          case 4: return this.documentRecords.length > 0;
+          case 5: return this.pendingSelection.length > 0;
+          case 6: return this.nonBrifleValid;
+          case 7: return this.subject !== '';
+          case 8: return this.overviewConfirmed && !this.sending;
+          default: return true;
+        }
+      },
+      nextLabel(): string {
+        if (this.step === 8) {
+          return this.t('ui.bulk.custom.sendNow');
+        }
+        if (this.step === 9) {
+          return this.t('ui.bulk.common.done');
+        }
+        return this.t('ui.bulk.common.next');
+      },
+      footerHint(): string {
+        if (this.step === 5 && this.pendingSelection.length > 0) {
+          return this.t('ui.bulk.search.selectedHint', { n: this.pendingSelection.length });
+        }
+        return '';
+      },
+      validSourceReceiver(): boolean {
         if(this.receiverSrc.type === 'file') {
             return this.receiverSrc.file != null && this.receiverSrc.file !== '';
         } else if(this.receiverSrc.type === 'sftp') {
@@ -296,7 +269,7 @@ export default defineComponent({
         return false;
     
       },
-      validSourceDocuments() {
+      validSourceDocuments(): boolean {
         if(this.documentsSrc.type === 'file') {
             return this.documentsSrc.file != null && this.documentsSrc.file !== '';
         } else if(this.documentsSrc.type === 'sftp') {
@@ -306,6 +279,34 @@ export default defineComponent({
       },
     },
     methods: {
+      next() {
+        switch (this.step) {
+          case 5:
+            this.onConfirmedDocuments(this.pendingSelection);
+            break;
+          case 6:
+            (this.$refs.nonBrifle as { update: () => void } | undefined)?.update();
+            break;
+          case 8: {
+            const overview = this.$refs.overview as { sendAll: () => Promise<void> } | undefined;
+            if (overview) {
+              this.sending = true;
+              void overview.sendAll().finally(() => {
+                this.sending = false;
+              });
+            }
+            break;
+          }
+          case 9:
+            this.leave();
+            break;
+          default:
+            this.step++;
+        }
+      },
+      leave() {
+        void this.$router.push({ name: 'bulk_sending.index' });
+      },
       goToPage7($event: NonExistingReceiverAction) {
         this.actionNotBrifle = $event;
         this.step = 7;

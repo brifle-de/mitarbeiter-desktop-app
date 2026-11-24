@@ -1,144 +1,82 @@
 <template>
-    <q-dialog 
-        class="confirm-dialog"
-        v-model="showBuildDialog" position="right" 
-        maximized persistent  no-shake  transition-show="none"
-        transition-hide="none">
-            <q-card class="material-card material-card-filled flex-column  padding-top-titlebar unselectable builder-dialog">
-                <q-card-section class="w-100">
-                    <div class="text-h5">Betreff Designer</div>
-                </q-card-section>
-                <q-card-section class="w-100">
-                    <q-input
-                    label="Betreff"
-                     filled
-                    class="w-100"
-                    v-model="builderSubject"
-                    color="secondary" />
-                    <div class="q-mt-md text-bold">
-                        {{ builderPreview }}
-                    </div>
-                </q-card-section>
-                <q-card-section class="w-100 flex-1 q-py-sm" style="overflow: auto;">
-                    <div class="text-h6">Verfügbare Platzhalter</div>
-                    <div v-for="placeholder in placeholders" :key="placeholder" class="row q-my-sm q-px-md">
-                        <div class="col-4">
-                            <div class="muted-pill text-caption clickable" @click="builderSubject += `{{${placeholder}}}`">
-                                {{ placeholder }}
-                            </div>
-                        </div>
-                        <div class="col-8">
-                            {{ placeholderDescriptions[placeholder as keyof typeof placeholderDescriptions] ?? 'Keine Beschreibung verfügbar' }}
-                        </div>
-                    </div>
-                    
-                </q-card-section>
-                <q-card-actions class="w-100 justify-between">
-                    <q-btn flat class="muted-action-btn" label="Schließen" @click="showBuildDialog = false" />
-                    <!-- copy design value-->
-                    <q-btn flat class="muted-action-btn" color="secondary" label="Kopieren in Zwischenablage" @click="copyFromBuilder()" />
-                </q-card-actions>
-                
-            </q-card>
-    </q-dialog>
-    <q-dialog :model-value="editIndex !== -1" persistent>
-        <q-card class="material-card material-card-filled">
-            <q-card-section>
-                <div class="text-h6">Dokumententyp bearbeiten</div>
-                <q-input filled
-                v-model="customDocTypes[editIndex]"
-                color="secondary"
-                label="Dokumententyp"
-                class="q-mt-lg"
-                @keyup.enter="editIndex = -1" 
-                @keyup.esc="editIndex = -1">
-            
-            </q-input>
-                
-            </q-card-section>
-            <q-card-actions align="right" class="q-mx-sm">
-                <q-btn flat class="muted-action-btn" label="Schließen" color="secondary" @click="editIndex = -1" />
-            </q-card-actions>
-        </q-card>
+    <div class="flex flex-col gap-6">
+        <div class="flex items-end gap-3">
+            <FormField :label="t('ui.bulk.subject.default')" for-id="bulk-subject-default" class="flex-1">
+                <InputText id="bulk-subject-default" v-model="subject.default" :placeholder="t('ui.bulk.subject.defaultPlaceholder')" />
+            </FormField>
+            <Button severity="secondary" outlined :label="t('ui.bulk.subject.builder')" @click="showBuildDialog = true">
+                <template #icon><Braces :size="18" /></template>
+            </Button>
+        </div>
 
-    </q-dialog>
-    <div>
-        <q-btn flat class="muted-action-btn" @click="showBuildDialog = true" color="secondary" label="Betreff Builder" />
-    </div>
-    <div class="q-my-lg text-center">
-        <q-input filled
-        v-model="subject.default"
-        color="secondary"
-        label="Betreff"
-        class="q-mt-lg"
-        />
-    </div>
-    <div class="q-my-lg text-center">
-        <h6>Dokumententyp spezifische Betreffs</h6>
-        <div v-for="docType in docTypes" :key="docType" class="q-my-md">
-            <q-input            
-            v-model="subject.docTypes[docType]"
-            color="secondary"
-            :placeholder="subject.default"
-            :label="`Betreff für ${docType}`"
-             >
-            <template v-slot:append>
-                <q-btn 
-                flat 
-                class="muted-action-btn"
-                @click="customDocTypes.push('Dok' + (customDocTypes.length + 1))"
-                color="secondary" label="+" />
-            </template>
-            <template v-slot:prepend>
-              <div :class="getPillClass(docType)">
-                {{ docType }}
-              </div>
-            </template>
-            </q-input>
-        </div>
-        <div v-for="(docType, index) in customDocTypes" :key="docType" class="q-my-md">
-            <q-input filled
-            v-model="subject.docTypes[docType]"
-            color="secondary"
-            :placeholder="subject.default"
-            :label="`Betreff für ${docType}`"
-             >
-            <template v-slot:append>
-                <div class="row">
-                    <q-btn 
-                        flat 
-                        class="muted-action-btn"
-                        @click="customDocTypes.push('Dok' + (customDocTypes.length + 1))"
-                        color="secondary" label="+" />
-                    <q-btn 
-                        flat
-                        class="muted-action-btn q-mx-sm"
-                        @click="customDocTypes.splice(customDocTypes.indexOf(docType), 1)"
-                        color="negative" label="-" />
-                        <q-btn
-                        flat
-                        class="muted-action-btn"
-                        @click="editIndex = index"
-                        icon="edit"
-                        />
-                        
-                </div>
-            </template>
-            <template v-slot:prepend>
-              <div :class="getPillClass(docType)">
-                {{ docType }}
-              </div>
-            </template>
-            </q-input>
+        <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-3">
+                <h3 class="ma-title-m flex-1">{{ t('ui.bulk.subject.perDocType') }}</h3>
+                <Button text size="small" :label="t('ui.bulk.subject.addDocType')" @click="addDocType()">
+                    <template #icon><Plus :size="16" /></template>
+                </Button>
+            </div>
+            <p class="ma-small text-ink-muted">{{ t('ui.bulk.subject.perDocTypeHint') }}</p>
+            <div v-for="docType in docTypes" :key="docType" class="flex items-center gap-3">
+                <div class="w-40 shrink-0"><DocTypePill :label="docType" :color="pillColors[docType]" /></div>
+                <InputText v-model="subject.docTypes[docType]" class="flex-1" :placeholder="subject.default" :aria-label="t('ui.bulk.subject.forDocType', { type: docType })" />
+            </div>
+            <div v-for="(docType, index) in customDocTypes" :key="docType" class="flex items-center gap-3">
+                <div class="w-40 shrink-0"><DocTypePill :label="docType" :color="pillColors[docType]" /></div>
+                <InputText v-model="subject.docTypes[docType]" class="flex-1" :placeholder="subject.default" :aria-label="t('ui.bulk.subject.forDocType', { type: docType })" />
+                <Button v-tooltip.top="t('ui.bulk.subject.renameDocType')" text rounded :aria-label="t('ui.bulk.subject.renameDocType')" @click="editIndex = index">
+                    <template #icon><Pencil :size="16" /></template>
+                </Button>
+                <Button v-tooltip.top="t('ui.bulk.subject.removeDocType')" text rounded severity="danger" :aria-label="t('ui.bulk.subject.removeDocType')" @click="customDocTypes.splice(customDocTypes.indexOf(docType), 1)">
+                    <template #icon><Trash2 :size="16" /></template>
+                </Button>
+            </div>
+            <p v-if="docTypes.length === 0 && customDocTypes.length === 0" class="ma-small text-ink-muted">{{ t('ui.bulk.subject.noDocTypes') }}</p>
         </div>
     </div>
-</template> 
-<style lang="scss" scoped>
-    .builder-dialog {
-        width: 800px;
-        max-width: 60vw;
-    }
-</style>
+
+    <!-- Betreff-Designer: compose a subject with placeholders and copy it -->
+    <Dialog v-model:visible="showBuildDialog" modal :header="t('ui.bulk.subject.builderTitle')" :style="{ width: '720px', maxWidth: '90vw' }">
+        <div class="flex flex-col gap-4">
+            <FormField :label="t('ui.bulk.subject.subject')" for-id="bulk-subject-builder">
+                <InputText id="bulk-subject-builder" v-model="builderSubject" />
+            </FormField>
+            <div class="flex flex-col gap-1 rounded-[10px] bg-dezent px-4 py-3">
+                <span class="ma-label text-ink-muted">{{ t('ui.bulk.subject.preview') }}</span>
+                <span class="ma-text-strong break-words">{{ builderPreview || '–' }}</span>
+            </div>
+            <h3 class="ma-title-m">{{ t('ui.bulk.subject.placeholders') }}</h3>
+            <ul class="flex max-h-[40vh] flex-col overflow-auto">
+                <li v-for="placeholder in placeholders" :key="placeholder" class="flex items-center gap-3 border-b border-line py-2 last:border-b-0">
+                    <button
+                        type="button"
+                        class="ma-label shrink-0 rounded-full bg-mint px-2.5 py-[3px] text-brand-ink hover:bg-brand hover:text-on-brand"
+                        :title="t('ui.bulk.subject.insert')"
+                        @click="insertPlaceholder(placeholder)"
+                    >
+                        {{ placeholder }}
+                    </button>
+                    <span class="ma-small text-ink-muted">{{ placeholderDescriptions[placeholder] }}</span>
+                </li>
+            </ul>
+        </div>
+        <template #footer>
+            <Button severity="secondary" outlined :label="t('ui.bulk.common.close')" @click="showBuildDialog = false" />
+            <Button :label="t('ui.bulk.subject.copy')" @click="copyFromBuilder()">
+                <template #icon><Copy :size="18" /></template>
+            </Button>
+        </template>
+    </Dialog>
+
+    <Dialog :visible="editIndex !== -1" modal :header="t('ui.bulk.subject.renameDocType')" :style="{ width: '420px' }" @update:visible="(v: boolean) => { if (!v) editIndex = -1; }">
+        <FormField v-if="editIndex !== -1" :label="t('ui.bulk.columns.docType')" for-id="bulk-doc-type-edit">
+            <InputText id="bulk-doc-type-edit" v-model="customDocTypes[editIndex]" autofocus @keyup.enter="editIndex = -1" @keyup.esc="editIndex = -1" />
+        </FormField>
+        <template #footer>
+            <Button :label="t('ui.bulk.common.close')" @click="editIndex = -1" />
+        </template>
+    </Dialog>
+</template>
 <script lang="ts">
 
 import { defineComponent, PropType, ref } from 'vue';
@@ -147,9 +85,19 @@ import DocumentRecord from '../util/documents/documentRecord';
 import { computePillColors } from '../util/helper';
 import { copyToClipboard } from 'src/composables/useClipboard';
 import { SendDocReceiverReq } from '../util/receivers/receiverRecord';
+import { useI18n } from 'vue-i18n';
+import Button from 'openvue/button';
+import Dialog from 'openvue/dialog';
+import InputText from 'openvue/inputtext';
+import { Braces, Copy, Pencil, Plus, Trash2 } from 'lucide-vue-next';
+import FormField from 'components/ui/FormField.vue';
+import DocTypePill from './ui/DocTypePill.vue';
+import { useNotify } from 'src/composables/useNotify';
 
 export default defineComponent({
     name: 'SubjectSetter',
+    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+    components: { Button, Dialog, InputText, Braces, Copy, Pencil, Plus, Trash2, FormField, DocTypePill },
     props: {
         modelValue: {
             type: Object as PropType<SubjectData>,
@@ -164,12 +112,15 @@ export default defineComponent({
     methods: {
         copyFromBuilder() {
             void copyToClipboard(this.builderSubject);
-            this.$q.notify({ type: 'positive', message: 'Betreff in Zwischenablage kopiert' });
+            this.notify.success(this.t('ui.bulk.subject.copied'));
             this.showBuildDialog = false;
         },
-        getPillClass(docType: string) {
-            return 'text-caption q-ml-sm muted-pill ' + (this.pillColors[docType] ?? '')
-        }
+        insertPlaceholder(placeholder: string) {
+            this.builderSubject += '{{' + placeholder + '}}';
+        },
+        addDocType() {
+            this.customDocTypes.push('Dok' + (this.customDocTypes.length + 1));
+        },
     },
     computed: {
         builderPreview(): string {
@@ -224,25 +175,13 @@ export default defineComponent({
         const showBuildDialog = ref<boolean>(false);
         const placeholders = getSubjectPlaceholderkeys();
       
-        const placeholderDescriptions = {
-            receiverId: 'Die ID des Empfängers',
-            docType: 'Der Dokumententyp',
-            currentMonth: 'Der aktuelle Monat (z.B. Januar, Februar, ...)',
-            currentYear: 'Das aktuelle Jahr (z.B. 2024)',   
-            currentDate: 'Das aktuelle Datum (z.B. 01.01.2024)',
-            currentDay: 'Der aktuelle Tag (z.B. 01, 02, ...)',
-            nextMonth: 'Der nächste Monat (z.B. Januar, Februar, ...)',
-            nextYear: 'Das nächste Jahr (z.B. 2024)',
-            nextDate: 'Das nächste Datum (z.B. 01.01.2024)',
-            lastMonth: 'Der letzte Monat (z.B. Januar, Februar, ...)',
-            lastYear: 'Das letzte Jahr (z.B. 2024)',
-            lastDate: 'Das letzte Datum (z.B. 01.01.2024)',
-            lastMonthYear: 'Der letzte Monat und das Jahr (z.B. Januar 2024)',
-            currentMonthAndYear: 'Der aktuelle Monat und das Jahr (z.B. Januar 2024)',
-            nextMonthYear: 'Der nächste Monat und das Jahr (z.B. Januar 2024)',
-        }
+        const { t } = useI18n();
+        const notify = useNotify();
+        const placeholderDescriptions = Object.fromEntries(
+            placeholders.map((key) => [key, t(`ui.bulk.subject.placeholder.${key}`)]),
+        ) as Record<string, string>;
         const builderSubject = ref<string>('');
-        return { customDocTypes, editIndex, showBuildDialog, placeholders, placeholderDescriptions, builderSubject };
+        return { t, notify, customDocTypes, editIndex, showBuildDialog, placeholders, placeholderDescriptions, builderSubject };
     },
 });
 
