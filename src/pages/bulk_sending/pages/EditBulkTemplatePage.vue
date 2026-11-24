@@ -116,7 +116,7 @@ export default defineComponent({
     components: {
         SourceReceivers, SourceReceiversParser, SourceDocuments, 
         SourceDocumentsParser, NonExistingReceiversAction, SubjectSetter,
-        // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+         
         InputText, Textarea, PageHeader, StepsHeader, WizardFooter, FormField,
     },
     props: {

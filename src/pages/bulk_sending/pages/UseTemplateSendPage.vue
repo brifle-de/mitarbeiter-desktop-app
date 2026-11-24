@@ -221,7 +221,7 @@ import DocTypePill from '../components/ui/DocTypePill.vue';
 export default defineComponent({
     name: 'UseTemplateSendPage',
     components: {
-        // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+         
         TemplateSendReports, Button, Column, DataTable, Dialog, Panel, ProgressBar, ProgressSpinner, ToggleSwitch,
         Info, RefreshCw, PageHeader, StepsHeader, WizardFooter, KpiCard, EmptyState, StatusTag, TableCard, DocTypePill,
     },

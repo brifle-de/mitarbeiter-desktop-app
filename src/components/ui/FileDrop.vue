@@ -23,7 +23,7 @@ import { ref } from 'vue';
 import { Upload } from 'lucide-vue-next';
 import IconBadge from './IconBadge.vue';
 
-withDefaults(defineProps<{ title: string; overTitle?: string; hint?: string; accept?: string; multiple?: boolean }>(), {
+withDefaults(defineProps<{ title: string; overTitle?: string | undefined; hint?: string | undefined; accept?: string | undefined; multiple?: boolean }>(), {
   overTitle: 'Loslassen zum Hinzufügen',
   accept: 'application/pdf',
 });

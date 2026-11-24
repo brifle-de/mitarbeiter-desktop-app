@@ -131,7 +131,7 @@ export default defineComponent({
     FileDragAndDrop,
     SearchReceiversResults,
     SftpModal,
-    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+     
     Button, Column, DataTable, Select, SelectButton, FileInput, FileText, Plus, Trash2, PageHeader, FormField, TableCard,
   },
   computed: {

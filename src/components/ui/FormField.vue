@@ -9,5 +9,5 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ label?: string; hint?: string; error?: string; forId?: string }>();
+defineProps<{ label?: string | undefined; hint?: string | undefined; error?: string | undefined; forId?: string }>();
 </script>

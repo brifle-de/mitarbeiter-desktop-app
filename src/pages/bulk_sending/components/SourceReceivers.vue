@@ -70,7 +70,7 @@ import SelectedPath from './ui/SelectedPath.vue';
 export default defineComponent({
   name: 'SourceReceivers',
   components: {
-    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+     
     SftpModal, Select, FormField, SourceTile, SelectedPath,
   },
   emits: ['update:modelValue'],

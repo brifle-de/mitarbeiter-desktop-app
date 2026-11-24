@@ -15,6 +15,6 @@
 import type { Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-defineProps<{ to: string; icon: Component; label: string; active?: boolean; count?: number }>();
+defineProps<{ to: string; icon: Component; label: string; active?: boolean | undefined; count?: number }>();
 const { t } = useI18n();
 </script>

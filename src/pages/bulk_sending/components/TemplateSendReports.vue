@@ -59,7 +59,7 @@ import TableCard from './ui/TableCard.vue';
 export default defineComponent({
     name: 'TemplateSendReports',
     components: {
-        // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+         
         ExportModal, Accordion, AccordionPanel, AccordionHeader, AccordionContent, Button, DataTable, Column, Download, KpiCard, StatusTag, TableCard,
     },
     computed: {

@@ -8,6 +8,18 @@ import Aura from '@openvue/themes/aura';
  * tokens as CSS variables for our own components.
  */
 const BriflePreset = definePreset(Aura, {
+  components: {
+    // MA/Kopfzelle: header row on Hintergrund/Dezent, 12px semibold titles
+    datatable: {
+      headerCell: { padding: '10px 16px' },
+      bodyCell: { padding: '12px 16px' },
+      columnTitle: { fontWeight: '600' },
+      colorScheme: {
+        light: { headerCell: { background: '#e7f4ea', color: '#546360' } },
+        dark: { headerCell: { background: '#1f2924', color: '#9fb0a7' } },
+      },
+    },
+  },
   semantic: {
     primary: {
       50: '#f6faf6',

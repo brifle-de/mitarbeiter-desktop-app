@@ -69,7 +69,7 @@ import { useNotify } from 'src/composables/useNotify';
 
 export default defineComponent({
   name: 'SearchReceiversResults',
-  // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+   
   components: { Button, DataTable, Column, ProgressBar, SelectButton, UserSearch, KpiCard, StatusTag, TableCard },
   emits: ['confirmed'],
   computed: {

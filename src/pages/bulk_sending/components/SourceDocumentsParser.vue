@@ -143,7 +143,7 @@ function toFilterDate(d: Date): string {
 export default defineComponent({
   name: 'SourceDocumentsParser',
   components: {
-    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+     
     SftpModal, Button, Select, InputText, Panel, DatePicker, DataTable, Column,
     CalendarDays, CalendarRange, FolderOpen, RefreshCw, FormField, StatusTag, TableCard, DocTypePill,
   },

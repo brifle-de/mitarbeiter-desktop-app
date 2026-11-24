@@ -2,7 +2,7 @@
   <router-view />
   <!-- MA/Toast: top right, below the title bar -->
   <Toast position="top-right" :pt="{ root: { style: 'top: 56px' } }" />
-  <ConfirmDialog />
+  <ConfirmDialog :style="{ width: '440px', maxWidth: '90vw' }" />
 </template>
 
 <script setup lang="ts">

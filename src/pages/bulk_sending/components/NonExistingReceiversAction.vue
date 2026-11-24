@@ -94,7 +94,7 @@ export default defineComponent({
   // 'update' carries the chosen action (the flow's "next" calls update()), 'valid' reports whether it can be used
   emits: ['update', 'valid'],
   components: {
-    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+     
     CoverLetterSelectionModal, Button, InputText, Message, ToggleSwitch, FileText, FormField, SourceTile,
   },
   watch: {

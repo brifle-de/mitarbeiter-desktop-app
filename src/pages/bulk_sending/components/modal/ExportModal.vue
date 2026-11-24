@@ -39,7 +39,7 @@ import { Download } from 'lucide-vue-next';
 export default defineComponent({
     name: 'ExportModal',
     emits: ['update:modelValue'],
-    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+     
     components: { Dialog, Button, Download },
 
     props: {

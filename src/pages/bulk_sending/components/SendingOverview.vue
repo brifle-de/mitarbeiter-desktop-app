@@ -68,7 +68,7 @@ export default defineComponent({
     // the flow's footer starts sendAll(); 'update:confirmed' reports the review checkbox
     emits: ['sent', 'update:confirmed'],
     components: {
-        // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+         
         SendDocsModal, Button, Checkbox, ProgressBar, KpiCard, StatusTag,
     },
     watch: {

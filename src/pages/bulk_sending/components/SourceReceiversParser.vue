@@ -55,7 +55,7 @@ export default defineComponent({
   name: 'SourceReceiversParser',
 
   components: {
-    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+     
     Button, Select, DataTable, Column, FileInput, FormField, StatusTag, TableCard,
   },
   setup() {   

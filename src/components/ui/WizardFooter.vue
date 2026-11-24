@@ -21,12 +21,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 defineProps<{
   nextLabel: string;
-  backLabel?: string;
-  cancelLabel?: string;
-  hint?: string;
-  nextDisabled?: boolean;
-  loading?: boolean;
-  nextIcon?: Component;
+  backLabel?: string | undefined;
+  cancelLabel?: string | undefined;
+  hint?: string | undefined;
+  nextDisabled?: boolean | undefined;
+  loading?: boolean | undefined;
+  nextIcon?: Component | undefined;
 }>();
 const emit = defineEmits<{ next: []; back: []; cancel: [] }>();
 </script>

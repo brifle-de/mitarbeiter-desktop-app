@@ -11,5 +11,5 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ title: string; path?: string; subtitle?: string }>();
+defineProps<{ title: string; path?: string | undefined; subtitle?: string }>();
 </script>

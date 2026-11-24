@@ -35,7 +35,7 @@ import TableCard from '../ui/TableCard.vue';
 export default defineComponent({
   name: 'SendDocsModal',
   emits: ['update:modelValue'],
-  // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+   
   components: { Dialog, Button, DataTable, Column, StatusTag, TableCard },
   computed: {
     value: {

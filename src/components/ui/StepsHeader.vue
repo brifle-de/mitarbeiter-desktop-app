@@ -23,6 +23,6 @@
 <script setup lang="ts">
 import { Check } from 'lucide-vue-next';
 
-defineProps<{ steps: { title: string; description?: string }[]; active: number; clickable?: boolean }>();
+defineProps<{ steps: { title: string; description?: string | undefined }[]; active: number; clickable?: boolean }>();
 const emit = defineEmits<{ select: [index: number] }>();
 </script>

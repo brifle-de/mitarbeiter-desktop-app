@@ -28,6 +28,8 @@ export default defineConfigWithVueTs(
       '@typescript-eslint/consistent-type-imports': 'off',
       '@typescript-eslint/no-redundant-type-constituents': 'warn',
       'vue/multi-word-component-names': 'off',
+      // OpenVue components are imported as Button, Dialog, Select, Textarea …
+      'vue/no-reserved-component-names': 'off',
     },
   },
 )

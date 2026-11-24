@@ -96,7 +96,7 @@ import { useNotify } from 'src/composables/useNotify';
 
 export default defineComponent({
     name: 'SubjectSetter',
-    // eslint-disable-next-line vue/no-reserved-component-names -- OpenVue components keep their PrimeVue names
+     
     components: { Button, Dialog, InputText, Braces, Copy, Pencil, Plus, Trash2, FormField, DocTypePill },
     props: {
         modelValue: {
