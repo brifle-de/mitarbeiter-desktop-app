@@ -145,7 +145,7 @@ import { defineComponent, PropType, ref } from 'vue';
 import { getSubjectPlaceholderkeys, getSubjectPlaceholders, SubjectData } from '../util/helper';
 import DocumentRecord from '../util/documents/documentRecord';
 import { computePillColors } from '../util/helper';
-import { copyToClipboard } from 'quasar';
+import { copyToClipboard } from 'src/composables/useClipboard';
 import { SendDocReceiverReq } from '../util/receivers/receiverRecord';
 
 export default defineComponent({

@@ -1,19 +1,20 @@
 <template>
   <router-view />
+  <!-- MA/Toast: top right, below the title bar -->
+  <Toast position="top-right" :pt="{ root: { style: 'top: 56px' } }" />
+  <ConfirmDialog />
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
+<script setup lang="ts">
+import { onMounted } from 'vue';
 import hotkeys from 'hotkeys-js';
+import Toast from 'openvue/toast';
+import ConfirmDialog from 'openvue/confirmdialog';
 
-export default defineComponent({
-  name: 'App',
-  mounted() {
-    // open debug tools with F12
-    hotkeys('f12', () => {
-      void window.electronApi.showDevTools(); 
-    });
-  }
+onMounted(() => {
+  // open the developer tools with F12
+  hotkeys('f12', () => {
+    void window.electronApi.showDevTools();
+  });
 });
 </script>

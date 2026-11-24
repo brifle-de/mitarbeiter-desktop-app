@@ -7,7 +7,8 @@ const routes: RouteRecordRaw[] = [
     name: 'home',
     component: () => import('layouts/MainLayout.vue'),
     meta: { 
-      requiresUnseal: true 
+      requiresUnseal: true,
+      section: 'home'
     },
     children: [
       {
@@ -25,18 +26,9 @@ const routes: RouteRecordRaw[] = [
     path: '/settings',
     name: 'settings',
     component: () => import('layouts/MainLayout.vue'),
-    meta: { requiresUnseal: true },
+    meta: { requiresUnseal: true, section: 'settings' },
     children: [
-      { 
-        path: '', component: () => import('pages/settings/Index.vue'),
-        name: 'settings.index',
-        meta: {
-          searchable: true,
-          title: 'Einstellungen',
-          description: 'Verwalten Sie Ihre Brifle-Einstellungen',
-          keywords: ['Einstellungen', 'Brifle'],
-        }
-      },
+      { path: '', name: 'settings.index', redirect: { name: 'settings.account' } },
       {
         path: 'account',
         name: 'settings.account',
@@ -90,6 +82,39 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'parsers/receiver-records',
         component: () => import('pages/settings/parsers/receiversFiles.vue'),     
+      },
+      {
+        path: 'connections',
+        name: 'settings.connections',
+        component: () => import('pages/settings/Connections.vue'),
+        meta: {
+          searchable: true,
+          title: 'Verbindungen',
+          description: 'SFTP-Verbindungen für Massenversand und Vorlagen',
+          keywords: ['SFTP', 'Verbindungen', 'Server', 'Einstellungen'],
+        }
+      },
+      {
+        path: 'updates',
+        name: 'settings.updates',
+        component: () => import('pages/settings/Updates.vue'),
+        meta: {
+          searchable: true,
+          title: 'Updates',
+          description: 'Version, Testkanal und Aktualisierungen',
+          keywords: ['Update', 'Version', 'Testkanal', 'Aktualisieren'],
+        }
+      },
+      {
+        path: 'appearance',
+        name: 'settings.appearance',
+        component: () => import('pages/settings/Appearance.vue'),
+        meta: {
+          searchable: true,
+          title: 'Darstellung',
+          description: 'Hell, Dunkel oder wie das System',
+          keywords: ['Darstellung', 'Dunkel', 'Hell', 'Theme', 'Design'],
+        }
       }
     ],
   },
@@ -97,7 +122,7 @@ const routes: RouteRecordRaw[] = [
     path: '/outbox',
     name: 'outbox',
     component: () => import('layouts/MainLayout.vue'),
-    meta: { requiresUnseal: true },
+    meta: { requiresUnseal: true, section: 'outbox' },
     children: [
       {
         path: '',
@@ -115,6 +140,7 @@ const routes: RouteRecordRaw[] = [
         name: 'outbox.send',
         component: () => import('pages/outbox/SendDocumentPage.vue'),
         meta: {
+          section: 'send',
           searchable: true,
           searchWeight: 2,
           title: 'Dokument senden',
@@ -138,7 +164,7 @@ const routes: RouteRecordRaw[] = [
     path: '/bulk_sending',
     name: 'bulk_sending',
     component: () => import('layouts/MainLayout.vue'),
-    meta: { requiresUnseal: true },
+    meta: { requiresUnseal: true, section: 'bulk' },
     children: [
       {
         path: '',
@@ -169,6 +195,7 @@ const routes: RouteRecordRaw[] = [
         name: 'bulk_sending.templates',
         component: () => import('pages/bulk_sending/pages/TemplatesBulkSendPage.vue'),
         meta: {
+          section: 'templates',
           searchable: true,
           searchWeight: 2,
           title: 'Serienversand Vorlagen',
@@ -181,6 +208,7 @@ const routes: RouteRecordRaw[] = [
         name: 'bulk_sending.create_template',
         component: EditBulkTemplatePage,
         meta: {
+          section: 'templates',
           searchable: true,
           searchWeight: 1,
           title: 'Vorlage erstellen',
@@ -192,19 +220,22 @@ const routes: RouteRecordRaw[] = [
         path: '/templates/edit/:id',
         name: 'bulk_sending.edit_template',
         component: EditBulkTemplatePage,
-        props: true,       
+        props: true,
+        meta: { section: 'templates' },       
       },      
       {
         path: '/templates/start/:id',
         name: 'bulk_sending.start',
         component: () => import('pages/bulk_sending/pages/UseTemplateSendPage.vue'),
         props: true,
+        meta: { section: 'templates' },
       },
       {
         path: 'receiver_check',
         name: 'bulk_sending.receiver_check',
         component: () => import('pages/bulk_sending/ReceiverCheckPage.vue'),
         meta: {
+          section: 'receiverCheck',
           searchable: true,
           searchWeight: 2,
           title: 'Empfängerprüfung',
@@ -257,7 +288,6 @@ export function searchRoutes(query: string): RouteRecordRaw[] {
   const uniquePath: Set<string> = new Set();
 
   const res = searchableRoutes.filter(route => {
-    console.log('Checking route:', route.path, route.meta?.title, query);
     if (uniquePath.has(route.path)) {
       return false; // Skip duplicate paths
     }
@@ -274,7 +304,6 @@ export function searchRoutes(query: string): RouteRecordRaw[] {
     const bWeight = (b.meta?.searchWeight as number) || 1;
     return bWeight - aWeight; // Higher weight first
   });
-  console.log('Search results:', res);
   return res;
 
 }

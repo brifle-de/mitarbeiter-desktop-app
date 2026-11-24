@@ -236,19 +236,22 @@ function copyOcrFiles(appDataDir: string){
 
 async function createWindow() {
 
+  // matches the title bar of the redesign (CD: Hintergrund/Marke-Stark, 44px)
   const titleBarOverlayWindow = {
-    color: '#151b11',
-    symbolColor: '#74be97',
-    height: 36 
+    color: '#093728',
+    symbolColor: '#ffffff',
+    height: 44
   }
 
   /**
    * Initial window options
    */
   mainWindow = new BrowserWindow({
-    icon: path.resolve(currentDir, 'icons/icon.png'), // tray icon
-    width: 1000,
-    height: 700,
+    icon: app.isPackaged ? path.join(process.resourcesPath, 'icons/icon.png') : path.join(process.cwd(), 'src-electron/icons/icon.png'),
+    width: 1280,
+    height: 800,
+    minWidth: 1100,
+    minHeight: 680,
     fullscreenable: true,
     // remove the default titlebar
     titleBarStyle: 'hidden',    
@@ -259,10 +262,8 @@ async function createWindow() {
       contextIsolation: true,
       // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
       sandbox: true,
-      preload: path.resolve(
-        currentDir,
-        path.join(process.env.QUASAR_ELECTRON_PRELOAD_FOLDER, 'electron-preload' + process.env.QUASAR_ELECTRON_PRELOAD_EXTENSION)
-      ),
+      // electron-vite: out/main/electron-main.js -> out/preload/electron-preload.cjs
+      preload: path.join(currentDir, '../preload/electron-preload.cjs'),
     },
   });
 
@@ -270,10 +271,10 @@ async function createWindow() {
   mainWindow.maximize();
   
 
-  if (process.env.DEV) {
-    await mainWindow.loadURL(process.env.APP_URL);
+  if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+    await mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
-    await mainWindow.loadFile('index.html');
+    await mainWindow.loadFile(path.join(currentDir, '../renderer/index.html'));
   }
 
   
@@ -287,12 +288,12 @@ async function createWindow() {
   
 }
 
+// Windows wants .ico for the tray; Linux and macOS cannot load .ico.
 const getTrayIcon = () => {
-  if (process.env.DEV) {
-    return path.join(process.cwd(), 'public/icons/icon.ico')
-  } else {
-    return path.join(process.resourcesPath, 'icons/icon.ico')
-  }
+  const file = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'icons', file)
+    : path.join(process.cwd(), 'src-electron/icons', file);
 }
 
 function createTray() {

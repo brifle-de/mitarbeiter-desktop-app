@@ -40,7 +40,7 @@
 </template>
 <script lang="ts">
 
-import { copyToClipboard } from 'quasar';
+import { copyToClipboard } from 'src/composables/useClipboard';
 import { defineComponent, PropType } from 'vue';
 
 export default defineComponent({

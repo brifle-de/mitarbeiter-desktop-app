@@ -1,0 +1,131 @@
+@import 'tailwindcss';
+
+/*
+ * Tokens of the redesign (Figma "Mitarbeiter – Brifle App", page 02 Komponenten).
+ * Values mirror the `Farben` collection of the Brifle/LIVIA corporate design
+ * (modes "Hell" and "Dunkel gedämpft") plus the local `MA/Status` collection
+ * (Fehler, Info). Components use them through the Tailwind names below, e.g.
+ * `bg-flaeche text-ink border-line`.
+ */
+:root {
+  --bg-seite: #f6faf6;
+  --bg-flaeche: #ffffff;
+  --bg-dezent: #e7f4ea;
+  --bg-mint: #d0f0da;
+  --bg-marke: #1b8e5a;
+  --bg-marke-stark: #093728;
+  --bg-highlight: #ace663;
+  --bg-warnung: #feeac2;
+  --bg-fehler: #fdecea;
+  --bg-info: #eaf2fb;
+  --text-primaer: #131f21;
+  --text-sekundaer: #546360;
+  --text-marke: #1b8e5a;
+  --text-auf-marke: #ffffff;
+  --text-auf-marke-stark: #f6faf6;
+  --text-auf-highlight: #093728;
+  --text-fehler: #b42318;
+  --text-info: #1d4f86;
+  --rahmen-standard: #d1ded6;
+  --rahmen-marke: #1b8e5a;
+  --icon-marke: #0b4a32;
+  --shadow-overlay: 0 8px 24px rgba(10, 26, 20, 0.12), 0 1px 3px rgba(10, 26, 20, 0.08);
+}
+
+:root.app-dark {
+  --bg-seite: #111714;
+  --bg-flaeche: #18201c;
+  --bg-dezent: #1f2924;
+  --bg-mint: #27332d;
+  --bg-marke: #5fae86;
+  --bg-marke-stark: #0c1a14;
+  --bg-highlight: #b7d58f;
+  --bg-warnung: #3a2f1c;
+  --bg-fehler: #3a2421;
+  --bg-info: #1f2b36;
+  --text-primaer: #e3eae5;
+  --text-sekundaer: #9fb0a7;
+  --text-marke: #b7d58f;
+  --text-auf-marke: #13201a;
+  --text-auf-marke-stark: #e3eae5;
+  --text-auf-highlight: #13201a;
+  --text-fehler: #f2a69c;
+  --text-info: #a9c8ec;
+  --rahmen-standard: #2e3a33;
+  --rahmen-marke: #5fae86;
+  --icon-marke: #b7d58f;
+  --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+@theme inline {
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-heading: 'Figtree Variable', 'Figtree', 'Inter Variable', sans-serif;
+
+  --color-seite: var(--bg-seite);
+  --color-flaeche: var(--bg-flaeche);
+  --color-dezent: var(--bg-dezent);
+  --color-mint: var(--bg-mint);
+  --color-brand: var(--bg-marke);
+  --color-brand-strong: var(--bg-marke-stark);
+  --color-highlight: var(--bg-highlight);
+  --color-warn-soft: var(--bg-warnung);
+  --color-danger-soft: var(--bg-fehler);
+  --color-info-soft: var(--bg-info);
+
+  --color-ink: var(--text-primaer);
+  --color-ink-muted: var(--text-sekundaer);
+  --color-brand-ink: var(--text-marke);
+  --color-on-brand: var(--text-auf-marke);
+  --color-on-brand-strong: var(--text-auf-marke-stark);
+  --color-on-highlight: var(--text-auf-highlight);
+  --color-danger: var(--text-fehler);
+  --color-info: var(--text-info);
+  --color-icon-brand: var(--icon-marke);
+
+  --color-line: var(--rahmen-standard);
+  --color-line-brand: var(--rahmen-marke);
+
+  --shadow-overlay: var(--shadow-overlay);
+  --radius-card: 12px;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    @apply bg-seite text-ink font-sans antialiased;
+    font-size: 14px;
+    line-height: 20px;
+    overflow: hidden;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    margin: 0;
+  }
+  ::selection {
+    background: var(--bg-highlight);
+    color: var(--text-auf-highlight);
+  }
+}
+
+/* Typography = text styles MA/* in Figma */
+@layer components {
+  .ma-title-xl { font-family: var(--font-heading); font-weight: 800; font-size: 28px; line-height: 36px; }
+  .ma-title-l  { font-family: var(--font-heading); font-weight: 800; font-size: 20px; line-height: 28px; }
+  .ma-title-m  { font-family: var(--font-heading); font-weight: 700; font-size: 16px; line-height: 24px; }
+  .ma-text-strong { font-weight: 600; }
+  .ma-small { font-size: 12px; line-height: 16px; font-weight: 500; }
+  .ma-label { font-size: 12px; line-height: 16px; font-weight: 600; }
+
+  /* Karte: Fläche, Rahmen, 12px Radius, 24px Innenabstand */
+  .ma-card {
+    @apply bg-flaeche border border-line rounded-[12px] p-6 flex flex-col gap-4 min-w-0;
+  }
+  /* draggable region of the custom title bar (Electron) */
+  .app-drag { -webkit-app-region: drag; }
+  .app-no-drag { -webkit-app-region: no-drag; }
+}

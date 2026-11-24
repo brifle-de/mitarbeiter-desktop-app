@@ -2,6 +2,7 @@
 
 import { ipcMain } from 'electron';
 import * as net from 'net';
+import * as fs from 'fs';
 
 export default class PipeSocketService {
 
@@ -24,18 +25,33 @@ export default class PipeSocketService {
     }
 
     public init() {
-        // Initialize the pipe socket connection
-        try {
+        const path = this.getPipePath();
         this.server = net.createServer((stream) => {
             stream.on('data', (data) => {
-                const message = data.toString();
-                this.handleMessage(message);
+                this.handleMessage(data.toString());
             });
-        })
-        this.server.listen(this.getPipePath());
-        } catch (error) {
-            console.error("Failed to initialize PipeSocketService:", error);
+        });
+        // An error here (e.g. the address is taken) must not crash the app:
+        // the pipe is an optional integration point.
+        this.server.on('error', (error) => {
+            console.error('PipeSocketService:', error);
+        });
+        if (process.platform !== 'win32' && fs.existsSync(path)) {
+            // A socket file left behind by a crashed run blocks listen() with
+            // EADDRINUSE. The app is single-instance, so if nobody answers on
+            // it, it is stale and can be removed.
+            const probe = net.connect(path);
+            probe.once('connect', () => {
+                probe.destroy();
+                console.warn(`PipeSocketService: ${path} is in use by another process; pipe disabled.`);
+            });
+            probe.once('error', () => {
+                try { fs.unlinkSync(path); } catch { /* already gone */ }
+                this.server?.listen(path);
+            });
+            return;
         }
+        this.server.listen(path);
     }
 
     public close() {
