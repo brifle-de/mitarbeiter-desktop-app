@@ -1,0 +1,107 @@
+name: Build installers
+
+# Reusable: builds the installers of one commit for every platform and uploads
+# them as artifacts (dist-linux, dist-windows, dist-mac). Used by
+# release-candidate.yml and promote.yml; it never publishes anything itself.
+#
+# Each runner builds its own platform: argon2 loads its prebuilt N-API binary
+# for that OS, so nothing is cross-compiled.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build (a tag)
+        required: true
+        type: string
+      version:
+        description: Version to build as (written to package.json before the build). Empty = as committed.
+        required: false
+        type: string
+        default: ''
+      mac:
+        description: Build macOS too (needs the signing secrets, see RELEASE.md)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ${{ fromJSON(inputs.mac && '["linux","windows","mac"]' || '["linux","windows"]') }}
+    name: build (${{ matrix.os }})
+    # ubuntu-22.04: older glibc, so the AppImage runs on more distributions
+    runs-on: ${{ matrix.os == 'linux' && 'ubuntu-22.04' || matrix.os == 'windows' && 'windows-latest' || 'macos-15' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set version
+        if: inputs.version != ''
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+        run: .github/scripts/set-version.sh "$VERSION"
+
+      - run: npm ci
+
+      # Signing and notarisation (macOS only for now). electron-builder signs
+      # when CSC_LINK is set and notarises when APPLE_API_KEY_ID is set.
+      - name: App Store Connect API key for notarisation
+        if: matrix.os == 'mac'
+        shell: bash
+        env:
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: |
+          if [[ -n "$ASC_API_KEY_P8" ]]; then
+            KEY="$RUNNER_TEMP/AuthKey.p8"
+            printf '%s' "$ASC_API_KEY_P8" > "$KEY"
+            echo "APPLE_API_KEY=$KEY" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build
+        shell: bash
+        env:
+          CSC_LINK: ${{ matrix.os == 'mac' && secrets.MAC_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.os == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || '' }}
+          APPLE_API_KEY_ID: ${{ matrix.os == 'mac' && secrets.ASC_KEY_ID || '' }}
+          APPLE_API_ISSUER: ${{ matrix.os == 'mac' && secrets.ASC_ISSUER_ID || '' }}
+          # electron-builder must not look for a certificate in the keychain
+          # when none is configured.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          set -euo pipefail
+          # empty values would make electron-builder try to sign/notarise
+          for v in CSC_LINK CSC_KEY_PASSWORD APPLE_API_KEY_ID APPLE_API_ISSUER; do
+            [[ -n "${!v}" ]] || unset "$v"
+          done
+          npm run build:${{ matrix.os == 'windows' && 'win' || matrix.os }}
+
+      - name: Collect installers
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          shopt -s nullglob
+          for f in dist/electron/Packaged/*.{exe,blockmap,AppImage,deb,dmg,zip} dist/electron/Packaged/latest*.yml; do
+            cp "$f" out/
+          done
+          ls -la out
+          [[ -n "$(ls out)" ]] || { echo "::error::no installers were built"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: out/*
+          if-no-files-found: error
+          retention-days: 14

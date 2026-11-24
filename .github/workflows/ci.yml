@@ -1,0 +1,40 @@
+name: CI
+
+# Tests on every pull request and every push outside release/**. Release
+# branches run the same job as the gate in release-candidate.yml.
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - 'release/**'
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit:ci
+
+      # The installers are built by build.yml for releases; this only proves
+      # the app still bundles and packages on Linux.
+      - name: Build (Linux)
+        run: npm run build:linux

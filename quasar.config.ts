@@ -219,7 +219,19 @@ export default defineConfig((ctx) => {
 
       builder: {
         // https://www.electron.build/configuration/configuration
-         extraResources: [
+        // appId, productName and the data folder (~/brifle-business) must not
+        // change: installed 0.4.x clients update in place and keep their
+        // encrypted store only while they stay the same.
+        appId: 'de.brifle.mitarbeiter',
+        productName: 'Brifle Business',
+        // No spaces: GitHub renames uploaded files with spaces, and the
+        // latest*.yml files must name the assets exactly.
+        artifactName: 'Brifle-Business-${version}-${arch}.${ext}',
+        // The native modules are N-API (argon2 ships prebuilds for every target,
+        // cpu-features is optional for ssh2), so they need no rebuild against
+        // Electron's headers. Rebuilding from source needs a C++20 compiler.
+        npmRebuild: false,
+        extraResources: [
           {
             from: 'src-electron/icons',
             to: 'icons',
@@ -231,22 +243,54 @@ export default defineConfig((ctx) => {
             filter: ['**/*']
           }
         ],
+        // CI builds with --publish never and uploads the files itself
+        // (.github/workflows); this entry tells electron-updater where to look.
         publish: [
-            {
-                provider: "github",
-                owner: "brifle-de",
-                repo: "mitarbeiter-desktop-app"
-            }
+          {
+            provider: 'github',
+            owner: 'brifle-de',
+            repo: 'mitarbeiter-desktop-app'
+          }
         ],
-        appId: 'de.brifle.mitarbeiter',
-        win:{
-          target: 'nsis',          
-        }
-      },     
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      extendWebpack(cfg : any) {
-        cfg.externals = { fs: 'commonjs fs' }; 
-      }
+        win: {
+          target: [{ target: 'nsis', arch: ['x64'] }],
+          icon: 'src-electron/icons/icon.ico',
+        },
+        nsis: {
+          artifactName: 'Brifle-Business-Setup-${version}.${ext}',
+          oneClick: true,
+          perMachine: false,
+        },
+        linux: {
+          // AppImage updates itself; the .deb is updated by electron-updater too
+          // (it asks for the password to install the new package).
+          target: [
+            { target: 'AppImage', arch: ['x64'] },
+            { target: 'deb', arch: ['x64'] },
+          ],
+          category: 'Office',
+          icon: 'src-electron/icons/icon.png',
+          maintainer: 'Brifle GmbH <entwickler@brifle.de>',
+          synopsis: 'Brifle für Geschäftskunden',
+        },
+        // macOS is built only when the repository variable MAC_RELEASE_ENABLED is
+        // true (see .github/RELEASE.md): it needs the Developer ID certificate
+        // (CSC_LINK / CSC_KEY_PASSWORD) and the App Store Connect API key for
+        // notarisation (APPLE_API_KEY / APPLE_API_KEY_ID / APPLE_API_ISSUER).
+        mac: {
+          target: [
+            { target: 'dmg', arch: ['arm64', 'x64'] },
+            { target: 'zip', arch: ['arm64', 'x64'] },
+          ],
+          category: 'public.app-category.business',
+          icon: 'src-electron/icons/icon.icns',
+          hardenedRuntime: true,
+          gatekeeperAssess: false,
+          entitlements: 'src-electron/build/entitlements.mac.plist',
+          entitlementsInherit: 'src-electron/build/entitlements.mac.plist',
+          notarize: process.env.APPLE_API_KEY_ID !== undefined,
+        },
+      },
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/developing-browser-extensions/configuring-bex
