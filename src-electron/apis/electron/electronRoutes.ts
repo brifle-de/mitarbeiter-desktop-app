@@ -1,4 +1,4 @@
-import AppUpdateService from 'app/src-electron/service/AppUpdateService';
+import AppUpdateService, { type UpdateChannel } from 'app/src-electron/service/AppUpdateService';
 import {  ipcMain, app, BrowserWindow } from 'electron'
 
 
@@ -30,6 +30,19 @@ export default class ElectronRoutes{
 
         ipcMain.handle('electron:downloadAndInstallUpdate', async () => {
             return this.appUpdateService.downloadAndInstallUpdate();
+        })
+
+        ipcMain.handle('electron:getUpdateStatus', async () => {
+            return this.appUpdateService.getStatus();
+        })
+
+        ipcMain.handle('electron:setUpdateChannel', async (_event, channel: UpdateChannel) => {
+            return this.appUpdateService.setChannel(channel === 'test' ? 'test' : 'stable');
+        })
+
+        ipcMain.handle('electron:checkForUpdates', async () => {
+            await this.appUpdateService.refresh();
+            return this.appUpdateService.getStatus();
         })
 
     }

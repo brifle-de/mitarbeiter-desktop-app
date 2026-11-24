@@ -25,8 +25,12 @@ export default class AbsolutePathResolver {
         return absolutePath;
     }
 
-    private isAbsolutePath(path: string): boolean {        
-        return p.isAbsolute(path)
+    /**
+     * Absolute on any OS: templates and assignment files may be written on
+     * Windows (C:\..., \\server\share) and used on Linux/macOS, or the other way round.
+     */
+    private isAbsolutePath(path: string): boolean {
+        return p.isAbsolute(path) || /^[a-zA-Z]:[\\/]/.test(path) || path.startsWith('\\\\')
     }
 
 }

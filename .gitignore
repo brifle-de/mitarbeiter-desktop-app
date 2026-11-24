@@ -33,3 +33,6 @@ yarn-error.log*
 .env.local*
 
 .env
+
+# logs written by the app in development
+*.log

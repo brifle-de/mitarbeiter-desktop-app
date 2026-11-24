@@ -1,0 +1,148 @@
+name: Promote release candidate to stable
+
+# Turns a release candidate into the stable release every installed app
+# updates to.
+#
+# Unlike the server images this REBUILDS: the version is baked into the app
+# and into latest*.yml, and an app that reports X.Y.Z-rc.N would see X.Y.Z as
+# newer forever. The rebuild is the rc's commit with package.json set to X.Y.Z,
+# which is exactly the tree the stable tag points at. Then the stable tag and
+# the GitHub Release (marked "latest" for the newest version) are created; the
+# next merge into release/X.Y computes vX.Y.(Z+1)-rc.1.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release candidate to promote, e.g. v0.5.0-rc.2 (becomes v0.5.0)'
+        required: true
+
+concurrency: promote-stable
+
+permissions:
+  contents: read
+
+jobs:
+  # The approval (environment production) happens here, before anything is built.
+  prepare:
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      rc: ${{ steps.v.outputs.rc }}
+      stable: ${{ steps.v.outputs.stable }}
+      # X.Y.Z without the v, for package.json
+      version: ${{ steps.v.outputs.version }}
+      # Only the highest stable version may become GitHub's "latest" release
+      # (what installed apps update to), so a fix for an older minor cannot
+      # move every app backwards.
+      is_newest: ${{ steps.v.outputs.is_newest }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Validate version
+        id: v
+        env:
+          RC: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RC" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
+            echo "::error::'$RC' is not a release candidate tag (expected vX.Y.Z-rc.N)."
+            exit 1
+          fi
+          git rev-parse --verify --quiet "refs/tags/$RC" >/dev/null \
+            || { echo "::error::Tag $RC does not exist."; exit 1; }
+          gh release view "$RC" >/dev/null 2>&1 \
+            || { echo "::error::$RC has no release: its build did not finish."; exit 1; }
+
+          STABLE="${RC%-rc.*}"
+          if git rev-parse --verify --quiet "refs/tags/$STABLE" >/dev/null; then
+            echo "::error::$STABLE is already released."
+            exit 1
+          fi
+
+          NEWEST=$( { git tag -l 'v*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; echo "$STABLE"; } | sort -V | tail -1)
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+          echo "version=${STABLE#v}" >> "$GITHUB_OUTPUT"
+          echo "is_newest=$([[ "$NEWEST" == "$STABLE" ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: refs/tags/${{ needs.prepare.outputs.rc }}
+      version: ${{ needs.prepare.outputs.version }}
+      mac: ${{ vars.MAC_RELEASE_ENABLED == 'true' }}
+    secrets: inherit
+
+  # Last on purpose: the stable tag is what makes the next patch number move on,
+  # so it must only exist once the installers exist. Safe to re-run.
+  release:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      # Only the release GitHub App may create v* tags (see tag ruleset).
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app.outputs.token }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: out
+          merge-multiple: true
+
+      - name: Tag stable release and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          RC: ${{ needs.prepare.outputs.rc }}
+          VERSION: ${{ needs.prepare.outputs.stable }}
+          IS_NEWEST: ${{ needs.prepare.outputs.is_newest }}
+        run: |
+          set -euo pipefail
+          # the installers must carry the stable version, not the rc's
+          grep -q "^version: ${VERSION#v}$" out/latest.yml \
+            || { echo "::error::out/latest.yml is not version ${VERSION#v}"; cat out/latest.yml; exit 1; }
+          if ! git rev-parse --verify --quiet "refs/tags/$VERSION" >/dev/null; then
+            git config user.name "brifle-release-bot[bot]"
+            git config user.email "brifle-release-bot[bot]@users.noreply.github.com"
+            # The stable tag is the RC commit plus a commit that only sets the
+            # version to X.Y.Z: the tree the installers were built from.
+            RC_SHA="$(git rev-list -n1 "$RC")"
+            SHA="$(.github/scripts/commit-version.sh "${VERSION#v}" "$RC_SHA")"
+            git tag -a "$VERSION" -m "$VERSION" "$SHA"
+            git push origin "refs/tags/$VERSION"
+            # release/X.Y follows only while nothing was merged after the RC.
+            BRANCH="release/$(echo "${VERSION#v}" | cut -d. -f1,2)"
+            if [[ "$SHA" != "$RC_SHA" ]]; then
+              if [[ "$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)" == "$RC_SHA" ]] \
+                && git push origin "$SHA:refs/heads/$BRANCH"; then
+                echo "\`$BRANCH\` now says \`${VERSION#v}\`" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "::notice::$BRANCH is no longer at $RC; the version commit is on the tag only."
+              fi
+            fi
+          fi
+          # gh uploads the files to a draft and publishes it once all are there,
+          # so installed apps never see a release with missing files.
+          if ! gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release create "$VERSION" out/* --verify-tag --generate-notes --title "$VERSION" \
+              --latest="$IS_NEWEST"
+          fi
+          {
+            echo "### $VERSION$([[ "$IS_NEWEST" == true ]] && echo ' (latest: installed apps update to it)')"
+            ls out | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"

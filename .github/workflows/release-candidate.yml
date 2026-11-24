@@ -1,0 +1,206 @@
+name: Release candidate
+
+# Every merge into a minor-version branch (release/0.5, release/0.6, ...)
+# builds a release candidate for the NEXT patch of that minor and publishes it
+# as a GitHub **prerelease**. Installed apps on the stable channel never see
+# prereleases (electron-updater follows the release GitHub marks "latest");
+# apps with the Testkanal switched on update to them. Pushing a tag does
+# nothing: tags are created here (rc) and by promote.yml (stable).
+#
+# package.json's version follows the release: creating release/X.Y commits
+# X.Y.0 (and cuts no candidate), and every candidate tag points at a commit
+# "chore(release): version X.Y.Z-rc.N" on top of the tested merge.
+on:
+  push:
+    branches:
+      - 'release/**'
+  # Fallback when a merge did not start a run: run it on the release branch
+  # from the Actions tab.
+  workflow_dispatch:
+
+# Two merges in quick succession must not compute the same rc number.
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # A new release/X.Y starts at X.Y.0; its first candidate comes with the first
+  # merge. The push of this commit is skipped by check-branch below.
+  branch-version:
+    if: github.event_name == 'push' && github.event.created
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$BRANCH" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$BRANCH' is not a release branch (expected release/X.Y). The version was not set."
+            exit 1
+          fi
+
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app.outputs.token }}
+
+      - name: Set the version to X.Y.0
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#release/}.0"
+          SHA="$(.github/scripts/commit-version.sh "$VERSION" "$GITHUB_SHA")"
+          if [[ "$SHA" == "$GITHUB_SHA" ]]; then
+            echo "The version file already says $VERSION" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git push origin "$SHA:refs/heads/$GITHUB_REF_NAME"
+          echo "Version set to \`$VERSION\` (${SHA:0:12})" >> "$GITHUB_STEP_SUMMARY"
+
+  # Only minor-version branches release (release/0.5). Skipped, and with it
+  # every job after it, for the push that creates the branch (branch-version
+  # handles it) and for the release bot's own version commits.
+  check-branch:
+    if: >-
+      github.event_name != 'push' || (
+        !github.event.created &&
+        !startsWith(github.event.head_commit.message, 'chore(release): version ')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [[ ! "$BRANCH" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$BRANCH' is not a release branch (expected release/X.Y). Nothing was built or tagged."
+            exit 1
+          fi
+
+  # A release candidate is only tagged when the tests pass.
+  test:
+    needs: check-branch
+    uses: ./.github/workflows/ci.yml
+
+  # The tag is created FIRST and is the single source for what follows: the
+  # installers are built from this tag's commit. Only the release GitHub App
+  # may create v* tags (tag ruleset).
+  tag-rc:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ steps.app.outputs.token }}
+
+      - name: Create the release candidate tag
+        id: next
+        run: |
+          set -euo pipefail
+          MINOR="${GITHUB_REF_NAME#release/}"
+          TAG="$(.github/scripts/next-rc-tag.sh "$MINOR")"
+          git config user.name "brifle-release-bot[bot]"
+          git config user.email "brifle-release-bot[bot]@users.noreply.github.com"
+          # The tag points at the tested merge plus one commit that only sets
+          # the version (see .github/scripts/set-version.sh).
+          SHA="$(.github/scripts/commit-version.sh "${TAG#v}" "$GITHUB_SHA")"
+          git tag -a "$TAG" -m "$TAG" "$SHA"
+          git push origin "refs/tags/$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release candidate: $TAG" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$SHA" != "$GITHUB_SHA" ]]; then
+            if git push origin "$SHA:refs/heads/$GITHUB_REF_NAME"; then
+              echo "\`$GITHUB_REF_NAME\` now says \`${TAG#v}\`" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::notice::$GITHUB_REF_NAME moved since this run started; the version commit is on the tag only."
+            fi
+          fi
+
+  build:
+    needs: tag-rc
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: refs/tags/${{ needs.tag-rc.outputs.tag }}
+      mac: ${{ vars.MAC_RELEASE_ENABLED == 'true' }}
+    secrets: inherit
+
+  # One release with every platform's files, created only when every enabled
+  # platform built: testers on Windows and Linux always get the same version.
+  publish:
+    needs: [tag-rc, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: out
+          merge-multiple: true
+
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: GitHub prerelease
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.tag-rc.outputs.tag }}
+        run: |
+          set -euo pipefail
+          ls -la out
+          gh release create "$TAG" out/* --verify-tag --prerelease --latest=false --generate-notes --title "$TAG"
+          {
+            echo "### $TAG (prerelease, Testkanal)"
+            ls out | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # A tag without its release must not stay behind: promote only accepts an rc
+  # that was built and published.
+  rollback-tag:
+    needs: [tag-rc, build, publish]
+    if: ${{ always() && needs.tag-rc.result == 'success' && needs.publish.result != 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-workflows: write
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app.outputs.token }}
+
+      - name: Delete the release candidate tag and release
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          TAG: ${{ needs.tag-rc.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release delete "$TAG" --yes 2>/dev/null || true
+          git push origin --delete "refs/tags/$TAG"
+          echo "### Build failed: tag \`$TAG\` removed" >> "$GITHUB_STEP_SUMMARY"

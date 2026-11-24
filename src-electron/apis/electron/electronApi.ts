@@ -1,5 +1,5 @@
  
-import { UpdateInformation } from "app/src-electron/service/AppUpdateService";
+import type { UpdateChannel, UpdateInformation, UpdateStatus } from "app/src-electron/service/AppUpdateService";
 import { ContextBridge, IpcRenderer } from "electron";
 
  export class ElectronApi{
@@ -10,7 +10,10 @@ import { ContextBridge, IpcRenderer } from "electron";
             getAppVersion: () => ipcRenderer.invoke('electron:getAppVersion'),
             showDevTools: () => ipcRenderer.invoke('electron:showDevTools'),
             getUpdateInfo: () => ipcRenderer.invoke('electron:getUpdateInfo'),
-            downloadAndInstallUpdate: () => ipcRenderer.invoke('electron:downloadAndInstallUpdate')
+            downloadAndInstallUpdate: () => ipcRenderer.invoke('electron:downloadAndInstallUpdate'),
+            getUpdateStatus: () => ipcRenderer.invoke('electron:getUpdateStatus'),
+            setUpdateChannel: (channel: UpdateChannel) => ipcRenderer.invoke('electron:setUpdateChannel', channel),
+            checkForUpdates: () => ipcRenderer.invoke('electron:checkForUpdates'),
         })
     }
 
@@ -21,4 +24,7 @@ import { ContextBridge, IpcRenderer } from "electron";
     showDevTools: () => Promise<void>;
     getUpdateInfo: () => Promise<UpdateInformation  | null>;
     downloadAndInstallUpdate: () => Promise<void>;
+    getUpdateStatus: () => Promise<UpdateStatus>;
+    setUpdateChannel: (channel: UpdateChannel) => Promise<UpdateStatus>;
+    checkForUpdates: () => Promise<UpdateStatus>;
 }
