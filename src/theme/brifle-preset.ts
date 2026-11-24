@@ -9,6 +9,20 @@ import Aura from '@openvue/themes/aura';
  */
 const BriflePreset = definePreset(Aura, {
   components: {
+    // MA/Button Sekundär: readable text and border (Aura's outlined secondary
+    // is too faint, in dark mode it looks disabled)
+    button: {
+      colorScheme: {
+        light: {
+          outlined: { secondary: { color: '#131f21', borderColor: '#d1ded6', hoverBackground: '#e7f4ea', activeBackground: '#d0f0da' } },
+          text: { secondary: { color: '#131f21' } },
+        },
+        dark: {
+          outlined: { secondary: { color: '#e3eae5', borderColor: '#3a4a41', hoverBackground: '#1f2924', activeBackground: '#27332d' } },
+          text: { secondary: { color: '#e3eae5' } },
+        },
+      },
+    },
     // MA/Kopfzelle: header row on Hintergrund/Dezent, 12px semibold titles
     datatable: {
       headerCell: { padding: '10px 16px' },
